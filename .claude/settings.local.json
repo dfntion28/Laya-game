@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(npm run *)",
+      "Bash(apt-get install *)",
+      "Read(//usr/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npx playwright *)",
+      "Bash(npm install *)",
+      "Bash(sudo apt-get install -y libnspr4 libnss3 libatk-bridge2.0-0)",
+      "Bash(/home/userdfntion_/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome --version)",
+      "Bash(ldconfig -p)",
+      "Read(//usr/**)",
+      "Read(//usr/lib/**)",
+      "Bash(curl -s http://localhost:4173/)",
+      "Bash(curl -s http://localhost:4173/assets/index-CkT_BBuT.js)",
+      "Bash(curl -s http://localhost:4173/assets/index-CbYoNxB9.css)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(curl -sI http://localhost:5174/src/main.jsx)",
+      "Bash(pkill -f \"vite --port\")",
+      "Bash(curl -s http://localhost:5175)",
+      "Bash(pkill -f \"vite.*5175\")"
+    ]
+  }
+}

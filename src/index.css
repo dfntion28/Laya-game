@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Barlow Condensed', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --color-felt: #0c1f10;
+  --color-gold: #c9a227;
+  --color-panel: #0d1b2e;
+  --color-green: #4ade80;
+  --color-red: #f87171;
+  --color-parchment: #f5e6c8;
+  --player-0: #22c55e;
+  --player-1: #f59e0b;
+  --player-2: #38bdf8;
+  --player-3: #e879f9;
+}
+body {
+  background: var(--color-felt);
+  font-family: var(--font-body);
+  color: var(--color-parchment);
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes cardReveal {
+  0%   { opacity: 0; transform: scale(0.82) translateY(10px); }
+  60%  { opacity: 1; transform: scale(1.03) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes spaceBlink {
+  0%,   100% { box-shadow: inset 0 0 0 3px #c9a227, 0 0 12px rgba(201,162,39,0.5); }
+  50%         { box-shadow: inset 0 0 0 3px #f5d060, 0 0 28px rgba(201,162,39,0.85); }
+}
+
+@keyframes cardFlipIn {
+  0%   { opacity: 0; transform: rotateX(30deg) scale(0.85); }
+  100% { opacity: 1; transform: rotateX(0deg)  scale(1); }
+}
+
+@keyframes diceRoll {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  20%       { transform: scale(1.25) rotate(-12deg); }
+  50%       { transform: scale(1.35) rotate(9deg); }
+  80%       { transform: scale(1.15) rotate(-4deg); }
+}
+
+.dice-rolling {
+  animation: diceRoll 0.45s ease-out;
+}
+
+@keyframes confettiFall {
+  0%   { transform: translateY(-120px) rotate(0deg);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh)  rotate(600deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: absolute;
+  animation: confettiFall linear infinite;
+}
