@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   useGameStore,
   computePassiveIncome,
@@ -87,6 +87,26 @@ export default function FinancialStatement({ playerId }) {
   const useNetworkCard    = useGameStore(s => s.useNetworkCard);
   const activatePaluwagan = useGameStore(s => s.activatePaluwagan);
 
+  // Animation freeze — lock display values while the current player's token is moving
+  const isAnimating        = useGameStore(s => s.animatingToken.active);
+  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const viewedIdx          = players.findIndex(p => p.id === playerId);
+  const [frozenPlayer, setFrozenPlayer] = useState(null);
+
+  useEffect(() => {
+    const shouldFreeze = isAnimating && viewedIdx === currentPlayerIndex;
+    if (shouldFreeze && frozenPlayer === null) {
+      setFrozenPlayer(player);
+    }
+    if (!isAnimating && frozenPlayer !== null) {
+      setFrozenPlayer(null);
+    }
+  }, [isAnimating]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Use frozen snapshot during animation; fall back to live player otherwise.
+  // Guard against stale frozen data if the user switches tabs mid-animation.
+  const displayPlayer = (frozenPlayer?.id === playerId) ? frozenPlayer : player;
+
   const playerHistory = eventLog.filter(e => e.playerId === playerId).slice(0, 5);
 
   if (!player) {
@@ -97,19 +117,21 @@ export default function FinancialStatement({ playerId }) {
     );
   }
 
-  // ── Derived values ─────────────────────────────────────────────────────────
+  if (!displayPlayer) return null;
+
+  // ── Derived values (all from displayPlayer so they freeze during animation) ─
   const marketMult    = getMarketMultiplier(marketCycle);
-  const passiveIncome = computePassiveIncome(player.assets);
-  const loanPayments  = computeLoanPayments(player.liabilities);
-  const netWorth      = computeNetWorth(player);
+  const passiveIncome = computePassiveIncome(displayPlayer.assets);
+  const loanPayments  = computeLoanPayments(displayPlayer.liabilities);
+  const netWorth      = computeNetWorth(displayPlayer);
 
-  const insuranceCost   = player.insuranceActive ? INSURANCE_MONTHLY_COST : 0;
-  const totalDeductions = player.tax + player.mandatoryDeductions + insuranceCost;
+  const insuranceCost   = displayPlayer.insuranceActive ? INSURANCE_MONTHLY_COST : 0;
+  const totalDeductions = displayPlayer.tax + displayPlayer.mandatoryDeductions + insuranceCost;
 
-  const activeIncome  = player.variableIncome ? null : player.salary;
+  const activeIncome  = displayPlayer.variableIncome ? null : displayPlayer.salary;
   const totalIncome   = activeIncome !== null ? activeIncome + passiveIncome : null;
 
-  const totalExpenses = player.monthlyExpenses + player.familyExpenses;
+  const totalExpenses = displayPlayer.monthlyExpenses + displayPlayer.familyExpenses;
   const totalOutflow  = totalDeductions + totalExpenses + loanPayments;
   const cashFlow      = totalIncome !== null ? totalIncome - totalOutflow : null;
 
@@ -118,7 +140,7 @@ export default function FinancialStatement({ playerId }) {
   const barPct        = Math.min(escapePct, 100);
   const hasEscaped    = escapePct >= 100;
 
-  const tier = creditTier(player.creditScore);
+  const tier = creditTier(displayPlayer.creditScore);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -132,9 +154,9 @@ export default function FinancialStatement({ playerId }) {
 
         <Row
           label="Active Income"
-          value={player.variableIncome
+          value={displayPlayer.variableIncome
             ? <span style={{ color: '#f59e0b' }}>🎲 D6 × ₱10,000</span>
-            : php(player.salary)
+            : php(displayPlayer.salary)
           }
           valueColor="var(--color-green)"
         />
@@ -164,17 +186,17 @@ export default function FinancialStatement({ playerId }) {
 
         {deductionsOpen && (
           <div className="rounded-lg px-3 py-2 my-1 space-y-0.5 border border-[#0d2030]" style={{ background: '#060f1a' }}>
-            {player.tax > 0 && <SubRow label="Income Tax" value={php(player.tax)} />}
-            {player.variableIncome && <SubRow label="Income Tax" value="15% ng roll" />}
-            <SubRow label="SSS / PhilHealth / Pag-IBIG" value={php(player.mandatoryDeductions)} />
-            {player.insuranceActive && <SubRow label="Insurance Premium" value={php(insuranceCost)} />}
+            {displayPlayer.tax > 0 && <SubRow label="Income Tax" value={php(displayPlayer.tax)} />}
+            {displayPlayer.variableIncome && <SubRow label="Income Tax" value="15% ng roll" />}
+            <SubRow label="SSS / PhilHealth / Pag-IBIG" value={php(displayPlayer.mandatoryDeductions)} />
+            {displayPlayer.insuranceActive && <SubRow label="Insurance Premium" value={php(insuranceCost)} />}
           </div>
         )}
 
-        <Row label="Monthly Expenses" value={php(player.monthlyExpenses)} valueColor="var(--color-red)" />
+        <Row label="Monthly Expenses" value={php(displayPlayer.monthlyExpenses)} valueColor="var(--color-red)" />
 
-        {player.familyExpenses > 0 && (
-          <Row label="Family Remittance" value={php(player.familyExpenses)} valueColor="var(--color-red)" />
+        {displayPlayer.familyExpenses > 0 && (
+          <Row label="Family Remittance" value={php(displayPlayer.familyExpenses)} valueColor="var(--color-red)" />
         )}
 
         <Row label="Loan Payments" value={php(loanPayments)} valueColor="var(--color-red)" />
@@ -231,10 +253,10 @@ export default function FinancialStatement({ playerId }) {
 
         {/* ── ASSETS ── */}
         <SectionLabel>Assets</SectionLabel>
-        {player.assets.length === 0 ? (
-          <p className="text-[12px] italic py-2" style={{ color: '#3a6a3a' }}>Wala pang assets.</p>
+        {displayPlayer.assets.length === 0 ? (
+          <p className="text-[12px] italic py-2" style={{ color: '#3a6a3a' }}>No assets yet.</p>
         ) : (
-          player.assets.map(asset => {
+          displayPlayer.assets.map(asset => {
             const mktValue = Math.round((asset.currentValue || 0) * marketMult);
             return (
               <div key={asset.instanceId} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
@@ -253,10 +275,10 @@ export default function FinancialStatement({ playerId }) {
 
         {/* ── LIABILITIES ── */}
         <SectionLabel>Liabilities</SectionLabel>
-        {player.liabilities.length === 0 ? (
-          <p className="text-[12px] italic py-2" style={{ color: '#4ade80' }}>Walang utang! 🎉</p>
+        {displayPlayer.liabilities.length === 0 ? (
+          <p className="text-[12px] italic py-2" style={{ color: '#4ade80' }}>No liabilities yet! 🎉</p>
         ) : (
-          player.liabilities.map(lib => (
+          displayPlayer.liabilities.map(lib => (
             <div key={lib.id} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
               <span className="text-[12px] text-[#8aabcb] flex-1">{lib.name}</span>
               <span className="text-[10px] text-[#f87171]">{php(lib.payment)}/mo</span>
@@ -271,17 +293,17 @@ export default function FinancialStatement({ playerId }) {
         )}
 
         {/* ── KONEKSYON CARDS ── */}
-        {player.heldNetworkCards.length > 0 && (
+        {displayPlayer.heldNetworkCards.length > 0 && (
           <>
             <SectionLabel>Koneksyon Cards</SectionLabel>
             <div className="flex flex-col gap-1 mb-2">
-              {player.heldNetworkCards.map((card, i) => {
+              {displayPlayer.heldNetworkCards.map((card, i) => {
                 const isAuto = AUTO_EFFECTS.has(card.effect);
                 const handleUse = () => {
                   if (card.effect === 'salary_plus_5000') {
                     useHrRecruiter(playerId);
                   } else if (card.effect === 'free_first_month_insurance') {
-                    if (!player.insuranceActive) toggleInsurance(playerId);
+                    if (!displayPlayer.insuranceActive) toggleInsurance(playerId);
                     useNetworkCard(playerId, card.effect);
                   } else if (card.effect === 'paluwagan_start') {
                     if (window.confirm('Simulan ang Paluwagan? Lahat ng players ay magbabayad ng ₱10,000/round sa pot.')) {
@@ -360,7 +382,7 @@ export default function FinancialStatement({ playerId }) {
         <div className="h-3" />
       </div>
 
-      {/* ── Kasaysayan (fixed 118px) ── */}
+      {/* ── History (fixed 118px) ── */}
       <div
         className="shrink-0 overflow-y-auto px-3 py-2"
         style={{ height: '118px', background: '#08101e', borderTop: '1px solid #1a3a1a' }}
@@ -369,10 +391,10 @@ export default function FinancialStatement({ playerId }) {
           className="text-[9px] font-bold tracking-[2px] uppercase mb-2"
           style={{ fontFamily: 'var(--font-display)', color: '#3a6a3a' }}
         >
-          Kasaysayan
+          History
         </p>
         {playerHistory.length === 0 ? (
-          <p className="text-[11px]" style={{ color: '#3a6a3a' }}>Wala pang kasaysayan.</p>
+          <p className="text-[11px]" style={{ color: '#3a6a3a' }}>No history yet.</p>
         ) : (
           playerHistory.map(e => (
             <div
@@ -396,10 +418,10 @@ export default function FinancialStatement({ playerId }) {
           className="rounded-[10px] px-2 py-[2px] text-[#93c5fd]"
           style={{ background: '#1e3a5f' }}
         >
-          {player.creditScore} · {tier.label}
+          {displayPlayer.creditScore} · {tier.label}
         </span>
 
-        {player.insuranceActive && (
+        {displayPlayer.insuranceActive && (
           <span
             className="rounded-[10px] px-2 py-[2px]"
             style={{ background: '#0d2e10', border: '1px solid #2d5a2d', color: '#4ade80' }}

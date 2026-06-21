@@ -26,23 +26,23 @@ const BADGE_STYLE = {
   pangyayari_merkado: { bg: '#1a0d2e', border: '#3a1a5a', color: '#c084fc', label: 'PANGYAYARI SA MERKADO'},
 };
 
-const ASSET_LESSONS = {
-  real_estate: 'Ang real estate ay nagbibigay ng passive income na tumutulong sa iyo na makalaya sa Rat Race.',
-  stock:       'Ang dividends ay kita na hindi nangangailangan ng iyong oras.',
-  business:    'Ang negosyo ay maaaring maging asset kung hindi ka na personally nagtatrabaho doon.',
-  lending:     'Ang pagpapautang sa tamang paraan ay isa ring paraan ng passive income.',
-  land:        'Ang lupa ay nagpapahalaga sa paglipas ng panahon — ito ay limitado at hindi nagagawa.',
-  agriculture: 'Ang pagpapaupa ng lupang sakahan ay nagbibigay ng passive income habang nagagamit ng iba ang lupa.',
+const CARD_LESSONS = {
+  maliit_deal:        'Passive income works for you even while you sleep.',
+  malaking_deal:      'Bigger assets mean bigger passive income — but they need more capital.',
+  gastos:             'Expenses reduce your cash flow. Watch your spending.',
+  pangyayari_buhay:   "Life events are unpredictable. That's why emergency funds matter.",
+  pangyayari_merkado: 'Markets move in cycles. Position your assets accordingly.',
+  koneksyon:          'Your network is your net worth. Connections open doors.',
 };
 
 function getEffectDisplay(card) {
-  if (card.monthlyIncome)       return { value: `+${php(card.monthlyIncome)}/buwan`, positive: true };
-  if (card.cashGain)            return { value: `+${php(card.cashGain)}`,             positive: true };
+  if (card.monthlyIncome)       return { value: `+${php(card.monthlyIncome)}/month`,          positive: true };
+  if (card.cashGain)            return { value: `+${php(card.cashGain)}`,                      positive: true };
   if (card.amount && card.type === 'salary_increase')
-                                return { value: `+${php(card.amount)}/buwan sahod`,   positive: true };
-  if (card.cashLoss)            return { value: `-${php(card.cashLoss)}`,              positive: false };
-  if (card.addedMonthlyPayment) return { value: `+${php(card.addedMonthlyPayment)}/buwan bayad`, positive: false };
-  if (card.addedMonthlyExpense) return { value: `+${php(card.addedMonthlyExpense)}/buwan gastusin`, positive: false };
+                                return { value: `+${php(card.amount)}/month salary`,            positive: true };
+  if (card.cashLoss)            return { value: `-${php(card.cashLoss)}`,                      positive: false };
+  if (card.addedMonthlyPayment) return { value: `+${php(card.addedMonthlyPayment)}/month payment`, positive: false };
+  if (card.addedMonthlyExpense) return { value: `+${php(card.addedMonthlyExpense)}/month expense`,  positive: false };
   return null;
 }
 
@@ -147,7 +147,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
   // ── Handlers ────────────────────────────────────────────────────────────────
   const showToast = (msg) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 4000);
+    // Cleared in handleEndTurn — no auto-dismiss so toast persists until turn ends
   };
 
   const handleRoll = () => {
@@ -156,24 +156,51 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
     const space = movePlayer(currentPlayer.id, total);
     if (!space) return;
 
-    if (space.type === 'sahod_day') {
-      const before = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
-      collectPayday(currentPlayer.id);
-      const after = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
+    // Freedom Track: no animation, resolve non-card spaces immediately
+    if (currentPlayer.hasEscapedRatRace) {
+      if (space.type === 'sahod_day') {
+        const before = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
+        collectPayday(currentPlayer.id);
+        const after = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
+        clearPendingAction();
+        showToast(`💰 Sahod Day! Net cash flow: ${php(after - before)}`);
+      } else if (space.type === 'koneksyon') {
+        const nc = drawCard('networkCards');
+        if (nc) { applyCardEffect(currentPlayer.id, nc); showToast(`🤝 Nakakuha ng Koneksyon: ${nc.name}`); }
+        else { showToast('🤝 Koneksyon space — walang card na natitira'); }
+        clearPendingAction();
+      } else if (space.type === 'win_check') {
+        checkWinCondition(currentPlayer.id);
+        clearPendingAction();
+        showToast('🏆 Freedom Check! Sinuri ang iyong financial status...');
+      }
+      // Card spaces and bangko: Zone B handles them
+    }
+    // Rat Race: all space resolution deferred to animationComplete useEffect
+  };
+
+  // Rat Race auto-resolve — fires once token animation finishes
+  useEffect(() => {
+    if (!animationComplete) return;
+    const state = useGameStore.getState();
+    const pending = state.pendingSpaceAction;
+    const cp = state.players[state.currentPlayerIndex];
+    if (!pending || !cp || pending.isFreedomTrack) return;
+
+    if (pending.type === 'sahod_day') {
+      const before = cp.cash;
+      collectPayday(cp.id);
+      const after = useGameStore.getState().players.find(p => p.id === cp.id)?.cash ?? 0;
       clearPendingAction();
       showToast(`💰 Sahod Day! Net cash flow: ${php(after - before)}`);
-    } else if (space.type === 'koneksyon') {
+    } else if (pending.type === 'koneksyon') {
       const nc = drawCard('networkCards');
-      if (nc) {
-        applyCardEffect(currentPlayer.id, nc);
-        showToast(`🤝 Nakakuha ng Koneksyon: ${nc.name}`);
-      } else {
-        showToast('🤝 Koneksyon space — walang card na natitira');
-      }
+      if (nc) { applyCardEffect(cp.id, nc); showToast(`🤝 Nakakuha ng Koneksyon: ${nc.name}`); }
+      else { showToast('🤝 Koneksyon space — walang card na natitira'); }
       clearPendingAction();
-    } else if (space.type === 'bir_audit') {
+    } else if (pending.type === 'bir_audit') {
       const d6 = Math.floor(Math.random() * 6) + 1;
-      const res = resolveBirAudit(currentPlayer.id, d6);
+      const res = resolveBirAudit(cp.id, d6);
       if (res?.result === 'penalty')
         showToast(`🧾 BIR Audit! Bayad ₱20,000 multa 😬 (D6: ${d6})`);
       else if (res?.result === 'pass')
@@ -181,13 +208,13 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
       else if (res?.result === 'refund')
         showToast(`🎉 BIR Refund! +${php(res.amount)} (D6: ${d6})`);
       clearPendingAction();
-    } else if (space.type === 'win_check') {
-      checkWinCondition(currentPlayer.id);
+    } else if (pending.type === 'win_check') {
+      checkWinCondition(cp.id);
       clearPendingAction();
       showToast('🏆 Freedom Check! Sinuri ang iyong financial status...');
     }
-    // Card spaces and bangko leave pendingSpaceAction set for Zone B / BangkoModal
-  };
+    // Card spaces and bangko: Zone B handles them
+  }, [animationComplete]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAccept = () => {
     if (!drawnCard || !currentPlayer) return;
@@ -208,6 +235,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
 
   const handleEndTurn = () => {
     if (!canEnd || !currentPlayer) return;
+    setToast(null);
     checkWinCondition(currentPlayer.id);
     nextTurn();
   };
@@ -269,7 +297,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
                   lineHeight: 1.2,
                 }}
               >
-                LUMIPAT NG {d1 + d2} ESPASYO
+                Move {d1 + d2} Spaces
               </span>
             )}
           </div>
@@ -281,7 +309,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
         </div>
 
         {!hasRolled && (
-          <p className="text-[9px] text-center" style={{ color: '#3a6a3a' }}>I-roll ang dice</p>
+          <p className="text-[9px] text-center" style={{ color: '#3a6a3a' }}>Roll the dice to start your turn</p>
         )}
       </div>
 
@@ -360,12 +388,12 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
             )}
 
             {/* Financial lesson */}
-            {isDeal && drawnCard.assetType && ASSET_LESSONS[drawnCard.assetType] && (
+            {CARD_LESSONS[spaceType] && (
               <p
                 className="text-[9px] italic rounded"
                 style={{ color: '#4a7a4a', background: '#0a1f0a', padding: '4px 8px' }}
               >
-                {ASSET_LESSONS[drawnCard.assetType]}
+                {CARD_LESSONS[spaceType]}
               </p>
             )}
 
@@ -387,7 +415,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
                   cursor: 'pointer',
                 }}
               >
-                {isDeal ? 'Tanggapin (Bilhin)' : 'Tanggapin'}
+                {isDeal ? 'Accept (Buy)' : 'Accept'}
               </button>
               {isDeal && (
                 <button
@@ -405,7 +433,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
                     cursor: 'pointer',
                   }}
                 >
-                  Pasa
+                  Pass
                 </button>
               )}
             </div>
@@ -419,7 +447,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
               className="text-[11px]"
               style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#4a7a4a' }}
             >
-              Kumikilos...
+              Moving...
             </span>
           </div>
 
@@ -441,7 +469,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
             ))}
           </div>
 
-        ) : animationComplete && pendingSpaceAction && deckName ? (
+        ) : animationComplete && pendingSpaceAction ? (
           /* Brief pause (≤180ms) between animation end and card flip-in */
           <div />
 
@@ -569,7 +597,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
               transition: 'all 0.15s',
             }}
           >
-            ✓ Tapusin ang Turn
+            End Turn
           </button>
         </div>
       </div>

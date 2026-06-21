@@ -76,6 +76,15 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
   const escapedPlayers     = players.filter(p => p.hasEscapedRatRace);
   const currentPlayer      = players[currentPlayerIndex] ?? null;
 
+  // During animation, show the animating player's token at currentPos instead of final position
+  const displayPlayers = players.map(p =>
+    animatingToken.active &&
+    animatingToken.currentPos !== null &&
+    p.id === animatingToken.playerId
+      ? { ...p, position: animatingToken.currentPos }
+      : p
+  );
+
   // Drive the token glow animation one step at a time
   useEffect(() => {
     if (!animatingToken.active) return;
@@ -119,7 +128,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 h-full"
               style={{ borderRight: i < topRow.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={players} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
             </div>
           ))}
         </div>
@@ -135,7 +144,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 w-full"
               style={{ borderBottom: i < leftCol.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={players} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
             </div>
           ))}
         </div>
@@ -159,7 +168,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 w-full"
               style={{ borderBottom: i < rightCol.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={players} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
             </div>
           ))}
         </div>
@@ -175,7 +184,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 h-full"
               style={{ borderRight: i < bottomRow.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={players} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
             </div>
           ))}
         </div>

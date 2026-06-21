@@ -22,7 +22,8 @@
       "Bash(curl -sI http://localhost:5174/src/main.jsx)",
       "Bash(pkill -f \"vite --port\")",
       "Bash(curl -s http://localhost:5175)",
-      "Bash(pkill -f \"vite.*5175\")"
+      "Bash(pkill -f \"vite.*5175\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

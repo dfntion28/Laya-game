@@ -75,11 +75,11 @@ export default function EscapeScreen({ player, onContinue }) {
         <div className="w-full bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col gap-2 font-mono text-sm">
           <div className="flex justify-between">
             <span className="text-slate-400">Passive Income</span>
-            <span className="text-emerald-400 font-bold">{php(passiveIncome)}/buwan</span>
+            <span className="text-emerald-400 font-bold">{php(passiveIncome)}/month</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Total Expenses</span>
-            <span className="text-red-400 font-bold">{php(totalExpenses)}/buwan</span>
+            <span className="text-red-400 font-bold">{php(totalExpenses)}/month</span>
           </div>
           <div className="flex justify-between border-t border-slate-700 pt-2 mt-1">
             <span className="text-slate-300 font-bold">Net Worth</span>
@@ -96,7 +96,7 @@ export default function EscapeScreen({ player, onContinue }) {
           onClick={onContinue}
           className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-base transition-all"
         >
-          Patuloy sa Freedom Track 🚀
+          Continue to Freedom Track 🚀
         </button>
 
       </div>

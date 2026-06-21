@@ -3,200 +3,372 @@ import { useGameStore } from '../store/gameStore.js';
 import { professions } from '../data/professions.js';
 
 const PLAYER_COLORS = [
-  { ring: 'ring-amber-400', bg: 'bg-amber-400', text: 'text-amber-400', badge: 'bg-amber-900/60 border-amber-600 text-amber-300', label: 'Amber'  },
-  { ring: 'ring-sky-400',   bg: 'bg-sky-400',   text: 'text-sky-400',   badge: 'bg-sky-900/60 border-sky-600 text-sky-300',       label: 'Sky'    },
-  { ring: 'ring-rose-400',  bg: 'bg-rose-400',  text: 'text-rose-400',  badge: 'bg-rose-900/60 border-rose-600 text-rose-300',     label: 'Rose'   },
-  { ring: 'ring-violet-400',bg: 'bg-violet-400',text: 'text-violet-400',badge: 'bg-violet-900/60 border-violet-600 text-violet-300',label: 'Violet' },
+  { label: 'Amber' },
+  { label: 'Sky' },
+  { label: 'Rose' },
+  { label: 'Violet' },
 ];
 
-const SPECIAL_DESC = {
-  ofw_upgrade:                'Maaaring maging OFW — 3× sahod sa mid-game!',
-  pension_bonus_round24:      'Nakaka-bonus na pension sa round 24.',
-  asset_risk_roll:            'Asset risk roll sa bawat Sahod Day (OFW mechanic).',
-  education_card_discount_20pct: '-20% discount sa education-related deals.',
-};
-
-function getSpecial(prof) {
-  return SPECIAL_DESC[prof.specialAbility]
-    ?? SPECIAL_DESC[prof.specialMechanic]
-    ?? SPECIAL_DESC[prof.bonus]
-    ?? null;
-}
+const INITIAL_SETUPS = [
+  { name: '', professionId: null },
+  { name: '', professionId: null },
+  { name: '', professionId: null },
+  { name: '', professionId: null },
+];
 
 const php = n =>
   (n ?? 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
-function ProfCard({ prof, selected, onClick }) {
-  const special = getSpecial(prof);
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        text-left p-3 rounded-xl border-2 transition-all duration-150 flex flex-col gap-1
-        ${selected
-          ? 'border-blue-500 bg-blue-900/40 shadow-lg shadow-blue-900/30'
-          : 'border-slate-700 bg-slate-800/60 hover:border-slate-500 hover:bg-slate-800'
-        }
-      `}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-2xl leading-none">{prof.emoji}</span>
-        <span className="font-bold text-white text-sm leading-tight">{prof.name}</span>
-        {selected && <span className="ml-auto text-blue-400 text-lg leading-none">✓</span>}
-      </div>
-      <div className="flex gap-3 font-mono text-xs text-slate-400 mt-0.5">
-        <span>Sahod: <span className="text-green-400">{php(prof.salary || 0)}</span></span>
-        <span>Cash: <span className="text-emerald-400">{php(prof.startingCash)}</span></span>
-      </div>
-      {special && (
-        <p className="text-[10px] text-blue-300/80 leading-tight mt-0.5 italic">{special}</p>
-      )}
-    </button>
-  );
-}
-
 export default function SetupScreen() {
   const initGame = useGameStore(s => s.initGame);
 
-  const [step, setStep] = useState(1);
-  const [playerCount, setPlayerCount] = useState(2);
-  const [setups, setSetups] = useState([
-    { name: '', professionId: null },
-    { name: '', professionId: null },
-    { name: '', professionId: null },
-    { name: '', professionId: null },
-  ]);
+  const [playerCount, setPlayerCount] = useState(null);
+  const [setups, setSetups] = useState(INITIAL_SETUPS.map(s => ({ ...s })));
+  const [dealtCards, setDealtCards] = useState({});
+  const [flippedIndex, setFlippedIndex] = useState({});
+  const [redealsUsed, setRedealsUsed] = useState({});
+  const [lockedProfession, setLockedProfession] = useState({});
 
-  const activeSetups = setups.slice(0, playerCount);
-  const allValid = activeSetups.every(s => s.name.trim() && s.professionId);
+  function dealCardsForPlayer(playerIndex) {
+    const shuffled = [...professions].sort(() => Math.random() - 0.5);
+    const hand = shuffled.slice(0, 4);
+    setDealtCards(prev => ({ ...prev, [playerIndex]: hand }));
+    setFlippedIndex(prev => ({ ...prev, [playerIndex]: null }));
+  }
 
-  const updateName = (i, name) =>
-    setSetups(prev => prev.map((s, idx) => idx === i ? { ...s, name } : s));
-
-  const updateProf = (i, professionId) =>
+  function updatePlayerProfession(i, professionId) {
     setSetups(prev => prev.map((s, idx) => idx === i ? { ...s, professionId } : s));
+  }
+
+  function handleCardClick(playerIndex, cardIndex) {
+    if (lockedProfession[playerIndex]) return;
+    if (flippedIndex[playerIndex] !== null) return;
+    setFlippedIndex(prev => ({ ...prev, [playerIndex]: cardIndex }));
+  }
+
+  function handleKeep(playerIndex) {
+    const cardIdx = flippedIndex[playerIndex];
+    const prof = dealtCards[playerIndex][cardIdx];
+    setLockedProfession(prev => ({ ...prev, [playerIndex]: prof }));
+    updatePlayerProfession(playerIndex, prof.id);
+  }
+
+  function handleRedeal(playerIndex) {
+    if (redealsUsed[playerIndex]) return;
+    setRedealsUsed(prev => ({ ...prev, [playerIndex]: true }));
+    dealCardsForPlayer(playerIndex);
+  }
+
+  function handleSelectCount(n) {
+    setPlayerCount(n);
+    for (let i = 0; i < n; i++) dealCardsForPlayer(i);
+  }
+
+  function handleBack() {
+    setPlayerCount(null);
+    setSetups(INITIAL_SETUPS.map(s => ({ ...s })));
+    setDealtCards({});
+    setFlippedIndex({});
+    setRedealsUsed({});
+    setLockedProfession({});
+  }
+
+  const allValid = playerCount !== null &&
+    Array.from({ length: playerCount }, (_, i) => i)
+      .every(i => setups[i]?.name?.trim() && lockedProfession[i]);
 
   const handleStart = () => {
     if (!allValid) return;
-    initGame(activeSetups.map((s, i) => ({
-      name: s.name.trim(),
-      professionId: s.professionId,
+    initGame(Array.from({ length: playerCount }, (_, i) => ({
+      name: setups[i].name.trim(),
+      professionId: lockedProfession[i].id,
       color: PLAYER_COLORS[i].label.toLowerCase(),
     })));
   };
 
-  return (
-    <div className="min-h-screen bg-[#0a0a14] flex flex-col items-center justify-start py-10 px-4 overflow-y-auto">
+  // Card sizing by player count
+  const cardW = playerCount === 3 ? 76 : playerCount === 4 ? 88 : 96;
+  const cardH = playerCount === 3 ? 106 : playerCount === 4 ? 120 : 130;
+  const cardGap = playerCount === 3 ? 5 : 8;
 
-      {/* Title */}
-      <div className="mb-8 text-center">
-        <h1 className="text-white text-4xl font-black font-mono tracking-tight">LAYA</h1>
-        <p className="text-slate-400 font-mono text-sm mt-1">Filipino Financial Freedom Board Game</p>
-      </div>
+  // ── Phase 1: Player count picker ──────────────────────────────────────────────
 
-      {/* Step 1: Player count */}
-      {step === 1 && (
-        <div className="flex flex-col items-center gap-6 w-full max-w-sm">
-          <h2 className="text-slate-300 font-mono text-lg font-bold">Ilang Players?</h2>
-          <div className="flex gap-4">
+  if (playerCount === null) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--color-felt)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 52, color: 'var(--color-gold)', letterSpacing: 5, textShadow: '0 0 32px rgba(201,162,39,0.28)' }}>
+            LAYA
+          </div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#3a6a3a', letterSpacing: 2, marginTop: 4 }}>
+            Filipino Financial Freedom Board Game
+          </div>
+        </div>
+
+        <div style={{ marginTop: 52 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--color-parchment)', letterSpacing: 3, textAlign: 'center', marginBottom: 24 }}>
+            HOW MANY PLAYERS?
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
             {[2, 3, 4].map(n => (
               <button
                 key={n}
-                onClick={() => { setPlayerCount(n); setStep(2); }}
-                className="w-20 h-20 rounded-2xl border-2 border-slate-600 bg-slate-800 hover:border-blue-500 hover:bg-slate-700 text-white font-black text-3xl font-mono transition-all"
+                onClick={() => handleSelectCount(n)}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--color-gold)';
+                  e.currentTarget.style.boxShadow = '0 0 18px rgba(201,162,39,0.25)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = '#1a3a4a';
+                  e.currentTarget.style.boxShadow = '';
+                }}
+                style={{
+                  width: 110, height: 96,
+                  background: '#0d1b2e',
+                  border: '2px solid #1a3a4a',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                }}
               >
-                {n}
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 48, color: '#8aabcb' }}>
+                  {n}
+                </div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 9, letterSpacing: 1, color: '#5a7a9a' }}>
+                  PLAYERS
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 9, color: '#2d4a2d' }}>
+                  {n === 2 ? 'Two' : n === 3 ? 'Three' : 'Four'}
+                </div>
               </button>
             ))}
           </div>
-          <p className="text-slate-600 font-mono text-xs">Pumili ng bilang ng manlalaro</p>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Step 2: Player setup */}
-      {step === 2 && (
-        <div className="w-full max-w-4xl flex flex-col gap-6">
+  // ── Phase 2: Player setup with card deal ──────────────────────────────────────
 
-          {/* Back */}
-          <button
-            onClick={() => setStep(1)}
-            className="self-start text-slate-500 hover:text-slate-300 font-mono text-xs flex items-center gap-1 transition-colors"
-          >
-            ← Bumalik
-          </button>
+  const gridStyle = playerCount === 3
+    ? { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }
+    : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 };
 
-          {/* One section per player */}
-          {activeSetups.map((setup, i) => {
-            const color = PLAYER_COLORS[i];
-            return (
-              <div key={i} className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 flex flex-col gap-4">
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--color-felt)', padding: '20px 24px 48px' }}>
 
-                {/* Player header */}
-                <div className="flex items-center gap-3">
-                  <div className={`w-7 h-7 rounded-full ${color.bg} shrink-0`} />
-                  <span className={`font-black font-mono text-sm uppercase tracking-widest ${color.text}`}>
-                    Player {i + 1}
-                  </span>
-                </div>
+      {/* Sticky header */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--color-felt)', paddingBottom: 14, borderBottom: '1px solid #1a3a1a', marginBottom: 24, display: 'flex', alignItems: 'center' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--color-gold)', letterSpacing: 3 }}>LAYA</span>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: '#3a6a3a', marginLeft: 12 }}>Choose your professions</span>
+        <button
+          onClick={handleBack}
+          style={{ marginLeft: 'auto', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, color: '#5a7a9a', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: 1 }}
+        >
+          ← Back
+        </button>
+      </div>
 
-                {/* Name input */}
-                <input
-                  type="text"
-                  maxLength={20}
-                  placeholder={`Pangalan ng Player ${i + 1}`}
-                  value={setup.name}
-                  onChange={e => updateName(i, e.target.value)}
-                  className={`
-                    bg-slate-900 border-2 rounded-xl px-4 py-2.5 text-white font-mono text-sm
-                    placeholder-slate-600 outline-none transition-all
-                    ${setup.name.trim() ? 'border-slate-600' : 'border-slate-700'}
-                    focus:border-blue-500
-                  `}
-                />
+      {/* Player grid */}
+      <div style={gridStyle}>
+        {Array.from({ length: playerCount }, (_, i) => {
+          const cards = dealtCards[i] ?? [];
+          const flipped = flippedIndex[i] ?? null;
+          const locked = lockedProfession[i] ?? null;
 
-                {/* Profession picker */}
-                <div>
-                  <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-2">
-                    Piliin ang Propesyon
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {professions.map(prof => (
-                      <ProfCard
-                        key={prof.id}
-                        prof={prof}
-                        selected={setup.professionId === prof.id}
-                        onClick={() => updateProf(i, prof.id)}
-                      />
-                    ))}
+          return (
+            <div key={i} style={{ background: '#0d1b2e', border: '1px solid #1a3a4a', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Player header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: `var(--player-${i})`, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--color-gold)', letterSpacing: 2 }}>
+                  PLAYER {i + 1}
+                </span>
+              </div>
+
+              {/* Name input */}
+              <input
+                type="text"
+                maxLength={20}
+                placeholder="Enter name..."
+                value={setups[i].name}
+                onChange={e => setSetups(prev => prev.map((s, idx) => idx === i ? { ...s, name: e.target.value } : s))}
+                onFocus={e => { e.target.style.borderColor = 'var(--color-gold)'; }}
+                onBlur={e => { e.target.style.borderColor = '#1a3a4a'; }}
+                className="placeholder-[#3a6a3a]"
+                style={{
+                  width: '100%',
+                  background: '#081420',
+                  border: '1px solid #1a3a4a',
+                  borderRadius: 6,
+                  padding: '8px 12px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  color: 'var(--color-parchment)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.15s',
+                }}
+              />
+
+              {/* Card deal section */}
+              {locked ? (
+                /* Confirmed profession */
+                <div style={{
+                  background: '#0a2810',
+                  border: '1.5px solid var(--color-gold)',
+                  borderRadius: 8,
+                  padding: '12px 14px',
+                  animation: 'lockPulse 0.6s ease-out',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 24 }}>{locked.emoji}</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--color-gold)' }}>{locked.name}</span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: '#8aabcb', display: 'flex', gap: 12 }}>
+                    <span>Salary: {php(locked.salary || 0)}</span>
+                    <span>Start: {php(locked.startingCash)}</span>
+                  </div>
+                  {(locked.specialNote ?? (locked.specialAbility && 'Special ability active') ?? null) && (
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontStyle: 'italic', color: '#3a6a3a' }}>
+                      {locked.specialNote}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 9, color: '#22c55e', letterSpacing: 1, marginTop: 4 }}>
+                    ✓ Confirmed
                   </div>
                 </div>
+              ) : (
+                /* Card draw UI */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
-              </div>
-            );
-          })}
+                  {/* Label row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 9, letterSpacing: 2, color: '#3a6a3a' }}>
+                      DRAW YOUR PROFESSION
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 9, color: flipped === null ? '#2d4a2d' : redealsUsed[i] ? '#5a2d2d' : '#3a6a3a' }}>
+                      {flipped === null ? 'Pick a card' : redealsUsed[i] ? 'No redeals left' : '1 redeal available'}
+                    </span>
+                  </div>
 
-          {/* Start button */}
-          <button
-            onClick={handleStart}
-            disabled={!allValid}
-            className={`w-full py-4 rounded-2xl font-black font-mono text-lg tracking-wide transition-all ${
-              allValid
-                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-900/40'
-                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            {allValid ? '🎲 Simulan ang Laro!' : 'Kumpletuhin ang setup ng lahat ng players'}
-          </button>
+                  {/* Card row */}
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: cardGap, justifyContent: 'center' }}>
+                    {cards.map((prof, cardIdx) => (
+                      <div
+                        key={`${cardIdx}-${redealsUsed[i] ? 'r' : '0'}`}
+                        className="profession-card-scene"
+                        style={{ width: cardW, height: cardH, flexShrink: 0, cursor: flipped === null ? 'pointer' : 'default' }}
+                        onClick={() => handleCardClick(i, cardIdx)}
+                      >
+                        <div
+                          className={`profession-card-inner${flipped === cardIdx ? ' is-flipped' : ''}`}
+                          style={{ animation: `dealIn 0.3s ease-out ${cardIdx * 0.08}s both` }}
+                        >
+                          {/* Back face */}
+                          <div
+                            className="profession-card-face profession-card-back-face"
+                            style={{
+                              background: '#0d1b2e',
+                              border: '1.5px solid #1a3a4a',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            }}
+                          >
+                            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: cardW < 90 ? 24 : 30, color: 'var(--color-gold)', opacity: 0.25 }}>?</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: cardW < 90 ? 8 : 9, color: 'var(--color-gold)', letterSpacing: 2, opacity: 0.5 }}>LAYA</div>
+                          </div>
+                          {/* Front face */}
+                          <div
+                            className="profession-card-face profession-card-front-face"
+                            style={{
+                              background: '#0a1f10',
+                              border: '1.5px solid var(--color-gold)',
+                              padding: 8,
+                              display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'space-between',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: cardW < 90 ? 18 : 22 }}>{prof.emoji}</div>
+                              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: cardW < 90 ? 9 : 11, color: 'var(--color-gold)', lineHeight: 1.2, marginTop: 3 }}>
+                                {prof.name}
+                              </div>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: 8, color: '#8aabcb' }}>
+                              <div>{php(prof.salary || 0)}/mo</div>
+                              <div style={{ color: '#6aaa8a', marginTop: 1 }}>Start: {php(prof.startingCash)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
-          {/* Rule summary */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 font-mono text-xs text-slate-400 leading-relaxed">
-            <p className="text-slate-300 font-bold mb-1 text-sm">📖 Paano Manalo</p>
-            <p>Ang layunin: gawing mas malaki ang iyong <span className="text-emerald-400 font-bold">passive income</span> kaysa sa iyong monthly expenses. Kapag nangyari ito, nakatakas ka sa Rat Race at makakalipat sa Freedom Track.</p>
-            <p className="mt-1">Sa Freedom Track, manalo ka kung ang iyong <span className="text-yellow-400 font-bold">net worth ay umabot sa ₱10,000,000</span> o ang iyong <span className="text-yellow-400 font-bold">passive income ay umabot sa ₱100,000/buwan</span>.</p>
-          </div>
+                  {/* Keep / Redeal buttons */}
+                  {flipped !== null && (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      <button
+                        onClick={() => handleKeep(i)}
+                        style={{
+                          flex: 1, padding: '7px 0', borderRadius: 6,
+                          background: 'var(--color-gold)', border: 'none', cursor: 'pointer',
+                          fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, color: '#0a0a14', letterSpacing: 1,
+                        }}
+                      >
+                        ✓ KEEP
+                      </button>
+                      <button
+                        onClick={() => handleRedeal(i)}
+                        disabled={redealsUsed[i]}
+                        style={{
+                          flex: 1, padding: '7px 0', borderRadius: 6,
+                          background: redealsUsed[i] ? '#1a2a3a' : '#1a3a4a',
+                          border: 'none',
+                          cursor: redealsUsed[i] ? 'not-allowed' : 'pointer',
+                          fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11,
+                          color: redealsUsed[i] ? '#3a5a6a' : '#8aabcb',
+                          letterSpacing: 1,
+                          opacity: redealsUsed[i] ? 0.5 : 1,
+                        }}
+                      >
+                        ↺ REDEAL
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Start button + rule summary */}
+      <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <button
+          onClick={handleStart}
+          disabled={!allValid}
+          style={{
+            width: '100%', padding: '16px 0', borderRadius: 16,
+            background: allValid ? '#2563eb' : '#334155',
+            border: 'none', cursor: allValid ? 'pointer' : 'not-allowed',
+            fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, letterSpacing: 2,
+            color: allValid ? '#fff' : '#64748b',
+            transition: 'background 0.2s',
+          }}
+        >
+          {allValid ? '🎲 START GAME →' : 'Complete setup for all players'}
+        </button>
+
+        <div style={{ background: '#0d1b2e', border: '1px solid #1a3a4a', borderRadius: 10, padding: '14px 16px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#8aabcb', lineHeight: 1.6 }}>
+          <div style={{ color: 'var(--color-parchment)', fontWeight: 700, marginBottom: 6, fontSize: 13 }}>📖 How to Win</div>
+          <p style={{ margin: 0 }}>
+            Make your <span style={{ color: '#4ade80', fontWeight: 700 }}>passive income</span> bigger than your monthly expenses to escape the Rat Race. On the Freedom Track, reach a <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>net worth of ₱10,000,000</span> or <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>₱100,000/month passive income</span> to win.
+          </p>
         </div>
-      )}
+      </div>
 
     </div>
   );

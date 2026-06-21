@@ -69,7 +69,7 @@ export default function WinScreen() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Monthly Passive Income</span>
-            <span className="text-emerald-400 font-bold">{php(passiveIncome)}/buwan</span>
+            <span className="text-emerald-400 font-bold">{php(passiveIncome)}/month</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Cash on Hand</span>
@@ -138,7 +138,7 @@ export default function WinScreen() {
           onClick={resetGame}
           className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-mono font-black text-lg transition-all shadow-xl shadow-blue-900/40"
         >
-          🔄 Maglaro Ulit
+          🔄 Play Again
         </button>
 
       </div>

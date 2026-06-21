@@ -30,7 +30,13 @@ export default function SpaceCell({ space, players = [], isAnimating = false, is
 
   let overlayStyle = {};
   if (isAnimating) {
-    overlayStyle = { boxShadow: 'inset 0 0 0 3px var(--color-gold), 0 0 14px rgba(201,162,39,0.45)' };
+    overlayStyle = {
+      animation: 'spaceTravel 340ms ease-in-out infinite',
+      outline: '3px solid #ffe566',
+      outlineOffset: '-3px',
+      zIndex: 5,
+      position: 'relative',
+    };
   } else if (isLanded) {
     overlayStyle = { animation: 'spaceBlink 900ms ease-in-out infinite', position: 'relative', zIndex: 1 };
   }

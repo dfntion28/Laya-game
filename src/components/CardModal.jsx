@@ -12,13 +12,13 @@ const DECK_FOR_SPACE = {
 
 const DEAL_TYPES = new Set(['maliit_deal', 'malaking_deal']);
 
-const ASSET_LESSONS = {
-  real_estate: 'Ang real estate ay nagbibigay ng passive income na tumutulong sa iyo na makalaya sa Rat Race.',
-  stock:       'Ang dividends ay kita na hindi nangangailangan ng iyong oras.',
-  business:    'Ang negosyo ay maaaring maging asset kung hindi ka na personally nagtatrabaho doon.',
-  lending:     'Ang pagpapautang sa tamang paraan ay isa ring paraan ng passive income.',
-  land:        'Ang lupa ay nagpapahalaga sa paglipas ng panahon — ito ay limitado at hindi nagagawa.',
-  agriculture: 'Ang pagpapaupa ng lupang sakahan ay nagbibigay ng passive income habang nagagamit ng iba ang lupa.',
+const CARD_LESSONS = {
+  maliit_deal:        'Passive income works for you even while you sleep.',
+  malaking_deal:      'Bigger assets mean bigger passive income — but they need more capital.',
+  gastos:             'Expenses reduce your cash flow. Watch your spending.',
+  pangyayari_buhay:   "Life events are unpredictable. That's why emergency funds matter.",
+  pangyayari_merkado: 'Markets move in cycles. Position your assets accordingly.',
+  koneksyon:          'Your network is your net worth. Connections open doors.',
 };
 
 const php = n =>
@@ -38,15 +38,15 @@ function CardEffects({ card }) {
   if (card.cost)              lines.push({ label: 'Halaga',           value: php(card.cost),              positive: false });
   if (card.downPayment)       lines.push({ label: 'Down Payment',     value: php(card.downPayment),       positive: false });
   if (card.mortgage)          lines.push({ label: 'Mortgage',         value: php(card.mortgage),          positive: false });
-  if (card.mortgagePayment)   lines.push({ label: 'Mortgage/buwan',   value: `−${php(card.mortgagePayment)}`, positive: false });
-  if (card.monthlyIncome)     lines.push({ label: 'Income/buwan',     value: `+${php(card.monthlyIncome)}`,   positive: true  });
+  if (card.mortgagePayment)   lines.push({ label: 'Mortgage/month',   value: `−${php(card.mortgagePayment)}`, positive: false });
+  if (card.monthlyIncome)     lines.push({ label: 'Income/month',     value: `+${php(card.monthlyIncome)}`,   positive: true  });
   if (card.cashLoss)          lines.push({ label: 'Cash Loss',        value: `−${php(card.cashLoss)}`,        positive: false });
   if (card.addedLiability)    lines.push({ label: 'Bagong Utang',     value: php(card.addedLiability),    positive: false });
-  if (card.addedMonthlyPayment) lines.push({ label: 'Payment/buwan',  value: `+${php(card.addedMonthlyPayment)}`, positive: false });
-  if (card.addedMonthlyExpense) lines.push({ label: 'Gastos/buwan',   value: `+${php(card.addedMonthlyExpense)}`, positive: false });
+  if (card.addedMonthlyPayment) lines.push({ label: 'Payment/month',  value: `+${php(card.addedMonthlyPayment)}`, positive: false });
+  if (card.addedMonthlyExpense) lines.push({ label: 'Expense/month',  value: `+${php(card.addedMonthlyExpense)}`, positive: false });
   if (card.cashGain)          lines.push({ label: 'Cash Gain',        value: `+${php(card.cashGain)}`,        positive: true  });
   if (card.amount && card.type === 'salary_increase')
-    lines.push({ label: 'Sahod Dagdag/buwan', value: `+${php(card.amount)}`, positive: true });
+    lines.push({ label: 'Salary Increase/month', value: `+${php(card.amount)}`, positive: true });
 
   if (!lines.length) return null;
   return (
@@ -141,11 +141,11 @@ export default function CardModal({ onClose }) {
               <p className="text-slate-400 text-sm leading-relaxed">{card.description}</p>
               <CardEffects card={card} />
 
-              {/* Financial lesson for deal cards */}
-              {isDeal && card.assetType && ASSET_LESSONS[card.assetType] && (
+              {/* Financial lesson */}
+              {CARD_LESSONS[spaceType] && (
                 <div className="mt-3 bg-blue-950/60 border border-blue-700/40 rounded-lg px-3 py-2.5">
-                  <p className="text-blue-400 font-mono text-[10px] uppercase tracking-wider mb-1">Ano ang matututunan mo dito?</p>
-                  <p className="text-blue-200 text-xs leading-relaxed">{ASSET_LESSONS[card.assetType]}</p>
+                  <p className="text-blue-400 font-mono text-[10px] uppercase tracking-wider mb-1">Financial Insight</p>
+                  <p className="text-blue-200 text-xs leading-relaxed">{CARD_LESSONS[spaceType]}</p>
                 </div>
               )}
 
@@ -184,7 +184,7 @@ export default function CardModal({ onClose }) {
                 : 'bg-blue-600 hover:bg-blue-500 text-white'
             }`}
           >
-            {isDeal ? '🤝 Tanggapin (Bilhin)' : '✓ Tanggapin'}
+            {isDeal ? '🤝 Accept (Buy)' : '✓ Accept'}
           </button>
 
           {isDeal && (
@@ -193,7 +193,7 @@ export default function CardModal({ onClose }) {
               disabled={!card}
               className="flex-1 py-3 rounded-lg font-mono font-bold text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 transition-all"
             >
-              Pasa
+              Pass
             </button>
           )}
         </div>

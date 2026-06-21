@@ -17,10 +17,10 @@ const MAX_LOAN = 500_000;
 const STEP     = 50_000;
 
 function creditLabel(score) {
-  if (score < 500)  return { label: '5-6 Lender (20%/buwan!)',         color: 'text-red-400',    warn: true  };
-  if (score < 700)  return { label: 'Standard Bank Rate',              color: 'text-yellow-400', warn: false };
-  if (score < 800)  return { label: 'Pag-IBIG Rate (mas mababa)',       color: 'text-green-400',  warn: false };
-  return                   { label: 'Premium — 80% LTV sa BRRRR',       color: 'text-emerald-400',warn: false };
+  if (score < 500)  return { label: '5-6 Lender (20%/month!)',          color: 'text-red-400',    warn: true  };
+  if (score < 700)  return { label: 'Standard Bank Rate',               color: 'text-yellow-400', warn: false };
+  if (score < 800)  return { label: 'Pag-IBIG Rate (lower rate)',        color: 'text-green-400',  warn: false };
+  return                   { label: 'Premium — 80% LTV for BRRRR',       color: 'text-emerald-400',warn: false };
 }
 
 function monthlyPayment(amount, creditScore) {
@@ -90,10 +90,10 @@ function BorrowTab({ player, onClose }) {
         </div>
         <div className="flex justify-between font-mono text-sm">
           <span className="text-slate-400">Monthly Payment</span>
-          <span className="text-orange-400 font-bold">{php(payment)}/buwan</span>
+          <span className="text-orange-400 font-bold">{php(payment)}/month</span>
         </div>
         <div className="flex justify-between font-mono text-sm">
-        <span className="text-slate-400">Cash Papasok</span>
+        <span className="text-slate-400">Cash Received</span>
           <span className="text-green-400 font-bold">+{php(amount)}</span>
         </div>
       </div>
@@ -102,7 +102,7 @@ function BorrowTab({ player, onClose }) {
         onClick={handleBorrow}
         className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold transition-all"
       >
-        Humiram ng {php(amount)}
+        Borrow {php(amount)}
       </button>
     </div>
   );
@@ -117,7 +117,7 @@ function PayLoanTab({ player }) {
   if (player.liabilities.length === 0) {
     return (
       <div className="text-center py-8 text-slate-500 font-mono">
-        Walang utang! 🎉 Malinis ang financial statement.
+        No liabilities! 🎉 Clean financial statement.
       </div>
     );
   }
@@ -138,7 +138,7 @@ function PayLoanTab({ player }) {
               </div>
               <div className="text-right">
                 <p className="text-red-400 font-mono font-bold text-sm">{php(lib.balance)}</p>
-                <p className="text-slate-500 font-mono text-xs">{php(lib.payment)}/buwan</p>
+                <p className="text-slate-500 font-mono text-xs">{php(lib.payment)}/month</p>
               </div>
             </div>
             {wasPaid ? (
@@ -156,7 +156,7 @@ function PayLoanTab({ player }) {
                     : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                Bayaran Ngayon {php(lib.balance)}
+                Pay {php(lib.balance)}
                 {canPay && (
                   <span className="bg-emerald-900 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
                     +{CREDIT_LOAN_PAID} credit
@@ -166,7 +166,7 @@ function PayLoanTab({ player }) {
             )}
             {!canPay && (
               <p className="text-red-400 font-mono text-xs text-center">
-                Hindi sapat ang cash. Kailangan: {php(lib.balance)}
+                Not enough cash. Need: {php(lib.balance)}
               </p>
             )}
           </div>
@@ -256,9 +256,9 @@ function BrrrrTab({ player, marketCycle }) {
 // ── Main Modal ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'borrow', label: '🏦 Humiram'     },
-  { id: 'pay',    label: '💳 Bayad Utang' },
-  { id: 'brrrr',  label: '🔄 BRRRR'       },
+  { id: 'borrow', label: '🏦 Borrow'           },
+  { id: 'pay',    label: '💳 Pay Loan'          },
+  { id: 'brrrr',  label: '🔄 BRRRR Refinancing' },
 ];
 
 export default function BangkoModal({ onClose }) {
@@ -322,7 +322,7 @@ export default function BangkoModal({ onClose }) {
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-mono text-sm font-bold transition-all"
             >
-              Isara ang Bangko
+              Close
             </button>
           </div>
         )}
