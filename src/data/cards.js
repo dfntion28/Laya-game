@@ -1,9 +1,12 @@
-// ─── Small Deal Cards (30 total) ─────────────────────────────────────────────
+// ─── Small Deal Cards ─────────────────────────────────────────────────────────
+// sd1–sd30: original 30 cards (exclusive added where monthlyIncome >= 5000)
+// sd31–sd42: new passive income cards
+// sd43–sd47: trap deal cards
 export const smallDeals = [
   {
     id: 'sd1',  name: '5-door Apartment (Cabanatuan, Nueva Ecija)',
     cost: 800000, downPayment: 160000, mortgage: 640000, mortgagePayment: 5000,
-    monthlyIncome: 12000, assetType: 'real_estate',
+    monthlyIncome: 12000, assetType: 'real_estate', exclusive: true,
     description: 'Lumang apartment sa Nueva Ecija. ₱12,000 gross rent. ₱5,000 mortgage. ₱7,000 net.',
   },
   {
@@ -18,7 +21,7 @@ export const smallDeals = [
   },
   {
     id: 'sd4',  name: 'Grab Car Partnership',
-    cost: 60000, monthlyIncome: 5000, assetType: 'business',
+    cost: 60000, monthlyIncome: 5000, assetType: 'business', exclusive: true,
     description: 'Kotse sa partner-driver. ₱5,000/month net pagkatapos ng maintenance.',
   },
   {
@@ -34,7 +37,7 @@ export const smallDeals = [
   {
     id: 'sd7',  name: 'Studio Condo para Paupahan (QC near Katipunan)',
     cost: 1200000, downPayment: 240000, mortgage: 960000, mortgagePayment: 8000,
-    monthlyIncome: 9000, assetType: 'real_estate',
+    monthlyIncome: 9000, assetType: 'real_estate', exclusive: true,
     description: 'Mahirap gawing cashflow positive. ₱9K rent minus ₱8K mortgage = ₱1K lang net.',
   },
   {
@@ -44,7 +47,7 @@ export const smallDeals = [
   },
   {
     id: 'sd9',  name: 'Self-Service Laundry Shop',
-    cost: 250000, monthlyIncome: 8000, assetType: 'business',
+    cost: 250000, monthlyIncome: 8000, assetType: 'business', exclusive: true,
     description: 'Coin laundry sa mataong lugar. Labor-light. ₱8,000/month net.',
   },
   {
@@ -55,7 +58,7 @@ export const smallDeals = [
   {
     id: 'sd11', name: 'Bodega para Paupa (Valenzuela)',
     cost: 500000, downPayment: 100000, mortgage: 400000, mortgagePayment: 3500,
-    monthlyIncome: 8000, assetType: 'real_estate',
+    monthlyIncome: 8000, assetType: 'real_estate', exclusive: true,
     description: 'Bodega na inaarkila ng maliit na negosyo. ₱8K rent, ₱3.5K mortgage.',
   },
   {
@@ -66,7 +69,7 @@ export const smallDeals = [
   {
     id: 'sd13', name: 'Boarding House Room (1 room, Malate)',
     cost: 300000, downPayment: 60000, mortgage: 240000, mortgagePayment: 2000,
-    monthlyIncome: 5000, assetType: 'real_estate',
+    monthlyIncome: 5000, assetType: 'real_estate', exclusive: true,
     description: 'Isang silid sa boarding house. ₱5K rent, ₱2K mortgage.',
   },
   {
@@ -97,12 +100,12 @@ export const smallDeals = [
   {
     id: 'sd19', name: '1-Bedroom Apartment (Batangas City)',
     cost: 550000, downPayment: 110000, mortgage: 440000, mortgagePayment: 3500,
-    monthlyIncome: 7500, assetType: 'real_estate',
+    monthlyIncome: 7500, assetType: 'real_estate', exclusive: true,
     description: '1BR apartment. ₱7,500 rent, ₱3,500 mortgage. ₱4,000 net/month.',
   },
   {
     id: 'sd20', name: 'Printing at Photocopy Shop (Malapit sa Pamantasan)',
-    cost: 120000, monthlyIncome: 6000, assetType: 'business',
+    cost: 120000, monthlyIncome: 6000, assetType: 'business', exclusive: true,
     description: 'Malapit sa kolehiyo. ₱6,000/month net pagkatapos ng utilities at supplies.',
   },
   {
@@ -112,17 +115,17 @@ export const smallDeals = [
   },
   {
     id: 'sd22', name: 'Airbnb — Spare Room (Baguio)',
-    cost: 50000, monthlyIncome: 6500, assetType: 'business',
+    cost: 50000, monthlyIncome: 6500, assetType: 'business', exclusive: true,
     description: 'Ini-rent ang isang kwarto sa Baguio. ₱6,500/month average. May seasonality.',
   },
   {
     id: 'sd23', name: 'Water Refilling Station',
-    cost: 180000, monthlyIncome: 7000, assetType: 'business',
+    cost: 180000, monthlyIncome: 7000, assetType: 'business', exclusive: true,
     description: 'Tubig negosyo sa residential area. ₱7,000/month net. Mababang overhead.',
   },
   {
     id: 'sd24', name: 'Nail Spa / Beauty Bar (Space Rentahan)',
-    cost: 150000, monthlyIncome: 8000, assetType: 'business',
+    cost: 150000, monthlyIncome: 8000, assetType: 'business', exclusive: true,
     description: 'Maliit na beauty bar. ₱8,000/month net. ₱3,000 upa sa espasyo.',
   },
   {
@@ -155,258 +158,446 @@ export const smallDeals = [
     cost: 25000, monthlyIncome: 3000, assetType: 'business',
     description: 'Maliit na e-loading business sa tindahan. ₱3,000/month commission net.',
   },
+
+  // ── New small deal cards sd31–sd42 ──────────────────────────────────────────
+  {
+    id: 'sd31', name: 'Nagpaarkila ng Parking Slot sa BGC Condo',
+    purchasePrice: 0, cashFlow: 4500, exclusive: false,
+    lesson: 'Ang parking slot na hindi mo ginagamit ay maaaring mapagkakitaan.',
+  },
+  {
+    id: 'sd32', name: 'Naglagay ng Vending Machine sa Opisina',
+    purchasePrice: 18000, cashFlow: 2200, exclusive: false,
+    lesson: 'Kahit maliit na makina, nagtatrabaho ito para sa iyo 24/7.',
+  },
+  {
+    id: 'sd33', name: 'Nagrenta ng Kagamitan tuwing Events (Rev Share)',
+    purchasePrice: 0, cashFlow: 1800, exclusive: false,
+    lesson: 'Hindi mo kailangang mag-ari ng asset para kumita — pwedeng rev share arrangement.',
+  },
+  {
+    id: 'sd34', name: 'Stock Photo Royalties — Isinubmit sa Shutterstock',
+    purchasePrice: 0, cashFlow: 900, exclusive: false,
+    lesson: 'Ang intellectual property ay nagbibigay ng kita kahit natutulog ka.',
+  },
+  {
+    id: 'sd35', name: 'Nagpaarkila ng Rooftop para sa Cell Tower',
+    purchasePrice: 0, cashFlow: 6500, exclusive: true,
+    lesson: 'Ang mga telecom company ay naghahanap ng espasyo — ikaw ang may-ari nito.',
+  },
+  {
+    id: 'sd36', name: 'Nagbenta ng Digital Template sa Shopee',
+    purchasePrice: 2000, cashFlow: 1500, exclusive: false,
+    lesson: 'Digital products: isang beses gumawa, paulit-ulit na kita.',
+  },
+  {
+    id: 'sd37', name: 'Nagpaupa ng Kwarto sa Boarder',
+    purchasePrice: 5000, cashFlow: 3500, exclusive: false,
+    lesson: 'Ang kwarto na bakante ay gastos. Ang kwartong may tao ay kita.',
+  },
+  {
+    id: 'sd38', name: 'Water Refilling Station Franchise Slot',
+    purchasePrice: 35000, cashFlow: 5000, exclusive: true,
+    lesson: 'Ang franchise ay nagbibigay ng sistema na pati na-test na.',
+  },
+  {
+    id: 'sd39', name: 'Nagpautang sa P2P Lending Platform (SeedIn)',
+    purchasePrice: 50000, cashFlow: 2500, exclusive: false,
+    lesson: 'Ang P2P lending ay naglalagay ng iyong pera sa trabaho — may risk ng default.',
+  },
+  {
+    id: 'sd40', name: 'YouTube Channel — Nagmonetize ng Old Videos',
+    purchasePrice: 0, cashFlow: 1200, exclusive: false,
+    lesson: 'Ang lumang content ay pwedeng magbigay ng bagong kita.',
+  },
+  {
+    id: 'sd41', name: 'Nag-sublease ng Bahagi ng Office Space',
+    purchasePrice: 0, cashFlow: 8000, exclusive: true,
+    lesson: 'Ang espasyong hindi mo ginagamit buong araw ay asset na naka-idle.',
+  },
+  {
+    id: 'sd42', name: 'Nagpadala ng OFW Remittance Fund sa REIT',
+    purchasePrice: 20000, cashFlow: 1800, exclusive: false,
+    lesson: 'Ang remittance ay hindi lang pang-gastos — pwede ring pang-invest.',
+  },
+
+  // ── Trap deal cards sd43–sd47 ────────────────────────────────────────────────
+  {
+    id: 'sd43', name: 'Pre-Selling Condo sa Taguig — Maagang Pumasok',
+    purchasePrice: 180000, cashFlow: 0, exclusive: false,
+    cardType: 'trap_deal', trapDelay: 4,
+    trapBullOutcome: { cashFlow: 0, oneTimeGain: 100000, description: 'Natapos ang condo — ibinenta mo ng tubo na ₱100,000!' },
+    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 180000, description: 'Nalugi ang developer — nawala ang iyong buong puhunan.' },
+    lesson: 'Ang pre-selling ay speculative — hindi guaranteed ang kita.',
+  },
+  {
+    id: 'sd44', name: 'Nagpuhunan sa Negosyo ng Kaibigan',
+    purchasePrice: 80000, cashFlow: 0, exclusive: false,
+    cardType: 'trap_deal', trapDelay: 3,
+    trapBullOutcome: { cashFlow: 3000, oneTimeGain: 0, description: 'Kumikita ang negosyo — +₱3,000/month passive income.' },
+    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 80000, description: 'Nagsara ang negosyo — nawala ang puhunan mo.' },
+    lesson: 'Ang pamumuhunan sa kaibigan ay may sentimental at financial na risk.',
+  },
+  {
+    id: 'sd45', name: 'Crypto Staking — Naglagay sa DeFi Yield Farm',
+    purchasePrice: 100000, cashFlow: 0, exclusive: false,
+    cardType: 'trap_deal', trapDelay: 2,
+    trapBullOutcome: { cashFlow: 5000, oneTimeGain: 0, description: 'Stable ang yield farm — +₱5,000/month passive income.' },
+    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 100000, description: 'Rug pull — nawala ang buong puhunan.' },
+    lesson: 'Ang mataas na yield ay kadalasang may katumbas na mataas na risk.',
+  },
+  {
+    id: 'sd46', name: 'Forex Hobby Trader',
+    purchasePrice: 50000, cashFlow: 0, exclusive: false,
+    cardType: 'trap_deal', trapDelay: 3,
+    trapBullOutcome: { cashFlow: 2000, oneTimeGain: 0, description: 'Consistent ang trades — +₱2,000/month net.' },
+    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 50000, description: 'Account blown — wala nang natira sa trading account.' },
+    lesson: 'Ang forex trading ay hindi passive income — ito ay aktibong spekulasyon.',
+  },
+  {
+    id: 'sd47', name: "Naging MLM 'Investor' para sa Kaibigan",
+    purchasePrice: 30000, cashFlow: 0, exclusive: false,
+    cardType: 'trap_deal', trapDelay: 2,
+    trapBullOutcome: { cashFlow: 0, oneTimeGain: 0, description: 'Walang income. ₱30,000 ang halaga ng aralin: suriin ang datos bago mag-invest.' },
+    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 0, description: 'Walang income. Parehong resulta ang bull at bear para sa MLM.' },
+    lesson: 'Ang MLM ay nagbebenta ng pangarap. Datos: mas maraming naglugi kaysa kumita.',
+  },
 ];
 
-// ─── Big Deal Cards (20 total) ────────────────────────────────────────────────
+// ─── Big Deal Cards ───────────────────────────────────────────────────────────
+// All cards have exclusive: true
+// bd1–bd20: original 20 cards; bd21–bd25: new cards
 export const bigDeals = [
   {
     id: 'bd1',  name: '3-Unit Townhouse (Marikina)',
     cost: 4500000, downPayment: 900000, mortgage: 3600000, mortgagePayment: 18000,
-    monthlyIncome: 42000, netIncome: 24000, assetType: 'real_estate',
+    monthlyIncome: 42000, netIncome: 24000, assetType: 'real_estate', exclusive: true,
     description: '3 units na nakatayo na. ₱42K gross rent, ₱18K mortgage. ₱24K net/month.',
   },
   {
     id: 'bd2',  name: 'Commercial Lot (LIMA Estate, Laguna)',
     cost: 3200000, downPayment: 3200000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'land', appreciates: true,
+    monthlyIncome: 0, assetType: 'land', appreciates: true, exclusive: true,
     description: 'Industrial zone na lot. Walang kita ngayon. Malaking gain sa hinaharap.',
   },
   {
     id: 'bd3',  name: '10-Door Apartment Compound (Quezon City)',
     cost: 9000000, downPayment: 2700000, mortgage: 6300000, mortgagePayment: 35000,
-    monthlyIncome: 85000, netIncome: 50000, assetType: 'real_estate',
+    monthlyIncome: 85000, netIncome: 50000, assetType: 'real_estate', exclusive: true,
     description: '₱85K gross rent, ₱35K mortgage, ₱50K net/month.',
   },
   {
     id: 'bd4',  name: 'Pre-Selling Condo (BGC, Taguig)',
     cost: 6800000, downPayment: 1360000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'real_estate', risk: 'delivery_risk', appreciates: true,
+    monthlyIncome: 0, assetType: 'real_estate', risk: 'delivery_risk', appreciates: true, exclusive: true,
     description: 'Pre-selling. Walang kita ngayon. 3 years delivery. Risk ng hindi matatapos.',
   },
   {
     id: 'bd5',  name: 'Farm Lot (Batangas, 2 hectares)',
     cost: 2500000, downPayment: 2500000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 8000, assetType: 'agriculture',
+    monthlyIncome: 8000, assetType: 'agriculture', exclusive: true,
     description: 'Inaarkila ng magsasaka. ₱8K/month pasture fee.',
   },
   {
     id: 'bd6',  name: 'Food Franchise Regional Masterfranchise (Visayas)',
     cost: 2000000, downPayment: 2000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 25000, assetType: 'business',
+    monthlyIncome: 25000, assetType: 'business', exclusive: true,
     description: 'Regional rights sa franchise. ₱25K/month royalty.',
   },
   {
     id: 'bd7',  name: 'Gas Station (Provincial, Leased Site)',
     cost: 5000000, downPayment: 5000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 60000, assetType: 'business',
+    monthlyIncome: 60000, assetType: 'business', exclusive: true,
     description: 'Dealer-owned, leased site. ₱60K/month net.',
   },
   {
     id: 'bd8',  name: '4-Storey Apartment Building (Caloocan)',
     cost: 12000000, downPayment: 3600000, mortgage: 8400000, mortgagePayment: 50000,
-    monthlyIncome: 120000, netIncome: 70000, assetType: 'real_estate',
+    monthlyIncome: 120000, netIncome: 70000, assetType: 'real_estate', exclusive: true,
     description: '20 units. ₱120K gross, ₱50K mortgage. ₱70K net.',
   },
   {
     id: 'bd9',  name: 'Pension House / Bed and Breakfast (Baguio)',
     cost: 8000000, downPayment: 2400000, mortgage: 5600000, mortgagePayment: 32000,
-    monthlyIncome: 90000, netIncome: 58000, assetType: 'real_estate',
+    monthlyIncome: 90000, netIncome: 58000, assetType: 'real_estate', exclusive: true,
     description: '15 rooms sa Baguio. ₱90K gross, ₱32K mortgage. ₱58K net. May seasonality.',
   },
   {
     id: 'bd10', name: 'Events Place / Function Hall (Pampanga)',
     cost: 4500000, downPayment: 1350000, mortgage: 3150000, mortgagePayment: 17500,
-    monthlyIncome: 50000, netIncome: 32500, assetType: 'business',
+    monthlyIncome: 50000, netIncome: 32500, assetType: 'business', exclusive: true,
     description: 'Events venue. Average 4 bookings/month. ₱50K gross, ₱32.5K net.',
   },
   {
     id: 'bd11', name: 'Cold Storage Warehouse for Lease (Bulacan)',
     cost: 6000000, downPayment: 1800000, mortgage: 4200000, mortgagePayment: 25000,
-    monthlyIncome: 70000, netIncome: 45000, assetType: 'real_estate',
+    monthlyIncome: 70000, netIncome: 45000, assetType: 'real_estate', exclusive: true,
     description: 'Cold chain logistics property. ₱70K/month lease, ₱25K mortgage. ₱45K net.',
   },
   {
     id: 'bd12', name: 'Multi-Level Parking Building (Binondo, Manila)',
     cost: 15000000, downPayment: 4500000, mortgage: 10500000, mortgagePayment: 55000,
-    monthlyIncome: 130000, netIncome: 75000, assetType: 'real_estate',
+    monthlyIncome: 130000, netIncome: 75000, assetType: 'real_estate', exclusive: true,
     description: '5 levels, 80 slots. ₱130K gross, ₱55K mortgage. ₱75K net/month.',
   },
   {
     id: 'bd13', name: 'Pre-Selling Lot (South Road Properties, Cebu)',
     cost: 3800000, downPayment: 3800000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'land', appreciates: true,
+    monthlyIncome: 0, assetType: 'land', appreciates: true, exclusive: true,
     description: 'Premium lot sa Cebu business district. Walang kita ngayon. Mataas na potential.',
   },
   {
     id: 'bd14', name: '6-Door Apartment (Cagayan de Oro)',
     cost: 5500000, downPayment: 1650000, mortgage: 3850000, mortgagePayment: 21000,
-    monthlyIncome: 54000, netIncome: 33000, assetType: 'real_estate',
+    monthlyIncome: 54000, netIncome: 33000, assetType: 'real_estate', exclusive: true,
     description: '6 units sa CDO. ₱54K gross, ₱21K mortgage. ₱33K net/month.',
   },
   {
     id: 'bd15', name: 'Car Wash Franchise (6-Bay, Clark, Pampanga)',
     cost: 3500000, downPayment: 3500000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 45000, assetType: 'business',
+    monthlyIncome: 45000, assetType: 'business', exclusive: true,
     description: 'High-traffic na car wash sa Clark. ₱45K/month net pagkatapos ng staff at utilities.',
   },
   {
     id: 'bd16', name: 'Resort (3 cottages + pool, Batangas Beach)',
     cost: 7500000, downPayment: 2250000, mortgage: 5250000, mortgagePayment: 30000,
-    monthlyIncome: 80000, netIncome: 50000, assetType: 'business',
+    monthlyIncome: 80000, netIncome: 50000, assetType: 'business', exclusive: true,
     description: 'Maliit na beach resort. ₱80K gross, ₱30K mortgage. ₱50K net. May off-season.',
   },
   {
     id: 'bd17', name: 'Commercial Building (Ground Floor Shops, Mandaluyong)',
     cost: 18000000, downPayment: 5400000, mortgage: 12600000, mortgagePayment: 70000,
-    monthlyIncome: 160000, netIncome: 90000, assetType: 'real_estate',
+    monthlyIncome: 160000, netIncome: 90000, assetType: 'real_estate', exclusive: true,
     description: '4 commercial units. ₱160K gross, ₱70K mortgage. ₱90K net/month.',
   },
   {
     id: 'bd18', name: 'Mango Plantation (2 hectares, Guimaras)',
     cost: 2800000, downPayment: 2800000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 12000, assetType: 'agriculture',
+    monthlyIncome: 12000, assetType: 'agriculture', exclusive: true,
     description: 'Established mango trees. ₱12K/month average net. May harvest seasonality.',
   },
   {
     id: 'bd19', name: 'Fast Food Franchise (National Brand, Mall Kiosk)',
     cost: 4000000, downPayment: 4000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 55000, assetType: 'business',
+    monthlyIncome: 55000, assetType: 'business', exclusive: true,
     description: 'Mall-based food kiosk ng kilalang brand. ₱55K/month net royalty income.',
   },
   {
     id: 'bd20', name: 'Mixed-Use Building (Shops + Apartments, Davao)',
     cost: 14000000, downPayment: 4200000, mortgage: 9800000, mortgagePayment: 54000,
-    monthlyIncome: 140000, netIncome: 86000, assetType: 'real_estate',
+    monthlyIncome: 140000, netIncome: 86000, assetType: 'real_estate', exclusive: true,
     description: '4 commercial + 8 residential units. ₱140K gross, ₱54K mortgage. ₱86K net.',
+  },
+
+  // ── New big deal cards bd21–bd25 ─────────────────────────────────────────────
+  {
+    id: 'bd21', name: 'Nag-acquire ng Existing Shopee Store (May Established Reviews)',
+    purchasePrice: 120000, cashFlow: 9000, exclusive: true,
+    lesson: 'Mas mura ang bumili ng cash-flowing business kaysa magsimula ng bago.',
+  },
+  {
+    id: 'bd22', name: 'Nagtayo ng Self-Storage Facility sa Probinsya',
+    purchasePrice: 350000, cashFlow: 18000, liabilityPayment: 2000, exclusive: true,
+    lesson: 'Ang tao ay nagdadagdag ng gamit — self-storage ay recession-resistant.',
+  },
+  {
+    id: 'bd23', name: 'Solar Panel sa Commercial Property — FIT-All Program',
+    purchasePrice: 500000, cashFlow: 22000, exclusive: true,
+    lesson: 'Ang enerhiya na hindi mo nagastos ay energy na ibinenta mo sa Meralco.',
+  },
+  {
+    id: 'bd24', name: 'Biniling TNVS Franchise — Driver sa Boundary',
+    purchasePrice: 200000, cashFlow: 12000, exclusive: true,
+    lesson: 'Ang boundary scheme ay naglalagay ng ibang tao sa trabaho para sa iyo.',
+  },
+  {
+    id: 'bd25', name: 'Naglagay ng ATM Terminal — Transaction Fee Income',
+    purchasePrice: 280000, cashFlow: 14500, exclusive: true,
+    lesson: 'Ang bawat transaksyon ng ibang tao ay maliit na kita para sa may-ari ng terminal.',
   },
 ];
 
-// ─── Gastos / Expense Cards (25 total) ───────────────────────────────────────
+// ─── Gastos / Expense Cards ───────────────────────────────────────────────────
+// type: 'liability' | 'expense' | 'cash'
+// minRound: earliest round this card can appear (formula in GAMEPLAN Part B)
+// g1–g25: original 25 cards; g26–g35: new cards
 export const gastosCards = [
   {
     id: 'g1',  name: 'Bagong Kotse (Installment)',
-    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000,
+    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 8,
     description: 'Na-tempt sa showroom. ₱18,000/month sa loob ng 48 buwan.',
   },
   {
     id: 'g2',  name: 'iPhone (In-house Financing)',
-    type: 'liability', addedMonthlyPayment: 4500, addedLiability: 54000,
+    type: 'liability', addedMonthlyPayment: 4500, addedLiability: 54000, minRound: 4,
     description: 'Pinakabago na modelo. ₱4,500/month sa 12 buwan.',
   },
   {
     id: 'g3',  name: 'Anak sa Pribadong Paaralan',
-    type: 'expense', addedMonthlyExpense: 8000, permanent: true,
+    type: 'expense', addedMonthlyExpense: 8000, permanent: true, minRound: 6,
     description: '+₱8,000/month na permanenteng dagdag sa gastusin.',
   },
   {
     id: 'g4',  name: 'Online Sugal (E-Sabong/Poker)',
-    type: 'cash', cashLoss: 30000,
+    type: 'cash', cashLoss: 30000, minRound: 6,
     description: 'Maling taya. Nawala ₱30,000 mula sa cash.',
   },
   {
     id: 'g5',  name: 'Baha — Walang Insurance',
-    type: 'cash', cashLoss: 80000, mitigatedByInsurance: true, insuranceCost: 10000,
+    type: 'cash', cashLoss: 80000, mitigatedByInsurance: true, insuranceCost: 10000, minRound: 10,
     description: '₱80,000 repair. ₱10,000 lang kung insured.',
   },
   {
     id: 'g6',  name: 'Medical Emergency (Walang HMO)',
-    type: 'cash', cashLoss: 150000, mitigatedByInsurance: true, insuranceCost: 50000,
+    type: 'cash', cashLoss: 150000, mitigatedByInsurance: true, insuranceCost: 50000, minRound: 10,
     description: '₱150,000 ospital. ₱50,000 lang kung insured.',
   },
   {
     id: 'g7',  name: 'Credit Card Hindi Binabayaran',
-    type: 'liability', addedMonthlyPayment: 5000, addedLiability: 50000, creditScorePenalty: -50,
+    type: 'liability', addedMonthlyPayment: 5000, addedLiability: 50000, creditScorePenalty: -50, minRound: 4,
     description: '3.5%/month interest. Credit score -50.',
   },
   {
     id: 'g8',  name: '5-6 Loan Trap',
-    type: 'liability', addedMonthlyPayment: 10000, addedLiability: 50000,
+    type: 'liability', addedMonthlyPayment: 10000, addedLiability: 50000, minRound: 8,
     description: '₱50K sa 5-6. ₱10K/month bayad sa 6 buwan.',
   },
   {
     id: 'g9',  name: 'Major Car Repair',
-    type: 'cash', cashLoss: 45000,
+    type: 'cash', cashLoss: 45000, minRound: 6,
     description: 'Napalitan ng makina ng kotse. ₱45,000.',
   },
   {
     id: 'g10', name: 'Renovation Frenzy',
-    type: 'cash', cashLoss: 60000,
+    type: 'cash', cashLoss: 60000, minRound: 10,
     description: 'Home improvement na hindi nagdagdag ng halaga.',
   },
   {
     id: 'g11', name: 'Gadgets para sa Pamilya',
-    type: 'cash', cashLoss: 80000,
+    type: 'cash', cashLoss: 80000, minRound: 10,
     description: 'Phones para sa apat na miyembro. ₱80,000.',
   },
   {
     id: 'g12', name: 'Maling Investment (Scam)',
-    type: 'cash', cashLoss: 100000,
+    type: 'cash', cashLoss: 100000, minRound: 10,
     description: 'Na-scam sa investment scheme. Nawala ₱100,000.',
   },
   {
     id: 'g13', name: 'Pamilya — Bagong Upa',
-    type: 'expense', addedMonthlyExpense: 5000, permanent: true,
+    type: 'expense', addedMonthlyExpense: 5000, permanent: true, minRound: 6,
     description: 'Napilitang lumipat ng mas mahal na bahay. +₱5,000/month.',
   },
   {
     id: 'g14', name: 'Utang ng Kapatid (Pinanghiram)',
-    type: 'cash', cashLoss: 40000,
+    type: 'cash', cashLoss: 40000, minRound: 6,
     description: 'Pamilya nangangailangan. ₱40,000 ang nilabas. Hindi mababawi.',
   },
   {
     id: 'g15', name: 'Maluho na Bakasyon (Boracay, Business Class)',
-    type: 'cash', cashLoss: 70000,
+    type: 'cash', cashLoss: 70000, minRound: 10,
     description: 'YOLO trip. ₱70,000 all-in para sa pamilya.',
   },
   {
     id: 'g16', name: 'Kasal — Grand Reception',
-    type: 'cash', cashLoss: 250000,
+    type: 'cash', cashLoss: 250000, minRound: 10,
     description: 'Malaking kasal na hindi kaya ng budget. ₱250,000.',
   },
   {
     id: 'g17', name: 'Appliances on Installment (Ref + TV + Washer)',
-    type: 'liability', addedMonthlyPayment: 6000, addedLiability: 72000,
+    type: 'liability', addedMonthlyPayment: 6000, addedLiability: 72000, minRound: 4,
     description: 'Pinabili ng bagong appliances. ₱6,000/month sa 12 buwan.',
   },
   {
     id: 'g18', name: 'Pinautang ang Kaibigan (Negosyo)',
-    type: 'cash', cashLoss: 50000,
+    type: 'cash', cashLoss: 50000, minRound: 6,
     description: 'Inutangan ng kaibigan para sa negosyo. Hindi nagbalik.',
   },
   {
     id: 'g19', name: 'Sagot sa Pag-aaral ng Kapatid (College)',
-    type: 'expense', addedMonthlyExpense: 6000, permanent: true,
+    type: 'expense', addedMonthlyExpense: 6000, permanent: true, minRound: 6,
     description: '+₱6,000/month para sa tuition at allowance ng kapatid.',
   },
   {
     id: 'g20', name: 'Bagyo — Hindi Narepair ang Bubong',
-    type: 'cash', cashLoss: 55000, mitigatedByInsurance: true, insuranceCost: 12000,
+    type: 'cash', cashLoss: 55000, mitigatedByInsurance: true, insuranceCost: 12000, minRound: 6,
     description: 'Damage ng bagyo. ₱55,000 kung walang insurance. ₱12,000 kung insured.',
   },
   {
     id: 'g21', name: 'BIR Penalty — Late Filing',
-    type: 'cash', cashLoss: 25000,
+    type: 'cash', cashLoss: 25000, minRound: 3,
     description: 'Nakalimutang mag-file ng ITR sa tamang oras. ₱25,000 penalty.',
   },
   {
     id: 'g22', name: 'Mall Sale Impulse Buying',
-    type: 'cash', cashLoss: 35000,
+    type: 'cash', cashLoss: 35000, minRound: 6,
     description: '₱35,000 na gamit na hindi naman kailangan.',
   },
   {
     id: 'g23', name: 'Bagong Muwebles (Interior Design Frenzy)',
-    type: 'cash', cashLoss: 65000,
+    type: 'cash', cashLoss: 65000, minRound: 10,
     description: 'Pinalamutian ng bahay. ₱65,000 sa muwebles at dekorasyon.',
   },
   {
     id: 'g24', name: 'Sakit ng Magulang (Walang PhilHealth)',
-    type: 'cash', cashLoss: 120000, mitigatedByInsurance: true, insuranceCost: 40000,
+    type: 'cash', cashLoss: 120000, mitigatedByInsurance: true, insuranceCost: 40000, minRound: 10,
     description: 'Ospital ang magulang. ₱120,000 kung walang insurance. ₱40,000 kung insured.',
   },
   {
     id: 'g25', name: 'Legal Dispute sa Katabi (Property)',
-    type: 'cash', cashLoss: 45000,
+    type: 'cash', cashLoss: 45000, minRound: 6,
     description: 'Kaso sa korte dahil sa property boundary. ₱45,000 legal fees.',
+  },
+
+  // ── New gastos cards g26–g35 ─────────────────────────────────────────────────
+  {
+    id: 'g26', name: 'Biniling Brand-New na Kotse (Na-Finance ng 5 Taon)',
+    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 6,
+    lesson: 'Ang bagong kotse ay depreciating liability — hindi investment. Tingnan ang income statement.',
+  },
+  {
+    id: 'g27', name: "Whole Life Insurance 'Para sa Investment'",
+    type: 'expense', addedMonthlyExpense: 8500, permanent: true, minRound: 3,
+    lesson: "Ang insurance na may 'savings component' ay mahal na insurance — hindi tunay na investment.",
+  },
+  {
+    id: 'g28', name: 'Timeshare Resort Unit',
+    type: 'cash', cashLoss: 90000, addedMonthlyExpense: 3000, permanent: true, minRound: 8,
+    lesson: 'Ang timeshare ay may resale value na malapit sa zero. Ito ay prepaid vacation, hindi real estate.',
+  },
+  {
+    id: 'g29', name: "Premium Credit Card Annual Fee 'Para sa Rewards'",
+    type: 'cash', cashLoss: 5000, minRound: 1,
+    lesson: 'Ang reward points ay may value lamang kung mas malaki kaysa sa annual fee at interes.',
+  },
+  {
+    id: 'g30', name: 'Renovation ng Rented Apartment',
+    type: 'cash', cashLoss: 45000, minRound: 4,
+    lesson: 'Ang pagpapaganda ng bahay ng ibang tao ay hindi mo investment.',
+  },
+  {
+    id: 'g31', name: 'MBA Degree — Kinuha ng Pautang',
+    type: 'cash', cashLoss: 120000, minRound: 6,
+    lesson: 'Ang edukasyon ay may ROI — pero ang utang para dito ay may tunay na cost na kailangang kalkulahin.',
+  },
+  {
+    id: 'g32', name: "Nagbili ng Jewelry Bilang 'Investment'",
+    type: 'cash', cashLoss: 60000, minRound: 5,
+    lesson: 'Ang alahas ay may emotional value — pero ang resale ay halos laging mas mababa kaysa purchase price.',
+  },
+  {
+    id: 'g33', name: "Nagbili ng Bagong Motorcycle 'Para sa Business'",
+    type: 'liability', addedMonthlyPayment: 8000, addedLiability: 288000, minRound: 3,
+    lesson: 'Kailangang mas malaki ang kita ng negosyo kaysa sa buwanang amortization ng sasakyan.',
+  },
+  {
+    id: 'g34', name: "Lupa sa Lalawigan — 'Pangmatagalang Investment'",
+    type: 'cash', cashLoss: 150000, addedMonthlyExpense: 1500, permanent: true, minRound: 8,
+    lesson: 'Ang lupa na walang kita ay gastos sa tax at oportunidad. Hindi ito passive income.',
+  },
+  {
+    id: 'g35', name: 'Japan Trip — YOLO Family Vacation (Business Class)',
+    type: 'cash', cashLoss: 85000, minRound: 4,
+    lesson: 'Ang karanasan ay may halaga — pero kailangan mong malaman kung saan nanggaling ang pera.',
   },
 ];
 

@@ -24,7 +24,7 @@ const SPACE_ICON = {
   win_check:          '🏆',
 };
 
-export default function SpaceCell({ space, players = [], isAnimating = false, isLanded = false }) {
+export default function SpaceCell({ space, players = [], isAnimating = false, isLanded = false, isCorner = false }) {
   const onSpace = players.filter(p => p.position === space.id);
   const bg = SPACE_BG[space.type] ?? '#081408';
 
@@ -46,7 +46,7 @@ export default function SpaceCell({ space, players = [], isAnimating = false, is
       className="relative flex flex-col items-center justify-center w-full h-full"
       style={{ background: bg, gap: '3px', padding: '4px 2px', ...overlayStyle }}
     >
-      <span style={{ fontSize: '18px', lineHeight: 1 }}>
+      <span style={{ fontSize: isCorner ? '26px' : '18px', lineHeight: 1 }}>
         {SPACE_ICON[space.type] ?? '❓'}
       </span>
       <span
@@ -54,7 +54,7 @@ export default function SpaceCell({ space, players = [], isAnimating = false, is
         style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 700,
-          fontSize: '10px',
+          fontSize: isCorner ? '11px' : '10px',
           color: 'rgba(255,255,255,0.95)',
           lineHeight: 1.2,
           textAlign: 'center',

@@ -124,6 +124,10 @@ function createPlayerState(name, professionId, color = 'amber') {
     bonus: prof.bonus || null,
     startingNetWorth,
     totalLoanPaymentsTracker: 0,
+    // Part A — extended player state
+    timeDeposits: [],
+    activeTrapDeals: [],
+    creditLine: null,
   };
 }
 
@@ -157,6 +161,8 @@ const INITIAL_STATE = {
     nextRecipientIndex: 0,
     members: [],
   },
+  // Part A — global extended state
+  exclusiveDealsTaken: [],
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -243,7 +249,7 @@ export const useGameStore = create((set, get) => ({
   // ── Deck management ────────────────────────────────────────────────────────
 
   drawCard: (deckName) => {
-    const { deckStates } = get();
+    const { deckStates, exclusiveDealsTaken = [], round } = get();
     const deck = deckStates[deckName];
     if (!deck) return null;
 
@@ -256,11 +262,31 @@ export const useGameStore = create((set, get) => ({
       discard = [];
     }
 
-    const [card, ...remaining] = draw;
-    set(state => ({
-      deckStates: { ...state.deckStates, [deckName]: { draw: remaining, discard } },
+    let selectedCard;
+    let remainingDraw;
+
+    if (deckName === 'smallDeals' || deckName === 'bigDeals') {
+      // Part B — exclude exclusive cards already removed from pool
+      const eligible = draw.filter(c => !exclusiveDealsTaken.includes(c.id));
+      const pool = eligible.length > 0 ? eligible : draw;
+      selectedCard = pool[0];
+      const idx = draw.findIndex(c => c.id === selectedCard.id);
+      remainingDraw = [...draw.slice(0, idx), ...draw.slice(idx + 1)];
+    } else if (deckName === 'gastosCards') {
+      // Part C — only cards whose minRound <= current round
+      const eligible = draw.filter(c => (c.minRound ?? 0) <= round);
+      const pool = eligible.length > 0 ? eligible : draw;
+      selectedCard = pool[0];
+      const idx = draw.findIndex(c => c.id === selectedCard.id);
+      remainingDraw = [...draw.slice(0, idx), ...draw.slice(idx + 1)];
+    } else {
+      [selectedCard, ...remainingDraw] = draw;
+    }
+
+    set(s => ({
+      deckStates: { ...s.deckStates, [deckName]: { draw: remainingDraw, discard } },
     }));
-    return card;
+    return selectedCard;
   },
 
   discardCard: (deckName, card) => {
@@ -342,7 +368,7 @@ export const useGameStore = create((set, get) => ({
       ? pal.contributionPerRound
       : 0;
 
-    const newCash = player.cash + inflow - totalOutflow - palContrib;
+    let newCash = player.cash + inflow - totalOutflow - palContrib;
 
     // Credit score tracking
     let { creditScore, consecutivePayments } = player;
@@ -362,9 +388,67 @@ export const useGameStore = create((set, get) => ({
     const sickLeaveRoundsRemaining = Math.max(0, player.sickLeaveRoundsRemaining - 1);
     const newTotalLoanPayments = player.totalLoanPaymentsTracker + loanPayments;
 
+    // ── Part E: Trap deal resolution ─────────────────────────────────────────
+    let resolvedAssets = [...player.assets];
+    const trapResolutions = [];
+    const updatedTrapDeals = (player.activeTrapDeals || []).map(entry => {
+      if (!entry.resolved && entry.triggersOnRound <= state.round) {
+        const outcome = state.marketCycle === 'bull'
+          ? entry.card.trapBullOutcome
+          : entry.card.trapBearOutcome;
+        if (outcome.cashFlow > 0) {
+          resolvedAssets = [...resolvedAssets, {
+            instanceId: uid('asset'),
+            cardId: entry.cardId,
+            name: entry.card.name,
+            currentValue: entry.card.purchasePrice || 0,
+            originalCost: entry.card.purchasePrice || 0,
+            monthlyIncome: outcome.cashFlow,
+            assetType: 'business',
+            mortgageLiabilityId: null,
+            isUrban: false,
+            isCondo: false,
+          }];
+        }
+        if (outcome.oneTimeGain > 0) newCash += outcome.oneTimeGain;
+        if (outcome.oneTimeLoss > 0) newCash = Math.max(0, newCash - outcome.oneTimeLoss);
+        trapResolutions.push({ entry, outcome });
+        return { ...entry, resolved: true };
+      }
+      return entry;
+    });
+
+    // ── Part F: Time deposit processing ──────────────────────────────────────
+    const tdPrincipalLogs = [];
+    const updatedTimeDeposits = [];
+    for (const deposit of (player.timeDeposits || [])) {
+      const monthlyInterest = deposit.amount * deposit.monthlyRate;
+      newCash += monthlyInterest;
+      const newAccrued = deposit.interestAccrued + monthlyInterest;
+      if (state.round >= deposit.unlockRound && !deposit.collected) {
+        newCash += deposit.amount;
+        tdPrincipalLogs.push(deposit);
+        // collected — do not push, removing from array
+      } else {
+        updatedTimeDeposits.push({ ...deposit, interestAccrued: newAccrued });
+      }
+    }
+
+    // ── Part G: Credit line interest ─────────────────────────────────────────
+    let creditLineInterest = 0;
+    if (player.creditLine && player.creditLine.outstanding > 0) {
+      creditLineInterest = Math.round(
+        player.creditLine.outstanding * player.creditLine.monthlyRate,
+      );
+      newCash -= creditLineInterest;
+    }
+
     set({
       players: patchPlayer(state.players, playerId, () => ({
         cash: newCash,
+        assets: resolvedAssets,
+        activeTrapDeals: updatedTrapDeals,
+        timeDeposits: updatedTimeDeposits,
         creditScore,
         consecutivePayments,
         jobLossRoundsRemaining,
@@ -394,6 +478,15 @@ export const useGameStore = create((set, get) => ({
       get().addLog(`⚠️ OFW risk: pamilya mismanaged "${missed?.name ?? 'property'}" — rent missed this round 😬`, playerId);
     } else if (ofwRoll !== null && ofwRoll > 1) {
       get().addLog(`✅ OFW assets: ligtas ngayong round (D6: ${ofwRoll})`, playerId);
+    }
+    for (const { entry, outcome } of trapResolutions) {
+      get().addLog(`🎲 ${player.name} — Trap Deal resolved: ${outcome.description}`, playerId);
+    }
+    for (const deposit of tdPrincipalLogs) {
+      get().addLog(`🏦 ${player.name} — Time Deposit matured: ${fmtPhp(deposit.amount)} principal returned.`, playerId);
+    }
+    if (creditLineInterest > 0) {
+      get().addLog(`💳 ${player.name} — Credit Line interest: ${fmtPhp(creditLineInterest)} deducted.`, playerId);
     }
   },
 
@@ -538,6 +631,188 @@ export const useGameStore = create((set, get) => ({
     return { success: true, cashOut, maxNewLoan, appraisedValue };
   },
 
+  // ── Part G: New Bangko actions ─────────────────────────────────────────────
+
+  openTimeDeposit: (playerId, amount, termRounds) => {
+    const { players, round } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || player.cash < amount || amount < 10000) return;
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        cash: p.cash - amount,
+        timeDeposits: [...(p.timeDeposits || []), {
+          id: 'td_' + Date.now(),
+          amount,
+          monthlyRate: 0.005,
+          unlockRound: round + termRounds,
+          interestAccrued: 0,
+          collected: false,
+        }],
+      })),
+    }));
+
+    get().addLog(
+      `🏦 ${player.name} opened a Time Deposit — ${fmtPhp(amount)} for ${termRounds} rounds at 0.5%/month.`,
+      playerId,
+    );
+  },
+
+  restructureLoan: (playerId, liabilityIndex) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || !player.liabilities[liabilityIndex]) return;
+
+    const liability = player.liabilities[liabilityIndex];
+    const newPayment = Math.round(liability.payment * 0.80);
+    const newBalance = Math.round(liability.balance * 1.15);
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        liabilities: p.liabilities.map((l, i) =>
+          i === liabilityIndex ? { ...l, payment: newPayment, balance: newBalance } : l
+        ),
+      })),
+    }));
+
+    get().addLog(
+      `🔄 ${player.name} restructured ${liability.name} — monthly payment reduced, total balance increased.`,
+      playerId,
+    );
+  },
+
+  takePagibigLoan: (playerId, amount) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const highIncomeProfs = ['engineer', 'business_owner', 'ofw'];
+    const maxLoan = highIncomeProfs.includes(player.professionId) ? 150000 : 80000;
+    if (amount <= 0 || amount > maxLoan) return;
+
+    const payment = Math.round(amount * 0.0046 * 1.15);
+    const newLiability = {
+      id: uid('lib'),
+      name: 'Pag-IBIG Multi-Purpose Loan',
+      balance: amount,
+      payment,
+      source: 'pagibig',
+      linkedAssetId: null,
+    };
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        cash: p.cash + amount,
+        liabilities: [...p.liabilities, newLiability],
+      })),
+    }));
+
+    get().addLog(
+      `🏦 ${player.name} took Pag-IBIG MPL — ${fmtPhp(amount)} at approx 0.46%/month.`,
+      playerId,
+    );
+  },
+
+  openCreditLine: (playerId) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || player.creditScore < 700) return;
+    if (player.creditLine) return;
+
+    const limit = player.creditScore * 120;
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, () => ({
+        creditLine: { approved: true, limit, outstanding: 0, monthlyRate: 0.02 },
+      })),
+    }));
+
+    get().addLog(`💳 ${player.name} opened a Credit Line — limit ${fmtPhp(limit)}.`, playerId);
+  },
+
+  drawCreditLine: (playerId, amount) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || !player.creditLine || !player.creditLine.approved) return;
+
+    const available = player.creditLine.limit - player.creditLine.outstanding;
+    if (amount > available) return;
+
+    const newOutstanding = player.creditLine.outstanding + amount;
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        cash: p.cash + amount,
+        creditLine: { ...p.creditLine, outstanding: newOutstanding },
+      })),
+    }));
+
+    get().addLog(
+      `💳 ${player.name} drew ${fmtPhp(amount)} from Credit Line. Outstanding: ${fmtPhp(newOutstanding)}.`,
+      playerId,
+    );
+  },
+
+  repairCreditScore: (playerId) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || player.cash < 15000) return;
+
+    const newScore = clampCredit(player.creditScore + 50);
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        cash: p.cash - 15000,
+        creditScore: newScore,
+      })),
+    }));
+
+    get().addLog(
+      `📈 ${player.name} paid for credit score repair — score improved to ${newScore}.`,
+      playerId,
+    );
+  },
+
+  takeAssetBackedLoan: (playerId, assetIndex, amount) => {
+    const { players } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || !player.assets[assetIndex]) return;
+
+    const asset = player.assets[assetIndex];
+    if (asset.collateralized) return;
+
+    // originalCost is set on all assets created by buyDeal; fall back to currentValue
+    const assetValue = asset.originalCost || asset.currentValue || 0;
+    const maxLoan = assetValue * 0.5;
+    if (amount <= 0 || amount > maxLoan) return;
+
+    const payment = mortgagePaymentFor(amount, player.creditScore);
+    const newLiability = {
+      id: uid('lib'),
+      name: 'Asset-Backed Loan: ' + asset.name,
+      balance: amount,
+      payment,
+      source: 'asset_backed',
+      linkedAssetId: asset.instanceId,
+    };
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        cash: p.cash + amount,
+        liabilities: [...p.liabilities, newLiability],
+        assets: p.assets.map((a, i) =>
+          i === assetIndex ? { ...a, collateralized: true } : a
+        ),
+        creditScore: clampCredit(p.creditScore + CREDIT_NEW_LOAN),
+      })),
+    }));
+
+    get().addLog(
+      `🏦 ${player.name} took asset-backed loan on ${asset.name} — ${fmtPhp(amount)}.`,
+      playerId,
+    );
+  },
+
   // ── BIR Audit ──────────────────────────────────────────────────────────────
 
   resolveBirAudit: (playerId, roll) => {
@@ -595,6 +870,42 @@ export const useGameStore = create((set, get) => ({
   applyCardEffect: (playerId, card) => {
     if (!card) return;
 
+    // Corner spaces (Bisita, SIMULA, LIBRE PARKING, BANGKO corner) have no effect
+    if (card?.type === 'corner') {
+      get().clearPendingAction();
+      return;
+    }
+
+    // ── Part D: Trap deal cards ───────────────────────────────────────────
+    if (card.cardType === 'trap_deal') {
+      const { players, round } = get();
+      const player = players.find(p => p.id === playerId);
+      if (!player) return;
+
+      set(state => ({
+        players: patchPlayer(state.players, playerId, p => ({
+          cash: p.cash - (card.purchasePrice || 0),
+          activeTrapDeals: [...(p.activeTrapDeals || []), {
+            cardId: card.id,
+            card,
+            triggersOnRound: round + card.trapDelay,
+            resolved: false,
+          }],
+        })),
+      }));
+
+      if (card.exclusive) {
+        set(s => ({ exclusiveDealsTaken: [...(s.exclusiveDealsTaken || []), card.id] }));
+      }
+
+      get().addLog(
+        `🎲 ${player.name} accepted a speculative deal: ${card.name}. Outcome resolves in ${card.trapDelay} rounds.`,
+        playerId,
+      );
+      get().clearPendingAction();
+      return;
+    }
+
     // ── Gastos cards ──────────────────────────────────────────────────────
     if (card.type === 'liability') {
       set(state => ({
@@ -637,7 +948,13 @@ export const useGameStore = create((set, get) => ({
         ? card.insuranceCost
         : card.cashLoss;
       set(state => ({
-        players: patchPlayer(state.players, playerId, p => ({ cash: p.cash - loss })),
+        players: patchPlayer(state.players, playerId, p => ({
+          cash: p.cash - loss,
+          // also apply any monthly expense increase on combo-cash cards (g28, g34)
+          ...(card.addedMonthlyExpense
+            ? { monthlyExpenses: p.monthlyExpenses + card.addedMonthlyExpense }
+            : {}),
+        })),
       }));
       get().addLog(`💸 Gastos: "${card.name}" — -${fmtPhp(loss)}${card.mitigatedByInsurance && player.insuranceActive ? ' (insured!)' : ''}`, playerId);
       return;
@@ -971,7 +1288,8 @@ export const useGameStore = create((set, get) => ({
 
     const hasContractorCard = player.heldNetworkCards.some(c => c.effect === 'rehab_cost_minus_20pct');
     const costMultiplier = getMarketMultiplier(marketCycle);
-    const rawCost = card.downPayment ?? card.cost;
+    // Support both old schema (cost/downPayment) and new schema (purchasePrice)
+    const rawCost = card.downPayment ?? card.purchasePrice ?? card.cost ?? 0;
     const discountedCost = hasContractorCard ? Math.round(rawCost * 0.8) : rawCost;
     const adjustedCost = Math.round(discountedCost * costMultiplier);
 
@@ -981,15 +1299,16 @@ export const useGameStore = create((set, get) => ({
 
     const mortgageAmount = card.mortgage || 0;
     const mortgageLiabilityId = mortgageAmount > 0 ? uid('lib') : null;
+    const assetCost = card.cost ?? card.purchasePrice ?? 0;
 
     const newAsset = {
       instanceId: uid('asset'),
       cardId: card.id,
       name: card.name,
-      currentValue: card.cost,
-      originalCost: card.cost,
-      monthlyIncome: card.monthlyIncome || 0,
-      assetType: card.assetType,
+      currentValue: assetCost,
+      originalCost: assetCost,
+      monthlyIncome: card.monthlyIncome ?? card.cashFlow ?? 0,
+      assetType: card.assetType ?? 'business',
       mortgageLiabilityId,
       isUrban: /QC|Quezon|Manila|Caloocan|Makati|BGC|Taguig|Marikina|Mandaluyong|Valenzuela|Binondo|Malate/i.test(card.name),
       isCondo: /condo/i.test(card.name),
@@ -1012,6 +1331,11 @@ export const useGameStore = create((set, get) => ({
         creditScore: newMortgage ? clampCredit(p.creditScore + CREDIT_NEW_LOAN) : p.creditScore,
       })),
     }));
+
+    // Part B — remove exclusive card from pool permanently
+    if (card.exclusive) {
+      set(s => ({ exclusiveDealsTaken: [...(s.exclusiveDealsTaken || []), card.id] }));
+    }
 
     if (hasContractorCard) get().useNetworkCard(playerId, 'rehab_cost_minus_20pct');
 
@@ -1185,7 +1509,7 @@ export const useGameStore = create((set, get) => ({
     set(state => {
       const anim = state.animatingToken;
       if (!anim.active) return state;
-      const nextPos = (anim.currentPos + 1) % 24;
+      const nextPos = (anim.currentPos + 1) % 28;
       return { animatingToken: { ...anim, currentPos: nextPos } };
     });
   },

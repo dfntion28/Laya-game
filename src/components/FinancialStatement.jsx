@@ -92,14 +92,21 @@ export default function FinancialStatement({ playerId }) {
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
   const viewedIdx          = players.findIndex(p => p.id === playerId);
   const [frozenPlayer, setFrozenPlayer] = useState(null);
+  const [frozenValues, setFrozenValues] = useState(null);
 
   useEffect(() => {
     const shouldFreeze = isAnimating && viewedIdx === currentPlayerIndex;
     if (shouldFreeze && frozenPlayer === null) {
       setFrozenPlayer(player);
+      setFrozenValues({
+        timeDeposits:    player.timeDeposits,
+        activeTrapDeals: player.activeTrapDeals,
+        creditLine:      player.creditLine,
+      });
     }
     if (!isAnimating && frozenPlayer !== null) {
       setFrozenPlayer(null);
+      setFrozenValues(null);
     }
   }, [isAnimating]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -141,6 +148,11 @@ export default function FinancialStatement({ playerId }) {
   const hasEscaped    = escapePct >= 100;
 
   const tier = creditTier(displayPlayer.creditScore);
+
+  // Three new fields — frozen during token animation, live otherwise
+  const timeDeposits    = frozenValues?.timeDeposits    ?? player.timeDeposits    ?? [];
+  const activeTrapDeals = frozenValues?.activeTrapDeals ?? player.activeTrapDeals ?? [];
+  const creditLine      = frozenValues?.creditLine      ?? player.creditLine      ?? null;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -273,6 +285,46 @@ export default function FinancialStatement({ playerId }) {
           })
         )}
 
+        {/* Time Deposits — locked principal, earning monthly interest */}
+        {timeDeposits.length > 0 && timeDeposits.map(td => (
+          <div key={td.id} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2 opacity-75">
+            <span className="text-[12px] text-[#5a7a9a] flex-1">
+              Time Deposit (unlocks Rnd {td.unlockRound})
+            </span>
+            <span className="text-[10px] text-[#5a9a7a]">
+              +{php(Math.round(td.amount * td.monthlyRate))}/mo (locked)
+            </span>
+            <span
+              className="text-[13px] font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: '#5a9a7a' }}
+            >
+              {php(td.amount)}
+            </span>
+          </div>
+        ))}
+
+        {/* Speculative (trap) deals awaiting resolution */}
+        {activeTrapDeals.filter(t => !t.resolved).length > 0 && (
+          <>
+            <p
+              className="text-[9px] font-bold tracking-[2px] uppercase pb-1 border-b border-[#3a2a0a] mb-[6px] mt-[8px]"
+              style={{ fontFamily: 'var(--font-display)', color: '#8a6a1a' }}
+            >
+              Speculative Deals
+            </p>
+            {activeTrapDeals.filter(t => !t.resolved).map(t => (
+              <div key={t.cardId} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
+                <span className="text-[12px] flex-1" style={{ color: '#f59e0b' }}>
+                  {t.card.name}
+                </span>
+                <span className="text-[10px]" style={{ color: '#a07030' }}>
+                  resolves Rnd {t.triggersOnRound}
+                </span>
+              </div>
+            ))}
+          </>
+        )}
+
         {/* ── LIABILITIES ── */}
         <SectionLabel>Liabilities</SectionLabel>
         {displayPlayer.liabilities.length === 0 ? (
@@ -290,6 +342,22 @@ export default function FinancialStatement({ playerId }) {
               </span>
             </div>
           ))
+        )}
+
+        {/* Credit Line outstanding — shown in Liabilities when balance is non-zero */}
+        {creditLine && creditLine.outstanding > 0 && (
+          <div className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
+            <span className="text-[12px] text-[#8aabcb] flex-1">Credit Line</span>
+            <span className="text-[10px] text-[#f87171]">
+              {php(Math.round(creditLine.outstanding * creditLine.monthlyRate))}/mo
+            </span>
+            <span
+              className="text-[13px] font-semibold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-red)' }}
+            >
+              {php(creditLine.outstanding)}
+            </span>
+          </div>
         )}
 
         {/* ── KONEKSYON CARDS ── */}

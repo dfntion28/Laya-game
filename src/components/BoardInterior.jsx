@@ -92,7 +92,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
   const deckName      = CARD_DECK_MAP[spaceType] ?? null;
   const isDeal        = DEAL_TYPES.has(spaceType);
   const canAfford     = !isDeal || !drawnCard ||
-    (currentPlayer?.cash ?? 0) >= (drawnCard.downPayment ?? drawnCard.cost ?? 0);
+    (currentPlayer?.cash ?? 0) >= (drawnCard.downPayment ?? drawnCard.purchasePrice ?? drawnCard.cost ?? 0);
 
   const [d1, d2] = lastDiceRolls ?? [null, null];
 
@@ -212,12 +212,20 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
       checkWinCondition(cp.id);
       clearPendingAction();
       showToast('🏆 Freedom Check! Sinuri ang iyong financial status...');
+    } else if (pending.type === 'corner') {
+      clearPendingAction();
     }
     // Card spaces and bangko: Zone B handles them
   }, [animationComplete]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAccept = () => {
     if (!drawnCard || !currentPlayer) return;
+    if (drawnCard.cardType === 'trap_deal') {
+      applyCardEffect(currentPlayer.id, drawnCard);
+      if (deckName) discardCard(deckName, drawnCard);
+      // clearPendingAction already called inside applyCardEffect for trap_deal
+      return;
+    }
     if (isDeal) {
       const result = buyDeal(currentPlayer.id, drawnCard);
       if (!result.success) { setBuyError(result.reason); return; }
@@ -318,6 +326,111 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
 
         {/* Card — only renders after animation completes + 180ms delay */}
         {cardVisible && deckName && drawnCard ? (
+          drawnCard.cardType === 'trap_deal' ? (
+            /* ── Trap Deal — amber speculative card ── */
+            <div className="flex flex-col gap-2" style={{ animation: 'cardFlipIn 0.32s ease-out forwards' }}>
+              <span
+                className="self-start rounded-full px-2 py-0.5 font-bold uppercase"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  background: '#451a03',
+                  border: '1px solid #92400e',
+                  color: '#f59e0b',
+                }}
+              >
+                SPECULATIVE DEAL ⚠
+              </span>
+
+              <h3
+                className="font-black leading-tight"
+                style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#fde68a', fontWeight: 800 }}
+              >
+                {drawnCard.name}
+              </h3>
+
+              <p className="text-[10px] leading-[1.5] text-[#8aabcb]">{drawnCard.lesson}</p>
+
+              <div
+                className="rounded-lg flex flex-col gap-1"
+                style={{ background: '#1c0a00', border: '1px solid #92400e', padding: '6px 8px' }}
+              >
+                <p className="text-[10px] font-mono font-bold" style={{ color: '#f59e0b' }}>
+                  ⏳ Resolves in {drawnCard.trapDelay} rounds
+                </p>
+                <p className="text-[10px] font-mono" style={{ color: '#4ade80' }}>
+                  🐂 Bull: {drawnCard.trapBullOutcome?.description}
+                </p>
+                <p className="text-[10px] font-mono" style={{ color: '#f87171' }}>
+                  🐻 Bear: {drawnCard.trapBearOutcome?.description}
+                </p>
+              </div>
+
+              {(drawnCard.purchasePrice ?? 0) > 0 && (
+                <p
+                  className="font-bold text-[13px]"
+                  style={{ fontFamily: 'var(--font-display)', color: '#f87171' }}
+                >
+                  -{php(drawnCard.purchasePrice)} upfront
+                </p>
+              )}
+
+              {!canAfford && (
+                <p className="text-[10px] text-[#f87171]">
+                  ⚠ Hindi sapat ang cash ({php(drawnCard.purchasePrice)} ang kailangan)
+                </p>
+              )}
+
+              {buyError && <p className="text-[10px] text-[#f87171]">{buyError}</p>}
+
+              <p
+                className="text-[9px] italic rounded"
+                style={{ color: '#b45309', background: '#1c0a00', padding: '4px 8px' }}
+              >
+                💡 Ang kinalabasan ay depende sa market cycle kung kailan mag-resolve.
+              </p>
+
+              <div className="flex gap-2 mt-1">
+                <button
+                  onClick={handleAccept}
+                  disabled={!canAfford}
+                  className="flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    height: '38px',
+                    background: '#b45309',
+                    color: '#fef3c7',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    cursor: canAfford ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Accept (Speculate)
+                </button>
+                <button
+                  onClick={handlePass}
+                  className="flex-1"
+                  style={{
+                    height: '38px',
+                    background: 'transparent',
+                    border: '1px solid #92400e',
+                    borderRadius: '8px',
+                    color: '#8aabcb',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pass
+                </button>
+              </div>
+            </div>
+          ) : (
+          /* ── Standard card ── */
           <div className="flex flex-col gap-2" style={{ animation: 'cardFlipIn 0.32s ease-out forwards' }}>
             {/* Badge */}
             {badge && (
@@ -438,6 +551,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
               )}
             </div>
           </div>
+          )
 
         ) : hasRolled && !pendingSpaceAction && !animatingToken.active ? (
           /* Waiting for end turn — auto-resolved space done, or card dismissed */

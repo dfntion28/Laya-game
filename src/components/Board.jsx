@@ -4,15 +4,15 @@ import { boardSpaces, freedomTrackSpaces } from '../data/boardSpaces.js';
 import SpaceCell from './SpaceCell.jsx';
 import BoardInterior from './BoardInterior.jsx';
 
-// Board layout — 24 spaces, 6 per side:
-// top   (L→R): spaces 0–5
-// right (T→B): spaces 6–11
-// bottom (R→L visual): 17,16,15,14,13,12
-// left  (T→B visual): 23,22,21,20,19,18
-const topRow    = boardSpaces.slice(0, 6);
-const rightCol  = boardSpaces.slice(6, 12);
-const bottomRow = [...boardSpaces.slice(12, 18)].reverse();
-const leftCol   = [...boardSpaces.slice(18, 24)].reverse();
+// Board layout — 28 spaces, 7 per side:
+// top   (L→R): spaces 0–6
+// right (T→B): spaces 7–13
+// bottom (R→L visual): 20,19,18,17,16,15,14
+// left  (T→B visual): 27,26,25,24,23,22,21
+const topRow    = boardSpaces.slice(0, 7);
+const rightCol  = boardSpaces.slice(7, 14);
+const bottomRow = [...boardSpaces.slice(14, 21)].reverse();
+const leftCol   = [...boardSpaces.slice(21, 28)].reverse();
 
 const FREEDOM_CFG = {
   malaking_deal:      { bg: '#0d2e10', border: '#2d5a2d', color: '#4ade80' },
@@ -128,7 +128,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 h-full"
               style={{ borderRight: i < topRow.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
             </div>
           ))}
         </div>
@@ -144,7 +144,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 w-full"
               style={{ borderBottom: i < leftCol.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
             </div>
           ))}
         </div>
@@ -168,7 +168,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 w-full"
               style={{ borderBottom: i < rightCol.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
             </div>
           ))}
         </div>
@@ -184,7 +184,7 @@ export default function Board({ selectedPlayerId, onSelectPlayer }) {
               className="flex-1 h-full"
               style={{ borderRight: i < bottomRow.length - 1 ? INTER_SPACE : undefined }}
             >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} />
+              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
             </div>
           ))}
         </div>
