@@ -10,6 +10,7 @@ export default function TopBar() {
   const toggleMute = useUi(s => s.toggleMute);
   const setHelp = useUi(s => s.setHelp);
   const [menu, setMenu] = useState(false);
+  const [sure, setSure] = useState(false);
   const marketTone = game.market === 'bull' ? 'bg-emerald-400/15 text-emerald-200 ring-emerald-400/40' : game.market === 'bear' ? 'bg-rose-400/15 text-rose-200 ring-rose-400/40' : 'bg-white/8 text-violet-100 ring-white/15';
   return (
     <header className="sticky top-0 z-30 flex items-center gap-2 bg-night/85 shadow-[0_3px_0_rgb(0_0_0/0.2)] px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur">
@@ -23,9 +24,19 @@ export default function TopBar() {
         {menu && (
           <div className="absolute right-0 top-12 z-40 w-56 animate-pop rounded-2xl bg-panel card-3d p-2 shadow-2xl ring-1 ring-line">
             <p className="px-3 py-2 text-xs text-muted">Naka-autosave ang laro mo.</p>
-            <button type="button" onClick={() => { setMenu(false); if (window.confirm('Simulan ang bagong laro? Mawawala ang kasalukuyang laro.')) quit(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm text-rose-200 hover:bg-white/5">
-              🔄 Bagong Laro
-            </button>
+            {sure ? (
+              <div className="flex flex-col gap-1.5 px-1 pb-1">
+                <p className="px-2 text-xs text-cream">Mawawala ang kasalukuyang laro. Sigurado ka?</p>
+                <button type="button" onClick={() => { setMenu(false); setSure(false); quit(); }} className="w-full rounded-xl bg-rose-500 px-3 py-2.5 text-left text-sm font-semibold text-white">
+                  Oo, bagong laro
+                </button>
+                <button type="button" onClick={() => setSure(false)} className="w-full rounded-xl px-3 py-2 text-left text-sm text-muted">Huwag na</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setSure(true)} className="w-full rounded-xl px-3 py-2.5 text-left text-sm text-rose-200 hover:bg-white/5">
+                🔄 Bagong Laro
+              </button>
+            )}
           </div>
         )}
       </div>
