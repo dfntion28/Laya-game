@@ -39,7 +39,7 @@ function PlayerPick({ players, value, onPick, note }) {
 
 function Section({ title, children }) {
   return (
-    <div className="flex flex-col gap-2.5 rounded-2xl bg-paper-2/60 p-3">
+    <div className="flex flex-col gap-2.5 border-t-2 border-ink/10 pt-3">
       <div className="font-display text-lg leading-none">{title}</div>
       {children}
     </div>

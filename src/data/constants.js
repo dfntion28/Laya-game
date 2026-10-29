@@ -55,3 +55,5 @@ export const FIXER_CREDIT_HIT = 40;
 export const PERMIT_HOLD_COST = 20_000;    // what you pay a fixer to hold a rival's permit
 export const PERMIT_HOLD_FEE = 30_000;     // extra the rival pays on their next property or business
 export const PERMIT_CAUGHT_FINE = 50_000;
+
+export const MAX_PLAYERS = PLAYER_COLORS.length;

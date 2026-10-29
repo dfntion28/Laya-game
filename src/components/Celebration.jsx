@@ -6,6 +6,7 @@ import { professionById } from '../data/professions.js';
 import { Btn, Figure } from './Ui.jsx';
 import Pawn from './Pawn.jsx';
 import { useNet, useControls } from '../store/netStore.js';
+import { leaveRoom } from '../net/online.js';
 
 const CONFETTI = [
   'left-[4%] bg-mustard [animation-delay:0s]', 'left-[11%] bg-berry [animation-delay:0.6s]',
@@ -87,7 +88,7 @@ export function EndScreen() {
           </div>
         ))}
       </div>
-      <Btn size="lg" className="mt-5 w-full" onClick={quit}>Play again</Btn>
+      <Btn size="lg" className="mt-5 w-full" onClick={net.mode === 'local' ? quit : leaveRoom}>Play again</Btn>
     </Shell>
   );
 }

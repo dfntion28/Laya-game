@@ -24,6 +24,13 @@ function hopPlan(ghost, path) {
   return { hops: [at, ...path], offset: -1 };
 }
 
+// Online: the player on this device. Local: any human at the table, except during a bot's turn.
+function isMine(state, pid) {
+  const net = useNet.getState();
+  if (net.mode !== 'local') return pid === net.me;
+  return !state.players.find(x => x.id === pid)?.isBot && state.players.filter(x => !x.isBot).length === 1;
+}
+
 export function runFx(fx, state, commit) {
   const ui = useUi.getState();
   const muted = ui.muted;
@@ -101,9 +108,12 @@ export function runFx(fx, state, commit) {
         });
         break;
       }
-      case 'cash':
-        at(t, () => useUi.getState().pushToast({ text: `${f.amount >= 0 ? '+' : ''}${fmt(f.amount)}`, sub: f.label, tone: f.amount >= 0 ? 'good' : 'bad' }));
+      case 'cash': {
+        // With several players, say whose money moved unless it is yours.
+        const who = multi && !isMine(state, f.pid) ? state.players.find(x => x.id === f.pid)?.name : null;
+        at(t, () => useUi.getState().pushToast({ text: `${who ? `${who} ` : ''}${f.amount >= 0 ? '+' : ''}${fmt(f.amount)}`, sub: f.label, tone: who ? 'info' : f.amount >= 0 ? 'good' : 'bad' }));
         break;
+      }
       case 'buy':
         at(t, () => play('buy', muted));
         break;

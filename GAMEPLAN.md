@@ -32,6 +32,9 @@ On escape: Fast Track cashflow = passive income × 20, paid at every Cashflow Da
 - **Fixer (lagay)**: on an Expense card of ₱10K or more, pay a fixer 30% to make it go away. Before rolling, pay ₱20K to hold a rival's permit (their next property or business costs ₱30K more). Either way, a roll of 1 or 2 means caught: pay the bill plus a 50% fine (or a ₱50K fine), credit −40.
 - Bots: Normal and Hard sell deals they can't afford and ask the richest player for loans; they lend at 2%+ when it's safe. Easy bots fall for fixers.
 
+## Online
+Create a room, share the link or 5-letter code, 2 to 4 players (host can fill seats with bots). Each phone shows only its own player's decisions; everyone sees every roll and hop. The host's phone is the referee. Message relay: Supabase Realtime (free tier).
+
 ## Rat Race spaces
 Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market ×3 · Life ×2 · Seminar · Charity · Laid Off · Contacts.
 
@@ -66,4 +69,4 @@ Guro ★★, Nars ★, BPO ★★, Inhinyero ★, Kawani ★★, Seaman ★, Neg
 - Every rule change must be re-checked with the simulator; it also fails on any exception or NaN.
 
 ## Out of scope (ideas for later)
-Online multiplayer, accounts/leaderboards, offline service worker, more languages (English toggle).
+Accounts/leaderboards, host hand-off when the host leaves, offline service worker, more languages (English toggle).

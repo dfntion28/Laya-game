@@ -6,6 +6,8 @@ import { startMusic } from '../lib/music.js';
 import Icon from './Icon.jsx';
 import { Btn } from './Ui.jsx';
 import { MONTHS } from '../data/constants.js';
+import { useNet } from '../store/netStore.js';
+import { leaveRoom } from '../net/online.js';
 
 function Toggle({ label, on, onClick }) {
   return (
@@ -58,6 +60,9 @@ export default function TopBar() {
   const game = useGame(s => s.shown ?? s.game);
   const quit = useGame(s => s.quit);
   const setHelp = useUi(s => s.setHelp);
+  const net = useNet();
+  const online = net.mode !== 'local';
+  const hostQuiet = net.mode === 'guest' && net.hostQuiet;
   const [menu, setMenu] = useState(false);
   const [sure, setSure] = useState(false);
   const p = game.players[game.current];
@@ -71,6 +76,11 @@ export default function TopBar() {
           <span className={`size-2 rounded-full border border-ink ${MARKET_DOT[game.market]}`} />
           {marketLabel(game.market)}
         </span>
+        {online && (
+          <span className={`truncate ${hostQuiet || net.linkDown ? 'text-red-700' : 'text-ink-soft'}`}>
+            {net.linkDown ? 'Reconnecting...' : hostQuiet ? 'Host is offline' : `Online · room ${net.room}`}
+          </span>
+        )}
       </span>
       <span className="flex-1" />
       <MusicButton className={round} />
@@ -83,14 +93,14 @@ export default function TopBar() {
             <div className="my-1 border-t-2 border-ink/10" />
             {sure ? (
               <div className="flex flex-col gap-2 p-1">
-                <p className="text-sm font-bold">This ends the current game. Sure?</p>
-                <Btn size="sm" variant="bad" onClick={() => { setMenu(false); setSure(false); quit(); }}>Yes, new game</Btn>
+                <p className="text-sm font-bold">{online ? (net.mode === 'host' ? 'You are the host. The game ends for everyone. Sure?' : 'You leave this online game. Sure?') : 'This ends the current game. Sure?'}</p>
+                <Btn size="sm" variant="bad" onClick={() => { setMenu(false); setSure(false); if (online) leaveRoom(); else quit(); }}>{online ? 'Yes, leave' : 'Yes, new game'}</Btn>
                 <Btn size="sm" variant="ghost" onClick={() => setSure(false)}>Keep playing</Btn>
               </div>
             ) : (
-              <button type="button" onClick={() => setSure(true)} className="w-full rounded-xl px-2 py-2 text-left text-sm font-extrabold text-red-600 hover:bg-ink/5">New game</button>
+              <button type="button" onClick={() => setSure(true)} className="w-full rounded-xl px-2 py-2 text-left text-sm font-extrabold text-red-600 hover:bg-ink/5">{online ? 'Leave game' : 'New game'}</button>
             )}
-            <p className="px-2 pt-1 text-[11px] font-bold text-ink-soft">Your game saves automatically.</p>
+            <p className="px-2 pt-1 text-[11px] font-bold text-ink-soft">{online ? 'If you close the app, open the invite link again to rejoin.' : 'Your game saves automatically.'}</p>
           </div>
         )}
       </div>

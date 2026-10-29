@@ -8,29 +8,16 @@ import { PLAYER_COLORS } from '../data/constants.js';
 import { Btn, Surface, LIST } from './Ui.jsx';
 import Pawn from './Pawn.jsx';
 import { SettingsList } from './TopBar.jsx';
+import OnlineScreen from './OnlineScreen.jsx';
+import { BOT_NAMES, STYLE_KEYS, pickN, newBot } from '../lib/setup.js';
 
-const BOT_NAMES = ['Aling Nena', 'Mang Tomas', 'Kuya Jun', 'Ate Joy', 'Tito Boy', 'Lola Remy'];
-const STYLE_KEYS = Object.keys(BOT_STYLES);
 const LEVEL_LABEL = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
 const LEVEL_TONE = { easy: 'bg-lettuce', normal: 'bg-mustard', hard: 'bg-tomato text-white' };
-
-function pickN(arr, n) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a.slice(0, n);
-}
 
 function monthly(prof) {
   const salary = prof.variable ? prof.variable[1] * 3.5 : prof.salary;
   const loans = prof.liabilities.reduce((s, l) => s + l.payment, 0);
   return { salary, exp: prof.tax + prof.living + (prof.family || 0) + loans };
-}
-
-function newBot(i, level = 'normal') {
-  return { name: BOT_NAMES[i % BOT_NAMES.length], isBot: true, botLevel: level, botStyle: STYLE_KEYS[(i * 2 + 1) % STYLE_KEYS.length] };
 }
 
 function Title({ onStart }) {
@@ -51,6 +38,7 @@ function Title({ onStart }) {
       <div className="flex w-full max-w-xs flex-col gap-3">
         <Btn size="lg" className="animate-breathe" onClick={() => onStart('solo')}>Play solo</Btn>
         <Btn size="lg" variant="blue" onClick={() => onStart('bots')}>Play vs bots</Btn>
+        <Btn size="lg" variant="good" onClick={() => onStart('online')}>Play online</Btn>
         <Btn size="lg" variant="ghost" onClick={() => onStart('pass')}>Pass and play</Btn>
       </div>
     </div>
@@ -98,7 +86,7 @@ function Roster({ slots, setSlots, onNext, onBack }) {
   );
 }
 
-function Draft({ slot, color, offer, dreamOffer, onReroll, rerolled, onDone }) {
+export function Draft({ slot, color, offer, dreamOffer, onReroll, rerolled, onDone }) {
   const [prof, setProf] = useState(null);
   const [dream, setDream] = useState(null);
   return (
@@ -172,6 +160,10 @@ export default function SetupScreen() {
   const dealOffer = (rerolled = false) => setOffer({ prof: pickN(professions, 3).map(p => p.id), dream: pickN(dreams, 3).map(d => d.id), rerolled });
 
   const start = mode => {
+    if (mode === 'online') {
+      setStage('online');
+      return;
+    }
     if (mode === 'solo') {
       setSlots([{ name: 'You', isBot: false }]);
       setPicks([]);
@@ -196,6 +188,7 @@ export default function SetupScreen() {
   };
 
   if (stage === 'title') return <Title onStart={start} />;
+  if (stage === 'online') return <OnlineScreen onBack={() => setStage('title')} />;
   if (stage === 'roster') {
     return <Roster slots={slots} setSlots={setSlots} onBack={() => setStage('title')} onNext={() => { setPicks([]); setDraftIdx(0); dealOffer(); setStage('draft'); }} />;
   }

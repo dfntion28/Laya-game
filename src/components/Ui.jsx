@@ -65,15 +65,15 @@ export function Figure({ label, value, tone = '', big = false }) {
 // Number picker with small and big steps.
 export function Stepper({ value, set, step, max, format }) {
   const clamp = v => Math.max(0, Math.min(max, v));
-  const b = 'press pop-shadow-sm grid size-11 place-items-center rounded-xl border-[2.5px] border-ink bg-paper font-display text-lg';
+  const b = 'press pop-shadow-sm grid size-10 shrink-0 place-items-center rounded-xl border-[2.5px] border-ink bg-paper font-display text-lg';
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       <button type="button" onClick={() => set(clamp(value - step * 10))} className={b}>−−</button>
       <button type="button" onClick={() => set(clamp(value - step))} className={b}>−</button>
-      <div className="min-w-0 flex-1 text-center font-display text-xl">{format(value)}</div>
+      <div className="min-w-0 flex-1 text-center font-display text-lg">{format(value)}</div>
       <button type="button" onClick={() => set(clamp(value + step))} className={b}>+</button>
       <button type="button" onClick={() => set(clamp(value + step * 10))} className={b}>++</button>
-      <button type="button" onClick={() => set(max)} className={`${b} w-auto px-2 text-sm`}>MAX</button>
+      <button type="button" onClick={() => set(max)} className={`${b} w-auto px-1.5 text-xs`}>MAX</button>
     </div>
   );
 }
