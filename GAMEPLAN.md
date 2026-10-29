@@ -26,6 +26,12 @@ On escape: Fast Track cashflow = passive income × 20, paid at every Cashflow Da
 3. Every corner passed = **Payday** (1 month): salary + passive − expenses. Exact landing on Payday = +1 Diskarte.
 4. The space's card deals in under the board (beside it on desktop). No pop-up covers the board.
 
+## Player to player (2+ players)
+- **Sell a deal card**: land on a property or business you can't or won't buy, offer it to another player at a price you set. They buy (price to you, plus their own down payment), counter once, or refuse. You can offer it to each player once.
+- **Borrow from a player**: on your turn (before rolling, or on a deal), ask a player for a loan at 1, 2, 3 or 5% a month. If they agree, you pay them interest every Payday until you repay. It counts as their passive income. If you escape, your player loans are paid off first. Bankruptcy halves what you owe them.
+- **Fixer (lagay)**: on an Expense card of ₱10K or more, pay a fixer 30% to make it go away. Before rolling, pay ₱20K to hold a rival's permit (their next property or business costs ₱30K more). Either way, a roll of 1 or 2 means caught: pay the bill plus a 50% fine (or a ₱50K fine), credit −40.
+- Bots: Normal and Hard sell deals they can't afford and ask the richest player for loans; they lend at 2%+ when it's safe. Easy bots fall for fixers.
+
 ## Rat Race spaces
 Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market ×3 · Life ×2 · Seminar · Charity · Laid Off · Contacts.
 
@@ -36,7 +42,7 @@ Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market 
 | Normal | Buys deals above ~22% yearly return, borrows only when the deal beats the interest by 20% |
 | Hard | Lower return bar, borrows at a 5% edge, times stocks tighter, sells to buyers sooner, buys seminars earlier |
 
-Styles (Landlord, Hustler, Trader, Saver, Balanced) shift what a bot prefers. `node scripts/simulate.mjs versus 270`: Hard 144, Normal 118, Easy 8 wins.
+Styles (Landlord, Hustler, Trader, Saver, Balanced) shift what a bot prefers. `node scripts/simulate.mjs versus 270`: Hard 145, Normal 115, Easy 10 wins (it also prints how often player-to-player moves happen).
 Fast bots: setting that cuts bot animation and think time to near zero.
 
 ## Economy rules

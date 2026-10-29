@@ -6,6 +6,8 @@ import { landingPreview, fmt } from '../engine/engine.js';
 import { spaceTone } from '../lib/theme.js';
 import Dice from './Dice.jsx';
 import Icon from './Icon.jsx';
+import { useNet, useControls } from '../store/netStore.js';
+import { actorOf } from '../engine/engine.js';
 
 function DiskartePips({ p }) {
   return (
@@ -76,16 +78,20 @@ export default function BoardCenter({ inspect, track, onCloseInspect }) {
   const dispatch = useGame(s => s.dispatch);
   const dice = useUi(s => s.dice);
   const busy = useUi(s => s.busyCount > 0);
+  const canAct = useControls(game);
+  const online = useNet(s => s.mode !== 'local');
   const p = game.players[game.current];
   const pend = game.pending;
-  const human = !p.isBot;
+  const human = canAct(p.id);
+  const mine = online ? human : !p.isBot && p.name === 'You';
+  const waitingOn = actorOf(game);
   const deciding = pend?.kind === 'move' && !busy;
   const go = steps => landingPreview(game, p, steps);
 
   return (
     <div className="relative flex size-full flex-col items-center justify-center gap-2 p-2 sm:gap-4 sm:p-4">
       {game.players.length > 1 && (
-        <div className="font-display text-base leading-none sm:text-2xl">{p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn' : `${p.name}'s turn`}</div>
+        <div className="font-display text-base leading-none sm:text-2xl">{mine ? 'Your turn' : `${p.name}'s turn`}</div>
       )}
 
       {!deciding && (
@@ -121,13 +127,15 @@ export default function BoardCenter({ inspect, track, onCloseInspect }) {
               </button>
             </div>
           ) : (
-            <span className="animate-pulse font-display text-sm">thinking...</span>
+            <span className="animate-pulse font-display text-sm">{p.isBot ? 'thinking...' : `Waiting for ${p.name}`}</span>
           )}
         </Landed>
       )}
 
       {!deciding && p.diskarte > 0 && pend?.kind === 'roll' && <DiskartePips p={p} />}
-      {p.isBot && !deciding && pend?.kind !== 'roll' && !busy && <span className="animate-pulse font-display text-sm">thinking...</span>}
+      {!deciding && !busy && pend && !canAct(waitingOn.id) && (pend.kind !== 'roll' || !waitingOn.isBot) && (
+        <span className="animate-pulse font-display text-sm">{waitingOn.isBot ? 'thinking...' : `Waiting for ${waitingOn.name}`}</span>
+      )}
 
       {inspect !== null && inspect !== undefined && <InspectBubble index={inspect} track={track} onClose={onCloseInspect} />}
     </div>

@@ -4,6 +4,7 @@
 import { useUi } from './uiStore.js';
 import { play, buzz } from '../lib/sfx.js';
 import { fmt } from '../engine/engine.js';
+import { useNet } from './netStore.js';
 
 const TIMING = {
   normal: { step: 430, dice: 900, settle: 450 },
@@ -127,10 +128,13 @@ export function runFx(fx, state, commit) {
         break;
       case 'turn': {
         const p = state.players.find(x => x.id === f.pid);
+        const net = useNet.getState();
+        const online = net.mode !== 'local';
         at(t, () => {
-          if (p && !p.isBot) useUi.getState().setView(p.id);
+          if (p && !p.isBot && !online) useUi.getState().setView(p.id);
           if (multi && p && !(p.isBot && useUi.getState().fastBots)) {
-            useUi.getState().showBanner(p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn!' : `${p.name}, you're up!`);
+            const mine = online ? p.id === net.me : p.name === 'You';
+            useUi.getState().showBanner(mine ? 'Your turn!' : p.isBot || online ? `${p.name}'s turn` : `${p.name}, you're up!`);
             play('whoosh', muted);
           }
         });

@@ -5,7 +5,9 @@ import {
   SAVE_VERSION, LOAN_STEP, FIVE_SIX_RATE, FIVE_SIX_CAP, CREDIT_START, CREDIT_MIN, CREDIT_MAX,
   INSURANCE_COVER, CHILD_COST, MAX_CHILDREN, TUITION_PER_CHILD, DISKARTE_START, DISKARTE_MAX,
   HAND_MAX, TYPHOON_MONTHS, TYPHOON_DAMAGE_PER_PROPERTY, FT_CASHFLOW_MULT, FT_WIN_GAIN,
-  FT_CHARITY_COST, MONTHS, PLAYER_COLORS,
+  FT_CHARITY_COST, MONTHS, PLAYER_COLORS, PITCH_STEP, PITCH_MAX, PLAYER_LOAN_MAX, PLAYER_LOAN_RATES,
+  FIXER_SHARE, FIXER_MIN_BILL, FIXER_CAUGHT_MAX, FIXER_FINE_MULT, FIXER_CREDIT_HIT, PERMIT_HOLD_COST,
+  PERMIT_HOLD_FEE, PERMIT_CAUGHT_FINE,
 } from '../data/constants.js';
 import { professionById } from '../data/professions.js';
 import { ratRace, fastTrack, BOARD_SIZE } from '../data/board.js';
@@ -168,6 +170,10 @@ export function createGame({ players, seed }) {
 
 const cur = s => s.players[s.current];
 const byId = (s, id) => s.players.find(p => p.id === id);
+// Pending decisions that belong to a player other than the one whose turn it is.
+const RESPONSE_KINDS = new Set(['pitch', 'loanask']);
+export const actorOf = s => (s.pending && RESPONSE_KINDS.has(s.pending.kind) ? byId(s, s.pending.pid) : cur(s));
+export const rivals = (s, p) => s.players.filter(o => o.id !== p.id && o.track === 'rat');
 const clampCredit = v => Math.max(CREDIT_MIN, Math.min(CREDIT_MAX, v));
 const board = p => (p.track === 'fast' ? fastTrack : ratRace);
 
@@ -269,10 +275,11 @@ function bankrupt(ctx, p) {
     else if (a.kind === 'stock') recovered += a.shares * (s.prices[a.symbol] || 0) * 0.5;
     else if (a.kind === 'mp2') recovered += a.amount;
   }
-  p.assets = p.assets.filter(a => a.kind === 'ip');
+  p.assets = p.assets.filter(a => a.kind === 'ip' || a.kind === 'iou');
   p.liabilities = p.liabilities
     .filter(l => l.kind !== 'fivesix')
     .map(l => ({ ...l, balance: Math.round(l.balance / 2), payment: Math.round(l.payment / 2) }));
+  for (const l of p.liabilities) if (l.kind === 'player') syncIou(s, l);
   p.cash = Math.max(0, p.cash + Math.round(recovered));
   p.credit = 450;
   p.diskarte = 0;
@@ -324,6 +331,7 @@ function enterFastTrack(ctx, p) {
   p.escapedTurn = p.turns;
   p.charityTurns = 0;
   p.cash += cf;
+  for (const l of p.liabilities.filter(x => x.kind === 'player')) repay(ctx, p, l.id, l.balance);
   ctx.fx.push({ type: 'escape', pid: p.id });
   log(ctx, p, `Out of the Rat Race in month ${p.month}. Fast Track cashflow: ${fmt(cf)}.`, 'great');
   ctx.s.pending = {
@@ -485,7 +493,7 @@ function resolveSpace(ctx, p) {
       return;
     case 'gastos': {
       const card = draw(s, 'gastos');
-      s.pending = { ...base, kind: 'card', deck: 'gastos', cardId: card.id, options: cardOptions(p, card, 'gastos') };
+      s.pending = { ...base, kind: 'card', deck: 'gastos', cardId: card.id, options: cardOptions(p, card, 'gastos', s.players.length > 1) };
       return;
     }
     case 'buhay': {
@@ -608,7 +616,15 @@ function describeEffects(p, effects) {
   return parts.join(' · ');
 }
 
-function cardOptions(p, card, deck) {
+// Biggest cash hit a card can deal, used to price the fixer.
+function cardBill(p, card) {
+  const one = e => Math.max(0, -(e?.cash || 0)) + (e?.medical ? medicalCost(p, e.medical) : 0);
+  return card.options ? Math.max(...card.options.map(o => one(o.effects))) : one(card.effects);
+}
+
+const fixerFee = bill => Math.round(bill * FIXER_SHARE / 1000) * 1000;
+
+function cardOptions(p, card, deck, multi = false) {
   let options;
   if (card.options) {
     options = card.options.map(o => ({ key: o.key, label: o.label, sub: describeEffects(p, o.effects) }));
@@ -619,6 +635,10 @@ function cardOptions(p, card, deck) {
   if (deck === 'gastos') {
     const shield = p.hand.find(id => getCard(id).use === 'expense');
     if (shield) options.push({ key: `use:${shield}`, label: `Use ${getCard(shield).name}`, sub: 'Cancels this expense' });
+    const bill = cardBill(p, card);
+    if (multi && bill >= FIXER_MIN_BILL) {
+      options.push({ key: 'fixer', label: `Pay a fixer ${fmt(fixerFee(bill))}`, sub: 'Makes it go away. 1 in 3 chance you get caught', fixer: true });
+    }
   }
   return options;
 }
@@ -691,6 +711,10 @@ function resolveCardOption(ctx, key) {
   const p = cur(s);
   const pend = s.pending;
   const card = getCard(pend.cardId);
+  if (key === 'fixer') {
+    payFixer(ctx, p, card);
+    return;
+  }
   if (key.startsWith('use:')) {
     const cardId = key.slice(4);
     if (!p.hand.includes(cardId)) return;
@@ -837,7 +861,9 @@ export function dealDown(p, card, useCardId) {
   const use = useCardId ? getCard(useCardId) : null;
   if (use?.effect === 'down_minus_30' && card.kind === 'realestate') down *= 0.7;
   if (use?.effect === 'biz_half' && card.kind === 'business') down *= 0.5;
-  return Math.round(down / 1000) * 1000;
+  // A rival paid a fixer to hold your permit: the next property or business costs extra.
+  const hold = p.permitHold && (card.kind === 'realestate' || card.kind === 'business') ? PERMIT_HOLD_FEE : 0;
+  return Math.round(down / 1000) * 1000 + hold;
 }
 
 export function dealCards(p) {
@@ -899,16 +925,34 @@ function buyDeal(ctx, a) {
     return true;
   }
   const useCardId = a.useCard && p.hand.includes(a.useCard) ? a.useCard : null;
+  return buyAsset(ctx, p, card, useCardId, a.borrow);
+}
+
+// Can `p` cover `down` after first paying `extra` in cash (borrowing the rest from the bank)?
+function bankGap(p, down, extra = 0) {
+  const left = p.cash - extra;
+  if (left < 0) return null;
+  if (left >= down) return 0;
+  const need = Math.ceil((down - left) / LOAN_STEP) * LOAN_STEP;
+  return maxBankLoan(p) >= need ? need : null;
+}
+
+function buyAsset(ctx, p, card, useCardId, borrow) {
+  const { s } = ctx;
   const down = dealDown(p, card, useCardId);
   if (p.cash < down) {
-    if (!a.borrow) return false;
-    const need = Math.ceil((down - p.cash) / LOAN_STEP) * LOAN_STEP;
-    if (maxBankLoan(p) < need) return false;
+    if (!borrow) return false;
+    const need = bankGap(p, down);
+    if (need === null) return false;
     addBankLoan(ctx, p, need, false);
     p.credit = clampCredit(p.credit - 5);
     log(ctx, p, `Bank loan of ${fmt(need)} for the down payment.`, 'warn');
   }
   if (useCardId) p.hand = p.hand.filter(id => id !== useCardId);
+  if (p.permitHold) {
+    log(ctx, p, `Paid ${fmt(PERMIT_HOLD_FEE)} extra to get a held permit released.`, 'bad');
+    p.permitHold = null;
+  }
   p.cash -= down;
   p.assets.push({
     id: uid(s, 'A'), kind: card.kind, sub: card.sub, name: card.name, emoji: card.emoji,
@@ -1007,6 +1051,7 @@ function repay(ctx, p, liabId, amount) {
   l.balance -= pay;
   l.payment = l.rate ? Math.round(l.balance * l.rate) : Math.round(l.payment * ratio);
   ctx.fx.push({ type: 'cash', pid: p.id, amount: -pay, label: `Paid ${l.name}` });
+  if (l.kind === 'player') payLender(ctx, l, pay);
   if (l.balance <= 0) {
     p.liabilities = p.liabilities.filter(x => x.id !== l.id);
     p.credit = clampCredit(p.credit + (l.kind === 'fivesix' ? 30 : 20));
@@ -1020,7 +1065,7 @@ function repay(ctx, p, liabId, amount) {
 function fireSale(ctx, p, assetId, qty) {
   const { s } = ctx;
   const a = p.assets.find(x => x.id === assetId);
-  if (!a || a.kind === 'ip') return false;
+  if (!a || a.kind === 'ip' || a.kind === 'iou') return false;
   if (a.kind === 'stock') {
     sellShares(ctx, p, a, Math.min(a.shares, qty || a.shares), s.prices[a.symbol]);
     return true;
@@ -1052,7 +1097,7 @@ function applyAnytimeCard(ctx, p, cardId) {
       else p.salaryBase = Math.round(p.salaryBase * 1.1);
       break;
     case 'pay_debt_50k': {
-      const target = [...p.liabilities].sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
+      const target = [...p.liabilities].filter(l => l.kind !== 'player').sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
       if (!target) return false;
       const cut = Math.min(50_000, target.balance);
       const ratio = (target.balance - cut) / target.balance;
@@ -1107,6 +1152,182 @@ function win(ctx, p, how) {
   log(ctx, p, how === 'dream' ? `Won by buying the dream: ${dreamById[p.dreamId].name}.` : 'Won by hitting the Fast Track cashflow goal.', 'great');
 }
 
+// ─── Player to player ──────────────────────────────────────────────────────
+
+const steps = (v, step, max) => Math.max(0, Math.min(max, Math.round((v || 0) / step) * step));
+
+// Sell the deal card you landed on to another player.
+function pitchDeal(ctx, p, a) {
+  const { s } = ctx;
+  const pend = s.pending;
+  const card = getCard(pend.cardId);
+  if (card.kind !== 'realestate' && card.kind !== 'business') return false;
+  const to = byId(s, a.to);
+  const pitched = pend.pitched || [];
+  if (!to || !rivals(s, p).includes(to) || pitched.includes(to.id)) return false;
+  const price = steps(a.price, PITCH_STEP, PITCH_MAX);
+  s.pending = { kind: 'pitch', pid: to.id, seller: p.id, buyer: to.id, cardId: card.id, size: pend.size, price, countered: false, pitched: [...pitched, to.id] };
+  log(ctx, p, `Offered ${card.name} to ${to.name} for ${fmt(price)}.`);
+  toast(ctx, `${p.name} offers ${to.name} a deal`, 'info', to.id);
+  return true;
+}
+
+function backToDeal(s, pend) {
+  s.pending = { pid: pend.seller, kind: 'deal', size: pend.size, cardId: pend.cardId, pitched: pend.pitched };
+}
+
+// Buyer pays the seller, then buys the deal as if they had landed on it.
+function closePitch(ctx, pend, price, borrow) {
+  const { s } = ctx;
+  const buyer = byId(s, pend.buyer);
+  const seller = byId(s, pend.seller);
+  const card = getCard(pend.cardId);
+  const gap = bankGap(buyer, dealDown(buyer, card, null), price);
+  if (gap === null || (gap > 0 && !borrow)) return false;
+  buyer.cash -= price;
+  seller.cash += price;
+  if (price) {
+    ctx.fx.push({ type: 'cash', pid: buyer.id, amount: -price, label: `Paid ${seller.name}` });
+    ctx.fx.push({ type: 'cash', pid: seller.id, amount: price, label: `${buyer.name} bought your deal` });
+  }
+  if (!buyAsset(ctx, buyer, card, null, true)) return false;
+  log(ctx, seller, `Sold the ${card.name} deal to ${buyer.name} for ${fmt(price)}.`, 'good');
+  endTurn(ctx);
+  return true;
+}
+
+function askLoan(ctx, p, a) {
+  const { s } = ctx;
+  const pend = s.pending;
+  if (p.track !== 'rat' || !['roll', 'deal'].includes(pend.kind)) return false;
+  const to = byId(s, a.to);
+  const amount = steps(a.amount, LOAN_STEP, PLAYER_LOAN_MAX);
+  if (!to || !rivals(s, p).includes(to) || amount <= 0 || to.cash < amount) return false;
+  if (!PLAYER_LOAN_RATES.includes(a.rate)) return false;
+  const asked = pend.loanAsked || [];
+  if (asked.includes(to.id)) return false;
+  s.pending = { kind: 'loanask', pid: to.id, borrower: p.id, amount, rate: a.rate, resume: { ...pend, loanAsked: [...asked, to.id] } };
+  log(ctx, p, `Asked ${to.name} for a ${fmt(amount)} loan at ${Math.round(a.rate * 100)}%/mo.`);
+  toast(ctx, `${p.name} asks ${to.name} for a loan`, 'info', to.id);
+  return true;
+}
+
+function lend(ctx, lender, borrower, amount, rate) {
+  const { s } = ctx;
+  const l = makeLiability(s, `Loan from ${lender.name}`, amount, { rate }, 'player');
+  l.lenderId = lender.id;
+  borrower.liabilities.push(l);
+  lender.assets.push({ id: uid(s, 'A'), kind: 'iou', name: `Loan to ${borrower.name}`, emoji: '🤝', amount, rate, cf: l.payment, borrowerId: borrower.id, liabId: l.id, down: amount, mortgage: 0 });
+  lender.cash -= amount;
+  borrower.cash += amount;
+  ctx.fx.push({ type: 'cash', pid: lender.id, amount: -amount, label: `Lent to ${borrower.name}` });
+  ctx.fx.push({ type: 'cash', pid: borrower.id, amount, label: `Loan from ${lender.name}` });
+  log(ctx, lender, `Lent ${fmt(amount)} to ${borrower.name} at ${Math.round(rate * 100)}%/mo (+${fmt(l.payment)}/mo).`, 'good');
+}
+
+function syncIou(s, l) {
+  const lender = byId(s, l.lenderId);
+  const iou = lender?.assets.find(x => x.liabId === l.id);
+  if (!iou) return;
+  iou.amount = l.balance;
+  iou.cf = l.payment;
+  if (l.balance <= 0) lender.assets = lender.assets.filter(x => x !== iou);
+}
+
+function payLender(ctx, l, pay) {
+  const lender = byId(ctx.s, l.lenderId);
+  if (lender) {
+    lender.cash += pay;
+    ctx.fx.push({ type: 'cash', pid: lender.id, amount: pay, label: 'Loan repaid' });
+  }
+  syncIou(ctx.s, l);
+}
+
+function respond(ctx, actor, a) {
+  const { s } = ctx;
+  const pend = s.pending;
+  if (!actor) return false;
+  if (pend.kind === 'loanask') {
+    const borrower = byId(s, pend.borrower);
+    if (a.type === 'LOAN_YES') {
+      if (actor.cash < pend.amount) return false;
+      lend(ctx, actor, borrower, pend.amount, pend.rate);
+      toast(ctx, `${actor.name} lent ${borrower.name} ${fmt(pend.amount)}`, 'good');
+    } else if (a.type === 'LOAN_NO') {
+      log(ctx, actor, `Turned down ${borrower.name}'s loan request.`);
+      toast(ctx, `${actor.name} said no to the loan`, 'bad', borrower.id);
+    } else {
+      return false;
+    }
+    s.pending = pend.resume;
+    return true;
+  }
+  // pitch: first the buyer answers; after a counter, the seller does.
+  if (a.type === 'PITCH_ACCEPT') return closePitch(ctx, pend, pend.countered ? pend.counter : pend.price, pend.countered ? pend.borrow : a.borrow);
+  if (a.type === 'PITCH_DECLINE') {
+    log(ctx, actor, pend.countered ? 'Turned down the counteroffer.' : `Passed on ${byId(s, pend.seller).name}'s deal.`);
+    toast(ctx, `${actor.name} said no`, 'bad');
+    backToDeal(s, pend);
+    return true;
+  }
+  if (a.type === 'PITCH_COUNTER' && !pend.countered) {
+    const counter = steps(a.price, PITCH_STEP, PITCH_MAX);
+    if (bankGap(actor, dealDown(actor, getCard(pend.cardId), null), counter) === null) return false;
+    s.pending = { ...pend, pid: pend.seller, countered: true, counter, borrow: !!a.borrow };
+    log(ctx, actor, `Countered with ${fmt(counter)}.`);
+    toast(ctx, `${actor.name} counters: ${fmt(counter)}`, 'info', pend.seller);
+    return true;
+  }
+  return false;
+}
+
+// Pay a fixer to make an expense card disappear. Caught = pay it anyway, plus a fine.
+function payFixer(ctx, p, card) {
+  const { s } = ctx;
+  const bill = cardBill(p, card);
+  const fee = fixerFee(bill);
+  const roll = d6(s);
+  ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
+  cash(ctx, p, -fee, 'Fixer');
+  if (roll <= FIXER_CAUGHT_MAX) {
+    const fine = Math.round(bill * (1 + FIXER_FINE_MULT));
+    cash(ctx, p, -fine, 'Caught');
+    p.credit = clampCredit(p.credit - FIXER_CREDIT_HIT);
+    log(ctx, p, `Fixer got caught on ${card.name}. Paid ${fmt(fee + fine)} in total.`, 'bad');
+    settle(ctx, p);
+    info(ctx, p, '🚨', `Rolled ${roll}. Caught!`, `You paid the fixer ${fmt(fee)}, the bill, and a fine: ${fmt(fine)} more. Credit score −${FIXER_CREDIT_HIT}.`, 'bad');
+    return;
+  }
+  log(ctx, p, `Paid a fixer ${fmt(fee)} to skip ${card.name}.`, 'warn');
+  settle(ctx, p);
+  info(ctx, p, '🤫', `Rolled ${roll}. It worked`, `The fixer made ${card.name} go away for ${fmt(fee)}. Next time you might not be so lucky.`, 'good');
+}
+
+// Pay a fixer to hold a rival's permit: their next property or business costs extra.
+function holdPermit(ctx, p, a) {
+  const { s } = ctx;
+  const target = byId(s, a.to);
+  if (s.pending.kind !== 'roll' || p.track !== 'rat' || p.fixerTurn === s.turn) return false;
+  if (!target || !rivals(s, p).includes(target) || target.permitHold || p.cash < PERMIT_HOLD_COST) return false;
+  p.fixerTurn = s.turn;
+  const roll = d6(s);
+  ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
+  cash(ctx, p, -PERMIT_HOLD_COST, 'Fixer');
+  if (roll <= FIXER_CAUGHT_MAX) {
+    cash(ctx, p, -PERMIT_CAUGHT_FINE, 'Caught');
+    p.credit = clampCredit(p.credit - FIXER_CREDIT_HIT);
+    log(ctx, p, `Tried to hold ${target.name}'s permit and got caught. Fine ${fmt(PERMIT_CAUGHT_FINE)}.`, 'bad');
+    toast(ctx, `${p.name} got caught bribing! −${fmt(PERMIT_HOLD_COST + PERMIT_CAUGHT_FINE)}`, 'bad');
+    settle(ctx, p);
+    return true;
+  }
+  target.permitHold = p.id;
+  log(ctx, p, `Paid a fixer to hold ${target.name}'s permit.`, 'warn');
+  log(ctx, target, `Permit held by a fixer. Next property or business costs ${fmt(PERMIT_HOLD_FEE)} more.`, 'bad');
+  toast(ctx, `${target.name}'s permit is on hold`, 'bad', target.id);
+  return true;
+}
+
 // ─── step ──────────────────────────────────────────────────────────────────
 
 const ANYTIME = new Set(['BORROW', 'REPAY', 'INSURANCE', 'SELL_ASSET', 'USE_CARD']);
@@ -1131,7 +1352,11 @@ function reduce(ctx, a) {
     return anytime(ctx, who, a);
   }
 
-  if (!pend || (pend.pid && pend.pid !== p.id)) return false;
+  if (!pend) return false;
+  if (RESPONSE_KINDS.has(pend.kind)) return respond(ctx, byId(s, pend.pid), a);
+  if (pend.pid && pend.pid !== p.id) return false;
+  if (a.type === 'LOAN_ASK') return askLoan(ctx, p, a);
+  if (a.type === 'PERMIT_HOLD') return holdPermit(ctx, p, a);
 
   switch (pend.kind) {
     case 'roll':
@@ -1171,6 +1396,7 @@ function reduce(ctx, a) {
       return true;
     }
     case 'deal':
+      if (a.type === 'PITCH') return pitchDeal(ctx, p, a);
       if (a.type === 'BUY') {
         if (!buyDeal(ctx, a)) return false;
         endTurn(ctx);

@@ -3,17 +3,19 @@ import { useGame } from '../store/gameStore.js';
 import { useUi } from '../store/uiStore.js';
 import {
   getCard, dealDown, dealCards, stockPrice, skillById, skillCost, offerMatches, offerPrice,
-  dreamById, fmt,
+  dreamById, fmt, actorOf, rivals,
 } from '../engine/engine.js';
+import { useControls } from '../store/netStore.js';
+import { SellToPlayer, AskLoan, RivalMoves, PitchCard, LoanAskCard } from './PlayerDeals.jsx';
 import { stocks, ftDeals, ftDisasters, lessons } from '../data/cards.js';
 import { spaceTypes } from '../data/board.js';
-import { LOAN_STEP } from '../data/constants.js';
+import { LOAN_STEP, PERMIT_HOLD_FEE } from '../data/constants.js';
 import {
   maxBankLoan, passiveIncome, totalExpenses, assetCashflow, freedomRatio, bankRate,
 } from '../engine/finance.js';
 import { spaceTone } from '../lib/theme.js';
 import { pct } from '../lib/format.js';
-import { Btn, Row, LIST } from './Ui.jsx';
+import { Btn, Row, LIST, Stepper } from './Ui.jsx';
 
 const HIDDEN = new Set(['roll', 'move', 'escape', 'win']);
 const TAG_TEXT = {
@@ -58,7 +60,7 @@ function freedomAfter(p, addCf) {
   return exp > 0 ? Math.max(0, (passiveIncome(p) + addCf) / exp) : 1;
 }
 
-function AssetDeal({ p, card, act, locked }) {
+function AssetDeal({ game, pend, p, card, act, locked }) {
   const eligible = dealCards(p).filter(id => {
     const c = getCard(id);
     return (c.effect === 'down_minus_30' && card.kind === 'realestate') || (c.effect === 'biz_half' && card.kind === 'business');
@@ -73,7 +75,8 @@ function AssetDeal({ p, card, act, locked }) {
   return (
     <div className="flex flex-col gap-4">
       <div className={LIST}>
-        <Row label="You pay now" sub={card.cost > card.down ? `Price ${fmt(card.cost)}, the rest is a mortgage` : null} value={fmt(down)} tone={down < card.down ? 'text-green-700' : ''} />
+        <Row label="You pay now" sub={card.cost > card.down ? `Price ${fmt(card.cost)}, the rest is a mortgage` : null} value={fmt(down)} tone={down < card.down ? 'text-green-700' : p.permitHold ? 'text-red-600' : ''} />
+        {p.permitHold && <Row label="Includes permit fixing" sub="A rival's fixer is holding your permit" value={`+${fmt(PERMIT_HOLD_FEE)}`} tone="text-red-600" />}
         <Row label="Cashflow each month" sub="After the mortgage payment" value={`${cf >= 0 ? '+' : ''}${fmt(cf)}`} tone={cf > 0 ? 'text-green-700' : 'text-red-600'} />
         <Row label="Return per year" value={pct(roi)} tone={roi >= 0.3 ? 'text-green-700' : roi > 0 ? 'text-amber-700' : 'text-red-600'} />
         <Row label="Freedom meter" value={`${pct(freedomRatio(p))} → ${pct(freedomAfter(p, cf))}`} />
@@ -105,21 +108,8 @@ function AssetDeal({ p, card, act, locked }) {
         )}
         <Btn variant="ghost" disabled={locked} onClick={() => act({ type: 'PASS' })}>Pass</Btn>
       </div>
-    </div>
-  );
-}
-
-function Stepper({ value, set, step, max, format }) {
-  const clamp = v => Math.max(0, Math.min(max, v));
-  const b = 'press pop-shadow-sm grid size-11 place-items-center rounded-xl border-[2.5px] border-ink bg-paper font-display text-lg';
-  return (
-    <div className="flex items-center gap-1.5">
-      <button type="button" onClick={() => set(clamp(value - step * 10))} className={b}>−−</button>
-      <button type="button" onClick={() => set(clamp(value - step))} className={b}>−</button>
-      <div className="min-w-0 flex-1 text-center font-display text-xl">{format(value)}</div>
-      <button type="button" onClick={() => set(clamp(value + step))} className={b}>+</button>
-      <button type="button" onClick={() => set(clamp(value + step * 10))} className={b}>++</button>
-      <button type="button" onClick={() => set(max)} className={`${b} w-auto px-2 text-sm`}>MAX</button>
+      {need > 0 && <AskLoan game={game} p={p} act={act} locked={locked} need={need} />}
+      <SellToPlayer game={game} p={p} card={card} pend={pend} act={act} locked={locked} />
     </div>
   );
 }
@@ -192,7 +182,7 @@ function dealHeader(card, size) {
   return { art: card.emoji, title: card.name, text: `${kind}${card.units > 1 ? ` · ${card.units} units` : ''}${size === 'big' ? ' · big deal' : ''}` };
 }
 
-function OfferBody({ game, card, act, locked }) {
+function OfferBody({ game, card, act, locked, canAct }) {
   const rows = [];
   for (const o of game.players) {
     if (o.isBot || o.track !== 'rat') continue;
@@ -216,7 +206,7 @@ function OfferBody({ game, card, act, locked }) {
               You get {fmt(proceeds)} ({proceeds - a.down >= 0 ? 'profit' : 'loss'} {fmt(Math.abs(proceeds - a.down))}), lose {fmt(a.cf)}/mo
             </div>
           </div>
-          <Btn size="sm" variant="good" disabled={locked} onClick={() => act({ type: 'SELL_OFFER', pid2: o.id, assetId: a.id })}>Sell</Btn>
+          <Btn size="sm" variant="good" disabled={!canAct(o.id)} onClick={() => act({ type: 'SELL_OFFER', pid2: o.id, assetId: a.id })}>Sell</Btn>
         </div>
       ))}
       </div>
@@ -226,8 +216,12 @@ function OfferBody({ game, card, act, locked }) {
   );
 }
 
-function SheetContent({ game, p, pend, act, locked }) {
+function SheetContent({ game, p, pend, act, locked, canAct }) {
   switch (pend.kind) {
+    case 'pitch':
+      return <PitchCard key={`${pend.cardId}-${pend.countered}`} game={game} pend={pend} act={act} locked={locked} Header={Header} />;
+    case 'loanask':
+      return <LoanAskCard game={game} pend={pend} act={act} locked={locked} Header={Header} />;
     case 'oport': {
       const loan = maxBankLoan(p);
       const choice = 'press pop-shadow flex flex-col items-center gap-1 rounded-2xl border-[3px] border-ink p-4 disabled:opacity-40';
@@ -275,7 +269,7 @@ function SheetContent({ game, p, pend, act, locked }) {
           <Header art={h.art} tone="green" tag={pend.size === 'big' ? 'Big deal' : 'Small deal'} title={h.title} text={h.text} />
           {card.kind === 'stock' && <StockDeal key={pend.cardId} game={game} p={p} card={card} act={act} locked={locked} />}
           {card.kind === 'mp2' && <Mp2Deal key={pend.cardId} p={p} card={card} act={act} locked={locked} />}
-          {card.kind !== 'stock' && card.kind !== 'mp2' && <AssetDeal key={pend.cardId} p={p} card={card} act={act} locked={locked} />}
+          {card.kind !== 'stock' && card.kind !== 'mp2' && <AssetDeal key={pend.cardId} game={game} pend={pend} p={p} card={card} act={act} locked={locked} />}
         </div>
       );
     }
@@ -296,7 +290,7 @@ function SheetContent({ game, p, pend, act, locked }) {
       return (
         <div className="flex flex-col gap-4">
           <Header art={card.emoji} tone="violet" tag="Market" title={card.name} text={card.text} />
-          {pend.kind === 'offer' ? <OfferBody game={game} card={card} act={act} locked={locked} /> : <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>}
+          {pend.kind === 'offer' ? <OfferBody game={game} card={card} act={act} locked={locked} canAct={canAct} /> : <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>}
         </div>
       );
     }
@@ -399,6 +393,8 @@ function peekInfo(pend) {
       return { art: c.emoji, title: c.name };
     }
     case 'aral': return { art: '🎓', title: 'At a seminar' };
+    case 'pitch': return { art: getCard(pend.cardId).emoji, title: pend.countered ? `Counteroffer: ${fmt(pend.counter)}` : `Deal offered for ${fmt(pend.price)}` };
+    case 'loanask': return { art: '🤝', title: `Loan request: ${fmt(pend.amount)}` };
     case 'tulong': return { art: '🤝', title: 'Charity' };
     case 'info': return { art: pend.emoji, title: pend.title };
     case 'ftdeal':
@@ -409,8 +405,8 @@ function peekInfo(pend) {
   }
 }
 
-// Bot turns show a slim card so you can follow what they're doing.
-function BotPeek({ p, pend }) {
+// When someone else is deciding (a bot, or another phone online), show a slim card so you can follow.
+function Peek({ p, pend }) {
   const { art, title } = peekInfo(pend);
   return (
     <div className="flex animate-deal-in items-center gap-3 rounded-2xl border-[3px] border-ink bg-paper p-2.5 pop-shadow">
@@ -429,10 +425,13 @@ export default function TurnCard() {
   const game = useGame(s => s.shown ?? s.game);
   const dispatch = useGame(s => s.dispatch);
   const busy = useUi(s => s.busyCount > 0);
+  const canAct = useControls(game);
   const ref = useRef(null);
   const pend = game?.pending;
+  const current = game?.players[game.current];
+  const beforeRoll = !!pend && pend.kind === 'roll' && !busy && canAct(current.id) && game.players.length > 1;
   const show = !!game && !!pend && !HIDDEN.has(pend.kind) && !busy;
-  const key = show ? `${game.turn}-${pend.kind}-${pend.cardId ?? pend.pos ?? ''}` : null;
+  const key = show ? `${game.turn}-${pend.kind}-${pend.cardId ?? pend.pos ?? ''}-${pend.pid ?? ''}-${pend.countered ?? ''}` : null;
 
   useEffect(() => {
     if (!key || !ref.current) return;
@@ -442,20 +441,23 @@ export default function TurnCard() {
     }
   }, [key]);
 
+  if (beforeRoll && rivals(game, current).length) return <RivalMoves key={game.turn} game={game} p={current} act={dispatch} />;
   if (!show) return null;
-  const p = game.players[game.current];
-  const humanOffer = pend.kind === 'offer' && pend.anyHuman;
-  const locked = p.isBot && !humanOffer;
+  const actor = actorOf(game);
+  const humanOffer = pend.kind === 'offer' && game.players.some(o => canAct(o.id) && o.track === 'rat' && o.assets.some(a => offerMatches(getCard(pend.cardId), a)));
+  const locked = !canAct(actor.id);
+  const handOff = actor.id !== current.id && !actor.isBot && !current.isBot && canAct(actor.id) && canAct(current.id);
   return (
     <div ref={ref} className="scroll-mt-3 scroll-mb-24 lg:scroll-mb-4">
-      {locked ? (
-        <BotPeek p={p} pend={pend} />
+      {locked && !humanOffer ? (
+        <Peek p={actor} pend={pend} />
       ) : (
         <div key={key} className="animate-deal-in rounded-[26px] border-[3px] border-ink bg-paper p-4 pop-shadow sm:p-5">
-          {game.players.length > 1 && (
-            <div className="mb-2 text-sm font-extrabold text-ink-soft">{p.name === 'You' ? 'Your card' : `${p.name}'s card`}</div>
+          {handOff && <div className="mb-3 rounded-xl bg-ocean px-3 py-2 text-center font-display text-lg text-white">Hand the phone to {actor.name}</div>}
+          {game.players.length > 1 && !handOff && (
+            <div className="mb-2 text-sm font-extrabold text-ink-soft">{actor.name === 'You' ? 'Your card' : `${actor.name}'s card`}</div>
           )}
-          <SheetContent game={game} p={p} pend={pend} act={dispatch} locked={locked} />
+          <SheetContent game={game} p={current} pend={pend} act={dispatch} locked={locked} canAct={canAct} />
         </div>
       )}
     </div>
@@ -467,8 +469,9 @@ export function CardWaiting() {
   const game = useGame(s => s.shown ?? s.game);
   const busy = useUi(s => s.busyCount > 0);
   const setTab = useUi(s => s.setTab);
+  const canAct = useControls(game);
   const pend = game?.pending;
-  if (!pend || HIDDEN.has(pend.kind) || busy || game.players[game.current].isBot) return null;
+  if (!pend || HIDDEN.has(pend.kind) || busy || !canAct(actorOf(game).id)) return null;
   return (
     <Btn variant="primary" className="w-full" onClick={() => setTab('board')}>Back to your card</Btn>
   );

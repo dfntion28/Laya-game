@@ -29,6 +29,7 @@ export function assetCashflow(p, a) {
     case 'mp2':
       return Math.round(a.amount * MP2_RATE);
     case 'ip':
+    case 'iou':
       return a.cf;
     default:
       return 0;
@@ -115,6 +116,7 @@ export function assetValue(p, a, prices) {
     case 'stock':
       return a.shares * (prices[a.symbol] ?? 0);
     case 'mp2':
+    case 'iou':
       return a.amount;
     default:
       return 0;

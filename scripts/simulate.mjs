@@ -20,6 +20,9 @@ function checkNumbers(obj, path = 's') {
 const pct = (arr, q) => arr.length ? [...arr].sort((a, b) => a - b)[Math.floor((arr.length - 1) * q)] : '-';
 let seed = 1;
 const rows = [];
+// Player-to-player actions that went through, to check the interaction mechanics get used.
+const tally = {};
+const TRACK = new Set(['PITCH', 'PITCH_ACCEPT', 'PITCH_COUNTER', 'PITCH_DECLINE', 'LOAN_ASK', 'LOAN_YES', 'LOAN_NO', 'PERMIT_HOLD']);
 
 function play(cfg) {
   let s = createGame({ players: cfg, seed: seed++ });
@@ -28,10 +31,13 @@ function play(cfg) {
     const a = botAction(s);
     let r = step(s, a);
     if (r.rejected) {
-      const fallback = s.pending.kind === 'roll' ? { type: 'ROLL' } : s.pending.kind === 'deal' ? { type: 'PASS' } : { type: 'DONE' };
+      const k = s.pending.kind;
+      const fallback = k === 'roll' ? { type: 'ROLL' } : k === 'deal' ? { type: 'PASS' } : k === 'pitch' ? { type: 'PITCH_DECLINE' } : k === 'loanask' ? { type: 'LOAN_NO' } : { type: 'DONE' };
       r = step(s, fallback);
       if (r.rejected) throw new Error(`Stuck on ${JSON.stringify(s.pending)} action ${JSON.stringify(a)}`);
     }
+    const key = a?.key === 'fixer' ? 'FIXER' : a?.type;
+    if (!r.rejected && (TRACK.has(key) || key === 'FIXER')) tally[key] = (tally[key] || 0) + 1;
     s = r.state;
     actions++;
     if (actions % 50 === 0) checkNumbers(s);
@@ -52,6 +58,7 @@ if (VERSUS) {
     wins[w ? w.botLevel : 'none']++;
   }
   console.log('Wins by bot level over', N, 'games:', wins);
+  console.log('Player-to-player actions:', tally);
   process.exit(0);
 }
 
@@ -82,3 +89,4 @@ for (const prof of professions) {
   });
 }
 console.table(rows);
+console.log('Player-to-player actions:', tally);
