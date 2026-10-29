@@ -16,7 +16,7 @@ export default function FinancePanel({ p, prices }) {
 
   const heading = (
     <div className="flex items-center gap-3 pb-3">
-      <Pawn color={p.color} className="size-11 shrink-0" />
+      <Pawn color={p.color} job={p.professionId} className="size-11 shrink-0" />
       <div className="min-w-0">
         <div className="font-display text-2xl leading-tight">{p.name}</div>
         <div className="text-sm font-bold text-ink-soft">{prof.name}. Dream: {dream.name}.</div>

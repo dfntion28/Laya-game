@@ -12,8 +12,9 @@ Read GAMEPLAN.md before writing code.
 - `src/engine/` — pure rules. `step(state, action) -> { state, fx }`. No React, no DOM, no Math.random (seeded RNG in state).
   `bot.js` = AI player; `finance.js` = derived numbers shared with UI.
 - `src/store/` — `gameStore.js` (Zustand, persisted to localStorage), `uiStore.js` (animation/tab/toast UI state), `fxRunner.js` (turns engine fx into timed animations/sounds).
+  `gameStore.shown` is what the screen renders: it lags behind `game` until the fx animations finish, so results never show before the pawn lands. Display components read `s.shown ?? s.game`; only the bot driver reads `game`.
 - `src/components/` — one component per file, PascalCase.jsx.
-- `src/lib/` — formatting, theme class maps, sound effects, music (WebAudio), safe storage.
+- `src/lib/` — formatting, theme class maps, sound effects and music (one shared WebAudio context in `audio.js`; start it from click/touchend, not pointerdown, or iPhones stay silent), safe storage.
 - `scripts/simulate.mjs` — headless bot games for balance and crash checks. `node scripts/simulate.mjs versus 270` checks that Hard bots beat Normal beat Easy.
 
 ## Build rules

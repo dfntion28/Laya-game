@@ -1,5 +1,7 @@
 // Bouncy kitchen-party background loop, synthesized live with WebAudio (no audio files).
 // I-vi-IV-V in C with a marimba-ish lead, plucked bass, shaker and a soft kick.
+import { audioContext } from './audio.js';
+
 let ctx = null;
 let master = null;
 let timer = null;
@@ -79,13 +81,13 @@ function schedule(s, t) {
   const sixteenth = 60 / tempo / 4;
   const note = LEAD[bar][i];
   if (note) {
-    voice('sine', n(note), t, 0.35, 0.16);
-    voice('sine', n(note + 12), t, 0.12, 0.04);
+    voice('triangle', n(note), t, 0.32, 0.17);
+    voice('sine', n(note + 12), t, 0.14, 0.05);
   }
   const chord = CHORDS[bar];
-  if (i % 8 === 0) voice('triangle', n(chord[0] - 12), t, sixteenth * 3, 0.22, 900);
-  if (i % 8 === 6) voice('triangle', n(chord[0]), t, sixteenth * 1.5, 0.14, 900);
-  if (i % 4 === 2) chord.forEach(m => voice('triangle', n(m + 12), t, 0.09, 0.025, 2400));
+  if (i % 8 === 0) voice('triangle', n(chord[0]), t, sixteenth * 3, 0.24, 1400);
+  if (i % 8 === 6) voice('triangle', n(chord[0] + 12), t, sixteenth * 1.5, 0.14, 1400);
+  if (i % 4 === 2) chord.forEach(m => voice('square', n(m + 12), t, 0.08, 0.018, 2200));
   if (i % 8 === 0) kick(t);
   if (i % 8 === 4) hit(t, 0.12, 0.12, 1800, 'bandpass');
   if (i % 2 === 1) hit(t, 0.04, 0.05, 7000);
@@ -105,17 +107,16 @@ function tick() {
 export function startMusic() {
   try {
     if (!ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      ctx = new AC();
+      ctx = audioContext();
+      if (!ctx) return;
       master = ctx.createGain();
-      master.gain.value = 0.22;
+      master.gain.value = 0.4;
       master.connect(ctx.destination);
       noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const d = noise.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    audioContext();
     if (timer) return;
     nextTime = ctx.currentTime + 0.05;
     timer = setInterval(tick, 25);

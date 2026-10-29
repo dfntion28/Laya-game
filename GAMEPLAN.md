@@ -8,7 +8,8 @@ Source of truth for numbers is `src/data/*`. This document explains the *why*.
 2. **A decision every turn.** Diskarte (move ±1 / reroll with landing preview), buy/pass/borrow, cash vs installment, sell now vs wait.
 3. **Teach by consequence, not text.** Every card shows its effect on the Freedom Meter; a one-line "Aral" (lesson) sits under it.
 4. **Variability.** 9 professions (draft 3), 8 dreams (draft 3), ~140 cards, market cycles, Philippine calendar seasons, 11 skills, bot opponents with 3 levels and 5 play styles.
-5. **Feel.** Cartoon kitchen-table look (thick outlines, chunky buttons), bouncy motion, a live-synthesized music loop that speeds up on the Fast Track.
+5. **Feel.** Cartoon kitchen-table look (thick outlines, chunky buttons), a character per profession (hard hat, nurse cap, headset...) in the player's color, bouncy motion, a live-synthesized music loop that speeds up on the Fast Track.
+   Only the bottom tab bar is fixed on phones. Header, Freedom meter and cards scroll with the page.
 6. **Language.** English first, with everyday Filipino words where people actually use them.
 
 ## Win flow
@@ -20,9 +21,10 @@ Source of truth for numbers is `src/data/*`. This document explains the *why*.
 On escape: Fast Track cashflow = passive income × 20, paid at every Cashflow Day (corners).
 
 ## Turn
-1. Roll. 2. Optional: spend 1 **Diskarte** to move ±1 or reroll (the buttons show which space each option lands on).
+1. Roll. The die tumbles, then the pawn hops to the rolled space. Nothing (money, card, month) is revealed before it lands.
+2. On landing: "You landed on X". If you have **Diskarte**: Stay here, Back 1, Forward 1, or Reroll from start (1 Diskarte each). The pawn hops again for any change.
 3. Every corner passed = **Payday** (1 month): salary + passive − expenses. Exact landing on Payday = +1 Diskarte.
-4. Resolve the space.
+4. The space's card deals in under the board (beside it on desktop). No pop-up covers the board.
 
 ## Rat Race spaces
 Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market ×3 · Life ×2 · Seminar · Charity · Laid Off · Contacts.

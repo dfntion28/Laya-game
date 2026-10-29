@@ -351,7 +351,18 @@ function doRoll(ctx) {
   const dice = rollDice(ctx, p);
   const total = dice.reduce((a, b) => a + b, 0);
   s.pending = { kind: 'move', pid: p.id, dice, total, used: false };
-  if (p.diskarte <= 0) doMove(ctx, total);
+  if (p.diskarte <= 0) {
+    doMove(ctx, total);
+    return;
+  }
+  // The rules wait for the Diskarte choice, but the UI hops the pawn to the rolled space first.
+  ctx.fx.push({ type: 'preview', pid: p.id, path: movePath(p.position, total), track: p.track });
+}
+
+function movePath(from, steps) {
+  const path = [from];
+  for (let i = 1; i <= steps; i++) path.push((from + i) % BOARD_SIZE);
+  return path;
 }
 
 function doMove(ctx, steps) {
@@ -1142,6 +1153,7 @@ function reduce(ctx, a) {
       }
       if (a.type === 'REROLL') {
         p.diskarte--;
+        ctx.fx.push({ type: 'return', pid: p.id });
         const dice = rollDice(ctx, p);
         doMove(ctx, dice.reduce((x, y) => x + y, 0));
         return true;

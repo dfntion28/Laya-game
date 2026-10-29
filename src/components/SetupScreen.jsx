@@ -37,9 +37,9 @@ function Title({ onStart }) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-7 px-6 py-10 text-center">
       <div className="flex items-end gap-2">
-        <span className="animate-bob"><Pawn color="red" className="size-14" /></span>
-        <span className="animate-bob [animation-delay:0.3s]"><Pawn color="blue" className="size-12" /></span>
-        <span className="animate-bob [animation-delay:0.6s]"><Pawn color="green" className="size-14" /></span>
+        <span className="animate-bob"><Pawn color="red" job="inhinyero" className="size-16" /></span>
+        <span className="animate-bob [animation-delay:0.3s]"><Pawn color="blue" job="nars" className="size-14" /></span>
+        <span className="animate-bob [animation-delay:0.6s]"><Pawn color="green" job="bpo" className="size-16" /></span>
       </div>
       <div className="animate-drop-in">
         <h1 className="font-display text-8xl leading-none tracking-wider text-mustard text-stroke drop-shadow-[0_7px_0_#1f1633]">LAYA</h1>
@@ -98,7 +98,7 @@ function Roster({ slots, setSlots, onNext, onBack }) {
   );
 }
 
-function Draft({ slot, offer, dreamOffer, onReroll, rerolled, onDone }) {
+function Draft({ slot, color, offer, dreamOffer, onReroll, rerolled, onDone }) {
   const [prof, setProf] = useState(null);
   const [dream, setDream] = useState(null);
   return (
@@ -116,7 +116,10 @@ function Draft({ slot, offer, dreamOffer, onReroll, rerolled, onDone }) {
           return (
             <button key={id} type="button" onClick={() => setProf(id)} className={`press rounded-2xl border-[3px] border-ink p-3 text-left pop-shadow transition ${on ? 'bg-mustard' : 'bg-paper'}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-display text-2xl leading-none">{p.emoji} {p.name}</span>
+                <span className="flex items-center gap-2 font-display text-2xl leading-none">
+                  <Pawn color={color} job={p.id} className={`size-12 shrink-0 ${on ? 'animate-bob' : ''}`} />
+                  {p.name}
+                </span>
                 <span className="font-display text-sm">{'★'.repeat(difficulty[p.id])}<span className="opacity-25">{'★'.repeat(3 - difficulty[p.id])}</span></span>
               </div>
               <div className="text-xs font-extrabold text-ink-soft">{p.en}</div>
@@ -199,6 +202,7 @@ export default function SetupScreen() {
   const slot = humans[draftIdx];
   return (
     <Draft
+      color={PLAYER_COLORS[(slot.i ?? draftIdx) % PLAYER_COLORS.length]}
       key={draftIdx}
       slot={slot}
       offer={offer.prof}

@@ -1,7 +1,6 @@
 import { useGame } from '../store/gameStore.js';
 import { useUi } from '../store/uiStore.js';
 import { spaceTypes, ratRace, fastTrack } from '../data/board.js';
-import { MONTHS } from '../data/constants.js';
 import { ftDeals } from '../data/cards.js';
 import { landingPreview, fmt } from '../engine/engine.js';
 import { spaceTone } from '../lib/theme.js';
@@ -11,7 +10,7 @@ import Icon from './Icon.jsx';
 function DiskartePips({ p }) {
   return (
     <span className="flex items-center gap-1" title="Diskarte: spend one to move ±1 or reroll">
-      <span className="text-[11px] font-extrabold uppercase tracking-wide text-ink-soft">Diskarte</span>
+      <span className="text-[11px] font-extrabold uppercase tracking-wide text-ink-soft">Diskarte left</span>
       {Array.from({ length: Math.max(p.diskarteMax, p.diskarte) }, (_, i) => (
         <span key={i} className={`size-2.5 rounded-full border-2 border-ink ${i < p.diskarte ? 'bg-mustard' : 'bg-white'}`} />
       ))}
@@ -19,15 +18,15 @@ function DiskartePips({ p }) {
   );
 }
 
-function MoveChoice({ label, space, onClick, main }) {
+function MoveChoice({ label, space, onClick }) {
   const meta = spaceTypes[space];
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`press pop-shadow-sm flex min-h-12 flex-1 flex-col items-center justify-center rounded-xl border-[2.5px] border-ink px-1 py-1 leading-none ${main ? 'bg-mustard' : 'bg-paper'}`}
+      className="press pop-shadow-sm flex min-h-11 flex-1 flex-col items-center justify-center rounded-xl border-[2.5px] border-ink bg-paper px-1 py-1 leading-none"
     >
-      <span className="font-display text-sm sm:text-lg">{label}</span>
+      <span className="font-display text-xs sm:text-base">{label}</span>
       <span className="mt-0.5 flex items-center gap-0.5 text-[9px] font-extrabold uppercase sm:text-[11px]">
         <span className={`grid size-4 place-items-center rounded border border-ink sm:size-5 ${spaceTone[meta.tone]}`}><Icon name={meta.icon} className="size-3 sm:size-4" /></span>
         {meta.label}
@@ -36,8 +35,23 @@ function MoveChoice({ label, space, onClick, main }) {
   );
 }
 
+// Shown once the pawn has landed on the rolled space.
+function Landed({ space, children }) {
+  const meta = spaceTypes[space];
+  return (
+    <div className="flex animate-land-in flex-col items-center gap-0.5">
+      <span className="text-[10px] font-extrabold uppercase tracking-widest text-ink-soft sm:text-xs">You landed on</span>
+      <span className="flex items-center gap-1.5">
+        <span className={`grid size-8 place-items-center rounded-lg border-[2.5px] border-ink sm:size-10 ${spaceTone[meta.tone]}`}><Icon name={meta.icon} className="size-6 sm:size-8" /></span>
+        <span className="font-display text-2xl leading-none sm:text-3xl">{meta.label}</span>
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function InspectBubble({ index, track, onClose }) {
-  const game = useGame(s => s.game);
+  const game = useGame(s => s.shown ?? s.game);
   const type = track === 'fast' ? fastTrack[index] : ratRace[index];
   const meta = spaceTypes[type];
   const deal = track === 'fast' ? ftDeals[index] : null;
@@ -58,57 +72,62 @@ function InspectBubble({ index, track, onClose }) {
 }
 
 export default function BoardCenter({ inspect, track, onCloseInspect }) {
-  const game = useGame(s => s.game);
+  const game = useGame(s => s.shown ?? s.game);
   const dispatch = useGame(s => s.dispatch);
   const dice = useUi(s => s.dice);
   const busy = useUi(s => s.busyCount > 0);
   const p = game.players[game.current];
   const pend = game.pending;
   const human = !p.isBot;
+  const deciding = pend?.kind === 'move' && !busy;
+  const go = steps => landingPreview(game, p, steps);
 
   return (
-    <div className="relative flex size-full flex-col items-center justify-between p-2 sm:p-4">
-      <div className="text-center leading-tight">
-        {game.players.length > 1 && (
-          <div className="font-display text-lg sm:text-2xl">{p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn' : `${p.name}'s turn`}</div>
-        )}
-        <div className="text-xs font-extrabold text-ink-soft sm:text-sm">
-          {p.track === 'fast' ? 'Fast Track' : `${MONTHS[p.month % 12]}, year ${Math.floor(p.month / 12) + 1}`}
-        </div>
-      </div>
+    <div className="relative flex size-full flex-col items-center justify-center gap-2 p-2 sm:gap-4 sm:p-4">
+      {game.players.length > 1 && (
+        <div className="font-display text-base leading-none sm:text-2xl">{p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn' : `${p.name}'s turn`}</div>
+      )}
 
-      <div className="flex flex-col items-center gap-2">
+      {!deciding && (
         <div className="flex gap-3 sm:gap-4">
           {dice.values.map((v, i) => <Dice key={i} value={v} rollId={dice.rollId} rolling={dice.rolling} size={dice.values.length > 2 ? 'sm' : 'md'} />)}
         </div>
-        <DiskartePips p={p} />
-      </div>
+      )}
 
-      <div className="flex w-full flex-col items-center gap-1">
-        {human && pend?.kind === 'roll' && !busy && (
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ROLL' })}
-            className="press pop-shadow w-full max-w-52 animate-breathe rounded-2xl border-[3px] border-ink bg-mustard py-2 font-display text-3xl tracking-wide text-white text-stroke-sm sm:py-3 sm:text-4xl"
-          >
-            ROLL!
-          </button>
-        )}
-        {human && pend?.kind === 'move' && !busy && (
-          <>
-            <span className="text-[11px] font-extrabold sm:text-xs">Spend 1 Diskarte to change it?</span>
-            <div className="flex w-full gap-1">
-              {pend.total > 1 && <MoveChoice label="−1" space={landingPreview(game, p, pend.total - 1)} onClick={() => dispatch({ type: 'ADJUST', delta: -1 })} />}
-              <MoveChoice main label={`GO ${pend.total}`} space={landingPreview(game, p, pend.total)} onClick={() => dispatch({ type: 'GO' })} />
-              <MoveChoice label="+1" space={landingPreview(game, p, pend.total + 1)} onClick={() => dispatch({ type: 'ADJUST', delta: 1 })} />
+      {human && pend?.kind === 'roll' && !busy && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'ROLL' })}
+          className="press pop-shadow w-full max-w-48 animate-breathe rounded-2xl border-[3px] border-ink bg-mustard py-2 font-display text-3xl tracking-wide text-white text-stroke-sm sm:py-3 sm:text-4xl"
+        >
+          ROLL!
+        </button>
+      )}
+
+      {deciding && (
+        <Landed space={go(pend.total)}>
+          {human ? (
+            <div className="mt-1.5 flex w-full max-w-72 flex-col items-center gap-1.5">
+              <button type="button" onClick={() => dispatch({ type: 'GO' })} className="press pop-shadow w-full rounded-xl border-[3px] border-ink bg-mustard py-1.5 font-display text-xl sm:py-2 sm:text-2xl">
+                Stay here
+              </button>
+              <span className="flex items-center gap-1.5 pt-0.5"><DiskartePips p={p} /></span>
+              <div className="flex w-full gap-1">
+                {pend.total > 1 && <MoveChoice label="Back 1" space={go(pend.total - 1)} onClick={() => dispatch({ type: 'ADJUST', delta: -1 })} />}
+                <MoveChoice label="Forward 1" space={go(pend.total + 1)} onClick={() => dispatch({ type: 'ADJUST', delta: 1 })} />
+              </div>
+              <button type="button" onClick={() => dispatch({ type: 'REROLL' })} className="press pop-shadow-sm rounded-lg border-2 border-ink bg-paper px-3 py-0.5 font-display text-xs sm:text-sm">
+                Reroll from start
+              </button>
             </div>
-            <button type="button" onClick={() => dispatch({ type: 'REROLL' })} className="press pop-shadow-sm rounded-lg border-2 border-ink bg-paper px-3 py-1 font-display text-xs sm:text-sm">
-              Reroll
-            </button>
-          </>
-        )}
-        {p.isBot && <span className="animate-pulse font-display text-sm">thinking...</span>}
-      </div>
+          ) : (
+            <span className="animate-pulse font-display text-sm">thinking...</span>
+          )}
+        </Landed>
+      )}
+
+      {!deciding && p.diskarte > 0 && pend?.kind === 'roll' && <DiskartePips p={p} />}
+      {p.isBot && !deciding && pend?.kind !== 'roll' && !busy && <span className="animate-pulse font-display text-sm">thinking...</span>}
 
       {inspect !== null && inspect !== undefined && <InspectBubble index={inspect} track={track} onClose={onCloseInspect} />}
     </div>

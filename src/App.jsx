@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { Sky } from './components/Effects.jsx';
 
 // Browsers only allow audio after a tap, so music starts on the first one.
+// `click`/`touchend` count as a tap on iPhone; `pointerdown` from a finger does not.
 function useMusic() {
   const music = useUi(s => s.music);
   const fast = useGame(s => !!s.game?.players.some(p => !p.isBot && p.track === 'fast'));
@@ -17,9 +18,17 @@ function useMusic() {
       stopMusic();
       return undefined;
     }
-    const start = () => startMusic();
-    window.addEventListener('pointerdown', start, { once: true });
-    return () => window.removeEventListener('pointerdown', start);
+    const start = () => {
+      startMusic();
+      window.removeEventListener('click', start);
+      window.removeEventListener('touchend', start);
+    };
+    window.addEventListener('click', start);
+    window.addEventListener('touchend', start);
+    return () => {
+      window.removeEventListener('click', start);
+      window.removeEventListener('touchend', start);
+    };
   }, [music]);
 }
 

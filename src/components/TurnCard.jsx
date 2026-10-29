@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../store/gameStore.js';
 import { useUi } from '../store/uiStore.js';
 import {
@@ -409,11 +409,11 @@ function peekInfo(pend) {
   }
 }
 
-// Bot turns show a small card that doesn't block the screen.
+// Bot turns show a slim card so you can follow what they're doing.
 function BotPeek({ p, pend }) {
   const { art, title } = peekInfo(pend);
   return (
-    <div className="pointer-events-none fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-sm animate-toast items-center gap-3 rounded-2xl border-[3px] border-ink bg-paper p-2.5 pop-shadow lg:bottom-6">
+    <div className="flex animate-deal-in items-center gap-3 rounded-2xl border-[3px] border-ink bg-paper p-2.5 pop-shadow">
       <span className="grid size-12 shrink-0 place-items-center rounded-xl border-[2.5px] border-ink bg-mustard text-2xl">{art}</span>
       <span className="min-w-0">
         <span className="block truncate font-display text-lg leading-tight">{title}</span>
@@ -423,36 +423,53 @@ function BotPeek({ p, pend }) {
   );
 }
 
-export default function ActionSheet() {
-  const game = useGame(s => s.game);
+// The card for the space you landed on. It sits in the page under the board (or beside it on wide
+// screens) instead of covering the game, and deals in once the pawn has landed.
+export default function TurnCard() {
+  const game = useGame(s => s.shown ?? s.game);
   const dispatch = useGame(s => s.dispatch);
   const busy = useUi(s => s.busyCount > 0);
-  const sheetMin = useUi(s => s.sheetMin);
-  const setSheetMin = useUi(s => s.setSheetMin);
+  const ref = useRef(null);
   const pend = game?.pending;
-  if (!game || !pend || HIDDEN.has(pend.kind) || busy) return null;
+  const show = !!game && !!pend && !HIDDEN.has(pend.kind) && !busy;
+  const key = show ? `${game.turn}-${pend.kind}-${pend.cardId ?? pend.pos ?? ''}` : null;
+
+  useEffect(() => {
+    if (!key || !ref.current) return;
+    const box = ref.current.getBoundingClientRect();
+    if (box.bottom > window.innerHeight - 80 || box.top < 0) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: box.height > window.innerHeight * 0.7 ? 'start' : 'end' });
+    }
+  }, [key]);
+
+  if (!show) return null;
   const p = game.players[game.current];
   const humanOffer = pend.kind === 'offer' && pend.anyHuman;
   const locked = p.isBot && !humanOffer;
-  if (locked) return <BotPeek game={game} p={p} pend={pend} />;
-  if (sheetMin) {
-    return (
-      <div className="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-sm lg:bottom-6">
-        <Btn size="lg" className="w-full animate-toast" onClick={() => setSheetMin(false)}>Back to the card</Btn>
-      </div>
-    );
-  }
   return (
-    <div className="fixed inset-0 z-40 flex animate-fade items-end justify-center bg-ink/45 sm:items-center">
-      <div className="max-h-[88dvh] w-full max-w-lg animate-sheet overflow-y-auto rounded-t-[28px] border-[4px] border-b-0 border-ink bg-paper p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-[28px] sm:border-b-[4px] sm:p-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <span className="text-sm font-extrabold text-ink-soft">{game.players.length > 1 && (p.isBot ? `${p.name}'s card` : p.name === 'You' ? 'Your turn' : `${p.name}'s turn`)}</span>
-          <button type="button" onClick={() => setSheetMin(true)} className="press pop-shadow-sm rounded-full border-2 border-ink bg-white px-3 py-1 text-xs font-extrabold">
-            Check my money
-          </button>
+    <div ref={ref} className="scroll-mt-3 scroll-mb-24 lg:scroll-mb-4">
+      {locked ? (
+        <BotPeek p={p} pend={pend} />
+      ) : (
+        <div key={key} className="animate-deal-in rounded-[26px] border-[3px] border-ink bg-paper p-4 pop-shadow sm:p-5">
+          {game.players.length > 1 && (
+            <div className="mb-2 text-sm font-extrabold text-ink-soft">{p.name === 'You' ? 'Your card' : `${p.name}'s card`}</div>
+          )}
+          <SheetContent game={game} p={p} pend={pend} act={dispatch} locked={locked} />
         </div>
-        <SheetContent game={game} p={p} pend={pend} act={dispatch} locked={locked} />
-      </div>
+      )}
     </div>
+  );
+}
+
+// On the Money/Assets/Log tabs (phones), a reminder that a card is still waiting.
+export function CardWaiting() {
+  const game = useGame(s => s.shown ?? s.game);
+  const busy = useUi(s => s.busyCount > 0);
+  const setTab = useUi(s => s.setTab);
+  const pend = game?.pending;
+  if (!pend || HIDDEN.has(pend.kind) || busy || game.players[game.current].isBot) return null;
+  return (
+    <Btn variant="primary" className="w-full" onClick={() => setTab('board')}>Back to your card</Btn>
   );
 }

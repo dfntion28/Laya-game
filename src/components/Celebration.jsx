@@ -30,7 +30,7 @@ function Shell({ children }) {
 }
 
 export function EscapeOverlay() {
-  const game = useGame(s => s.game);
+  const game = useGame(s => s.shown ?? s.game);
   const dispatch = useGame(s => s.dispatch);
   const busy = useUi(s => s.busyCount > 0);
   const pend = game?.pending;
@@ -39,7 +39,7 @@ export function EscapeOverlay() {
   const dream = dreamById[p.dreamId];
   return (
     <Shell>
-      <div className="mx-auto w-20 animate-bob"><Pawn color={p.color} className="size-20" /></div>
+      <div className="mx-auto w-20 animate-bob"><Pawn color={p.color} job={p.professionId} className="size-20" /></div>
       <h2 className="mt-2 font-display text-5xl leading-none text-mustard text-stroke">LAYA!</h2>
       <p className="mt-2 font-display text-xl">{game.players.length > 1 ? `${p.name} is out of the Rat Race` : 'You\'re out of the Rat Race'}</p>
       <p className="mt-2 text-[15px] font-bold text-ink-soft">{pend.text}</p>
@@ -59,7 +59,7 @@ export function EscapeOverlay() {
 }
 
 export function EndScreen() {
-  const game = useGame(s => s.game);
+  const game = useGame(s => s.shown ?? s.game);
   const quit = useGame(s => s.quit);
   if (!game || game.phase !== 'ended') return null;
   const winner = game.players.find(p => p.id === game.winnerId);
@@ -74,7 +74,7 @@ export function EndScreen() {
       <div className="mt-4 flex flex-col divide-y-2 divide-ink/10 border-y-2 border-ink/10 text-left">
         {[...game.players].sort((a, b) => (b.id === game.winnerId) - (a.id === game.winnerId)).map(p => (
           <div key={p.id} className="flex items-center gap-3 py-2.5">
-            <Pawn color={p.color} className="size-9 shrink-0" />
+            <Pawn color={p.color} job={p.professionId} className="size-9 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="font-extrabold">{p.name}{p.id === game.winnerId ? ' (winner)' : ''}</div>
               <div className="text-xs font-bold text-ink-soft">
