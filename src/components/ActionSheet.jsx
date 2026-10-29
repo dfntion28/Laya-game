@@ -13,23 +13,23 @@ import {
 } from '../engine/finance.js';
 import { spaceTone } from '../lib/theme.js';
 import { pct } from '../lib/format.js';
-import { Btn, Stat, Tag } from './Ui.jsx';
+import { Btn, Row, LIST } from './Ui.jsx';
 
 const HIDDEN = new Set(['roll', 'move', 'escape', 'win']);
-const TAG_TONE = {
-  gold: 'bg-mustard text-ink', green: 'bg-lettuce text-ink', red: 'bg-tomato text-white', violet: 'bg-grape text-white',
-  sky: 'bg-ocean text-white', amber: 'bg-orange-400 text-ink', rose: 'bg-berry text-white', slate: 'bg-slate-400 text-ink',
-  teal: 'bg-teal-400 text-ink', pink: 'bg-fuchsia-500 text-white',
+const TAG_TEXT = {
+  gold: 'text-amber-700', green: 'text-green-700', red: 'text-red-600', violet: 'text-violet-700',
+  sky: 'text-blue-700', amber: 'text-orange-700', rose: 'text-pink-700', slate: 'text-slate-600',
+  teal: 'text-teal-700', pink: 'text-fuchsia-700',
 };
 
 function Header({ art, tone, tag, title, text }) {
   return (
     <div className="flex items-start gap-3">
-      <div className={`grid size-[72px] shrink-0 animate-pop place-items-center rounded-2xl border-[3px] border-ink text-[40px] pop-shadow ${spaceTone[tone] ?? spaceTone.gold}`}>{art}</div>
-      <div className="min-w-0 flex-1">
-        {tag && <Tag tone={TAG_TONE[tone] ?? TAG_TONE.gold}>{tag}</Tag>}
-        <h2 className="mt-1.5 font-display text-2xl leading-tight [text-wrap:balance]">{title}</h2>
-        {text && <p className="mt-0.5 text-[15px] font-bold leading-snug text-ink-soft">{text}</p>}
+      <div className={`grid size-16 shrink-0 animate-pop place-items-center rounded-2xl border-[2.5px] border-ink text-4xl ${spaceTone[tone] ?? spaceTone.gold}`}>{art}</div>
+      <div className="min-w-0 flex-1 pt-0.5">
+        {tag && <div className={`text-xs font-extrabold uppercase tracking-widest ${TAG_TEXT[tone] ?? TAG_TEXT.gold}`}>{tag}</div>}
+        <h2 className="font-display text-2xl leading-tight [text-wrap:balance]">{title}</h2>
+        {text && <p className="mt-1 text-[15px] font-bold leading-snug text-ink-soft">{text}</p>}
       </div>
     </div>
   );
@@ -37,11 +37,7 @@ function Header({ art, tone, tag, title, text }) {
 
 function Tip({ text }) {
   if (!text) return null;
-  return (
-    <p className="rounded-xl border-2 border-dashed border-ink/40 bg-paper-2 px-3 py-2 text-sm font-bold">
-      <span className="font-display tracking-wide text-tomato">TIP </span>{text}
-    </p>
-  );
+  return <p className="text-sm font-bold italic text-ink-soft">{text}</p>;
 }
 
 function Options({ options, act, locked }) {
@@ -57,18 +53,9 @@ function Options({ options, act, locked }) {
   );
 }
 
-function FreedomDelta({ p, addCf }) {
-  const before = freedomRatio(p);
+function freedomAfter(p, addCf) {
   const exp = totalExpenses(p);
-  const after = exp > 0 ? Math.max(0, (passiveIncome(p) + addCf) / exp) : 1;
-  return (
-    <div className="flex items-center justify-between rounded-xl border-2 border-ink/15 bg-white/70 px-3 py-2">
-      <span className="text-sm font-extrabold text-ink-soft">Freedom meter</span>
-      <span className="font-display text-lg">
-        {pct(before)} → <span className={after >= before ? 'text-green-700' : 'text-red-600'}>{pct(after)}</span>
-      </span>
-    </div>
-  );
+  return exp > 0 ? Math.max(0, (passiveIncome(p) + addCf) / exp) : 1;
 }
 
 function AssetDeal({ p, card, act, locked }) {
@@ -84,15 +71,13 @@ function AssetDeal({ p, card, act, locked }) {
   const canBorrow = borrow > 0 && borrow <= maxBankLoan(p);
   const roi = down > 0 ? (cf * 12) / down : 0;
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-2">
-        <Stat label="Price" value={fmt(card.cost)} />
-        <Stat label="Down payment" value={fmt(down)} tone={down < card.down ? 'text-green-700' : ''} />
-        <Stat label="Cashflow / mo" value={`${cf >= 0 ? '+' : ''}${fmt(cf)}`} tone={cf > 0 ? 'text-green-700' : 'text-red-600'} />
-        <Stat label="Return / yr" value={pct(roi)} tone={roi >= 0.3 ? 'text-green-700' : roi > 0 ? 'text-amber-700' : 'text-red-600'} />
+    <div className="flex flex-col gap-4">
+      <div className={LIST}>
+        <Row label="You pay now" sub={card.cost > card.down ? `Price ${fmt(card.cost)}, the rest is a mortgage` : null} value={fmt(down)} tone={down < card.down ? 'text-green-700' : ''} />
+        <Row label="Cashflow each month" sub="After the mortgage payment" value={`${cf >= 0 ? '+' : ''}${fmt(cf)}`} tone={cf > 0 ? 'text-green-700' : 'text-red-600'} />
+        <Row label="Return per year" value={pct(roi)} tone={roi >= 0.3 ? 'text-green-700' : roi > 0 ? 'text-amber-700' : 'text-red-600'} />
+        <Row label="Freedom meter" value={`${pct(freedomRatio(p))} → ${pct(freedomAfter(p, cf))}`} />
       </div>
-      {card.cost > card.down && <p className="text-xs font-bold text-ink-soft">Includes a {fmt(card.cost - card.down)} mortgage. The cashflow above is after the monthly payment.</p>}
-      <FreedomDelta p={p} addCf={cf} />
       {eligible.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {eligible.map(id => {
@@ -148,13 +133,16 @@ function StockDeal({ game, p, card, act, locked }) {
   const holding = p.assets.find(a => a.kind === 'stock' && a.symbol === card.symbol);
   const r = (price - st.low) / (st.high - st.low);
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-2">
-        <Stat label="Price per share" value={`₱${price.toLocaleString()}`} />
-        <Stat label="Dividend / share / mo" value={st.dps ? `₱${st.dps}` : 'None'} />
+    <div className="flex flex-col gap-4">
+      <div className={LIST}>
+        <Row label="Price per share" value={`₱${price.toLocaleString()}`} />
+        <Row label="Monthly dividend per share" value={st.dps ? `₱${st.dps}` : 'None'} />
+        {holding && (
+          <Row label={`You hold ${holding.shares.toLocaleString()}`} sub={`Bought at ₱${holding.avgCost.toFixed(1)} average`} value={`${price >= holding.avgCost ? '+' : ''}${fmt((price - holding.avgCost) * holding.shares)}`} tone={price >= holding.avgCost ? 'text-green-700' : 'text-red-600'} />
+        )}
       </div>
       {p.revealStocks ? (
-        <div className="rounded-xl border-2 border-ink/15 bg-white/70 px-3 py-2">
+        <div>
           <div className="flex justify-between text-[11px] font-extrabold uppercase text-ink-soft"><span>Cheap ₱{st.low}</span><span>Usual range</span><span>Pricey ₱{st.high}</span></div>
           <svg viewBox="0 0 100 10" className="mt-1 h-3 w-full" preserveAspectRatio="none" aria-hidden="true">
             <rect x="0.5" y="0.5" width="99" height="9" rx="4.5" className="fill-white stroke-ink" strokeWidth="1" />
@@ -163,12 +151,6 @@ function StockDeal({ game, p, card, act, locked }) {
         </div>
       ) : (
         <p className="text-sm font-bold text-ink-soft">No idea if this is cheap or expensive. The Stock Basics seminar shows you the usual range.</p>
-      )}
-      {holding && (
-        <div className="flex items-center justify-between rounded-xl border-2 border-ink/15 bg-white/70 px-3 py-2 text-sm font-extrabold">
-          <span>You hold {holding.shares.toLocaleString()} at ₱{holding.avgCost.toFixed(1)} avg</span>
-          <span className={price >= holding.avgCost ? 'text-green-700' : 'text-red-600'}>{price >= holding.avgCost ? '+' : ''}{fmt((price - holding.avgCost) * holding.shares)}</span>
-        </div>
       )}
       <Stepper value={qty} set={setQty} step={lot} max={maxQty} format={v => `${v.toLocaleString()} sh`} />
       <div className="text-center text-sm font-bold text-ink-soft">
@@ -189,7 +171,7 @@ function Mp2Deal({ p, card, act, locked }) {
   const max = Math.floor(p.cash / LOAN_STEP) * LOAN_STEP;
   const [amount, setAmount] = useState(Math.min(max, 20_000));
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <p className="text-[15px] font-bold text-ink-soft">Low-risk savings that pay 0.55% a month. You can withdraw anytime.</p>
       <Stepper value={amount} set={setAmount} step={LOAN_STEP} max={max} format={fmt} />
       <div className="text-center text-sm font-bold text-ink-soft">+{fmt(amount * 0.0055)}/mo passive income</div>
@@ -222,9 +204,10 @@ function OfferBody({ game, card, act, locked }) {
   }
   return (
     <div className="flex flex-col gap-2.5">
-      {rows.length === 0 && <p className="rounded-xl border-2 border-ink/15 bg-white/70 p-3 text-sm font-bold text-ink-soft">Nobody owns one of these. Remember this buyer for next time.</p>}
+      {rows.length === 0 && <p className="text-[15px] font-bold text-ink-soft">Nobody owns one of these. Remember this buyer for next time.</p>}
+      <div className={LIST}>
       {rows.map(({ o, a, price, proceeds }) => (
-        <div key={a.id} className="flex items-center gap-3 rounded-xl border-[2.5px] border-ink bg-white p-3 pop-shadow-sm">
+        <div key={a.id} className="flex items-center gap-3 py-2.5">
           <span className="text-3xl">{a.emoji}</span>
           <div className="min-w-0 flex-1 text-sm font-bold">
             <div className="truncate font-extrabold">{a.name}</div>
@@ -236,6 +219,7 @@ function OfferBody({ game, card, act, locked }) {
           <Btn size="sm" variant="good" disabled={locked} onClick={() => act({ type: 'SELL_OFFER', pid2: o.id, assetId: a.id })}>Sell</Btn>
         </div>
       ))}
+      </div>
       <Tip text={lessons.merkado} />
       <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>Done</Btn>
     </div>
@@ -248,7 +232,7 @@ function SheetContent({ game, p, pend, act, locked }) {
       const loan = maxBankLoan(p);
       const choice = 'press pop-shadow flex flex-col items-center gap-1 rounded-2xl border-[3px] border-ink p-4 disabled:opacity-40';
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art="💼" tone="green" tag="Deal" title="Small or big?" text={`Cash: ${fmt(p.cash)}. The bank will lend up to ${fmt(loan)}.`} />
           <div className="grid grid-cols-2 gap-3">
             <button type="button" disabled={locked} onClick={() => act({ type: 'CHOOSE_DEAL', size: 'small' })} className={`${choice} bg-lettuce`}>
@@ -266,7 +250,7 @@ function SheetContent({ game, p, pend, act, locked }) {
     }
     case 'pick':
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art="🏠" tone="green" tag="Real Estate 101" title="Pick one" text="Your skill lets you see two big deals." />
           {pend.cards.map((id, i) => {
             const c = getCard(id);
@@ -287,7 +271,7 @@ function SheetContent({ game, p, pend, act, locked }) {
       const card = getCard(pend.cardId);
       const h = dealHeader(card, pend.size);
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={h.art} tone="green" tag={pend.size === 'big' ? 'Big deal' : 'Small deal'} title={h.title} text={h.text} />
           {card.kind === 'stock' && <StockDeal key={pend.cardId} game={game} p={p} card={card} act={act} locked={locked} />}
           {card.kind === 'mp2' && <Mp2Deal key={pend.cardId} p={p} card={card} act={act} locked={locked} />}
@@ -299,7 +283,7 @@ function SheetContent({ game, p, pend, act, locked }) {
       const card = getCard(pend.cardId);
       const meta = spaceTypes[pend.deck];
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={card.emoji} tone={meta.tone} tag={meta.label} title={card.name} text={card.text} />
           <Tip text={card.aral ?? lessons[pend.deck]} />
           <Options options={pend.options} act={act} locked={locked} />
@@ -310,7 +294,7 @@ function SheetContent({ game, p, pend, act, locked }) {
     case 'market': {
       const card = getCard(pend.cardId);
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={card.emoji} tone="violet" tag="Market" title={card.name} text={card.text} />
           {pend.kind === 'offer' ? <OfferBody game={game} card={card} act={act} locked={locked} /> : <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>}
         </div>
@@ -318,7 +302,7 @@ function SheetContent({ game, p, pend, act, locked }) {
     }
     case 'aral':
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art="🎓" tone="amber" tag="Seminar" title={pend.free ? 'Free seminar' : 'Learn a skill'} text="Skills last the whole game. Pick one." />
           {pend.skills.map(id => {
             const k = skillById[id];
@@ -340,14 +324,14 @@ function SheetContent({ game, p, pend, act, locked }) {
       );
     case 'tulong':
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art="🤝" tone="rose" tag="Charity" title="Give back" text="Donate 10% of your monthly income. You roll 2 dice for the next 3 turns (more deals, more paydays) and get +1 Diskarte." />
           <Options options={pend.options} act={act} locked={locked} />
         </div>
       );
     case 'info':
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={pend.emoji} tone={pend.tone === 'bad' ? 'red' : pend.tone === 'good' ? 'green' : 'teal'} title={pend.title} text={pend.text} />
           <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>
         </div>
@@ -359,9 +343,9 @@ function SheetContent({ game, p, pend, act, locked }) {
         ? `Put in ${fmt(d.cost)} and roll one die. ${d.need} or higher pays ${fmt(d.win)}. Anything else, you lose it.`
         : `Adds ${fmt(d.cf)} to your Fast Track cashflow.`;
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={d.emoji} tone={pend.kind === 'gamble' ? 'violet' : 'green'} tag={pend.kind === 'gamble' ? 'Long shot' : 'Business'} title={d.name} text={text} />
-          <Stat label="Your cash" value={fmt(p.cash)} />
+          <div className={LIST}><Row label="Your cash" value={fmt(p.cash)} /></div>
           <Options options={pend.options} act={act} locked={locked} />
         </div>
       );
@@ -369,11 +353,11 @@ function SheetContent({ game, p, pend, act, locked }) {
     case 'dream': {
       const d = dreamById[pend.dreamId];
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={d.emoji} tone="pink" tag="Your dream" title={d.name} text={d.text} />
-          <div className="grid grid-cols-2 gap-2">
-            <Stat label="Price" value={fmt(d.cost)} />
-            <Stat label="Your cash" value={fmt(p.cash)} tone={p.cash >= d.cost ? 'text-green-700' : 'text-red-600'} />
+          <div className={LIST}>
+            <Row label="Price" value={fmt(d.cost)} />
+            <Row label="Your cash" value={fmt(p.cash)} tone={p.cash >= d.cost ? 'text-green-700' : 'text-red-600'} />
           </div>
           <Options options={pend.options} act={act} locked={locked} />
         </div>
@@ -382,7 +366,7 @@ function SheetContent({ game, p, pend, act, locked }) {
     case 'sakuna': {
       const d = ftDisasters[pend.pos];
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art={d.emoji} tone="red" tag="Disaster" title={d.name} text={d.text} />
           <Options options={pend.options} act={act} locked={locked} />
         </div>
@@ -390,7 +374,7 @@ function SheetContent({ game, p, pend, act, locked }) {
     }
     case 'foundation':
       return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <Header art="🕊️" tone="rose" tag="Foundation" title="Start a foundation" text="Donate ₱1M and roll 3 dice for the next 3 turns." />
           <Options options={pend.options} act={act} locked={locked} />
         </div>

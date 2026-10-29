@@ -4,9 +4,9 @@ import { getCard, fireSalePrice, fmt } from '../engine/engine.js';
 import { stocks } from '../data/cards.js';
 import { LOAN_STEP, INSURANCE_COST } from '../data/constants.js';
 import { assetCashflow, maxBankLoan, bankRate, insuranceCost } from '../engine/finance.js';
-import { Btn, Panel } from './Ui.jsx';
+import { Btn, Surface, SectionTitle, LIST } from './Ui.jsx';
 
-const ROW = 'rounded-xl border-[2.5px] border-ink bg-white p-2.5';
+const ROW = 'py-2.5';
 
 export default function AssetsPanel({ game, p }) {
   const dispatch = useGame(s => s.dispatch);
@@ -25,11 +25,10 @@ export default function AssetsPanel({ game, p }) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <Panel>
-        <h3 className="mb-2 font-display text-xl">Assets</h3>
+    <Surface className="p-4">
+        <SectionTitle>Assets</SectionTitle>
         {p.assets.length === 0 && <p className="text-sm font-bold text-ink-soft">Nothing yet. Land on a Deal space to buy something.</p>}
-        <div className="flex flex-col gap-2">
+        <div className={LIST}>
           {p.assets.map(a => {
             const cf = assetCashflow(p, a);
             const value = saleValue(a);
@@ -39,7 +38,7 @@ export default function AssetsPanel({ game, p }) {
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{a.emoji}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-extrabold">{a.kind === 'stock' ? `${a.shares.toLocaleString()} ${a.symbol}` : a.name}</div>
+                    <div className="truncate text-[15px] font-extrabold">{a.kind === 'stock' ? `${a.shares.toLocaleString()} ${a.symbol}` : a.name}</div>
                     <div className="text-xs font-bold text-ink-soft">
                       {a.kind === 'stock' && `${stocks[a.symbol].name} · bought ₱${a.avgCost.toFixed(1)}, now ₱${game.prices[a.symbol]}`}
                       {a.kind === 'mp2' && `${fmt(a.amount)} saved`}
@@ -69,15 +68,13 @@ export default function AssetsPanel({ game, p }) {
         {p.assets.some(a => a.kind === 'realestate' || a.kind === 'business') && (
           <p className="mt-2 text-xs font-bold text-ink-soft">A quick sale pays 85% of the price (businesses: 12 months of cashflow). A Market buyer usually pays more.</p>
         )}
-      </Panel>
 
-      <Panel>
-        <h3 className="mb-2 font-display text-xl">Debts</h3>
+        <SectionTitle>Debts</SectionTitle>
         {p.liabilities.length === 0 && <p className="text-sm font-bold text-ink-soft">Debt free.</p>}
-        <div className="flex flex-col gap-2">
+        <div className={LIST}>
           {p.liabilities.map(l => (
-            <div key={l.id} className={`${ROW} ${l.kind === 'fivesix' ? 'bg-red-50' : ''}`}>
-              <div className="text-sm font-extrabold">{l.name}</div>
+            <div key={l.id} className={ROW}>
+              <div className={`text-[15px] font-extrabold ${l.kind === 'fivesix' ? 'text-red-600' : ''}`}>{l.name}</div>
               <div className="text-xs font-bold text-ink-soft">
                 Owe {fmt(l.balance)} · {fmt(l.payment)}/mo · {l.months ? `${l.months} months left` : `${(l.rate * 100).toFixed(1)}% a month, until repaid`}
               </div>
@@ -91,14 +88,10 @@ export default function AssetsPanel({ game, p }) {
           ))}
         </div>
         <p className="mt-2 text-xs font-bold text-ink-soft">Kill the highest interest first (5-6, credit cards). Paying a loan off raises your credit score.</p>
-      </Panel>
 
       {p.track === 'rat' && (
-        <Panel>
-          <div className="mb-1 flex items-baseline justify-between">
-            <h3 className="font-display text-xl">Bank</h3>
-            <span className="text-xs font-extrabold text-ink-soft">{Math.round(bankRate(p) * 100)}% a month</span>
-          </div>
+        <>
+          <SectionTitle right={<span className="text-sm text-ink-soft">{Math.round(bankRate(p) * 100)}% a month</span>}>Bank</SectionTitle>
           <p className="text-sm font-bold text-ink-soft">You can borrow up to <b className="text-ink">{fmt(maxLoan)}</b>. You pay interest every payday until you repay it.</p>
           {canAct && maxLoan > 0 && (
             <div className="mt-2 flex items-center gap-2">
@@ -108,7 +101,7 @@ export default function AssetsPanel({ game, p }) {
               <Btn size="sm" disabled={borrowAmt < LOAN_STEP} onClick={() => act({ type: 'BORROW', amount: borrowAmt })}>Borrow</Btn>
             </div>
           )}
-          <div className={`${ROW} mt-3 flex items-center justify-between gap-2`}>
+          <div className="mt-2 flex items-center justify-between gap-2 border-t-2 border-ink/10 pt-3">
             <div className="min-w-0">
               <div className="text-sm font-extrabold">Health and property insurance</div>
               <div className="text-xs font-bold text-ink-soft">
@@ -117,20 +110,19 @@ export default function AssetsPanel({ game, p }) {
             </div>
             {canAct && <Btn size="sm" variant={p.insured ? 'ghost' : 'good'} onClick={() => act({ type: 'INSURANCE', on: !p.insured })}>{p.insured ? 'Cancel' : 'Get it'}</Btn>}
           </div>
-        </Panel>
+        </>
       )}
 
-      <Panel>
-        <h3 className="mb-2 font-display text-xl">Contacts <span className="text-base text-ink-soft">{p.hand.length}/{p.handMax}</span></h3>
+        <SectionTitle right={<span className="text-sm text-ink-soft">{p.hand.length} of {p.handMax}</span>}>Contacts</SectionTitle>
         {p.hand.length === 0 && <p className="text-sm font-bold text-ink-soft">No contact cards. Land on Contacts to get one.</p>}
-        <div className="flex flex-col gap-2">
+        <div className={LIST}>
           {p.hand.map(id => {
             const c = getCard(id);
             return (
-              <div key={id} className={`${ROW} flex items-center gap-2 bg-teal-50`}>
+              <div key={id} className={`${ROW} flex items-center gap-2`}>
                 <span className="text-2xl">{c.emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-extrabold">{c.name}</div>
+                  <div className="text-[15px] font-extrabold">{c.name}</div>
                   <div className="text-xs font-bold text-ink-soft">{c.text}</div>
                 </div>
                 {c.use === 'anytime' ? (
@@ -142,7 +134,6 @@ export default function AssetsPanel({ game, p }) {
             );
           })}
         </div>
-      </Panel>
-    </div>
+    </Surface>
   );
 }

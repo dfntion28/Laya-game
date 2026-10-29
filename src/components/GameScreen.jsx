@@ -3,8 +3,6 @@ import { useGame } from '../store/gameStore.js';
 import { useUi } from '../store/uiStore.js';
 import { botAction } from '../engine/bot.js';
 import TopBar from './TopBar.jsx';
-import PlayerStrip from './PlayerStrip.jsx';
-import FreedomMeter from './FreedomMeter.jsx';
 import Board from './Board.jsx';
 import FinancePanel from './FinancePanel.jsx';
 import AssetsPanel from './AssetsPanel.jsx';
@@ -60,11 +58,9 @@ export default function GameScreen() {
 
   return (
     <div className="min-h-dvh pb-24 lg:pb-6">
-      <TopBar />
-      <PlayerStrip />
-      <main className="mx-auto max-w-6xl px-3 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-6">
-        <section className={`flex flex-col gap-4 ${tab === 'board' ? '' : 'hidden lg:flex'}`}>
-          <FreedomMeter p={viewed} />
+      <TopBar viewed={viewed} />
+      <main className="mx-auto mt-4 max-w-6xl px-3 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-6">
+        <section className={tab === 'board' ? '' : 'hidden lg:block'}>
           <Board />
         </section>
         <section key={tab} className={`animate-drop-in ${tab === 'board' ? 'hidden lg:block' : ''}`}>

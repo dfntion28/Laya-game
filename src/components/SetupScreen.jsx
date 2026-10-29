@@ -5,7 +5,7 @@ import { dreams } from '../data/cards.js';
 import { fmt } from '../engine/engine.js';
 import { BOT_LEVELS, BOT_STYLES } from '../engine/bot.js';
 import { PLAYER_COLORS } from '../data/constants.js';
-import { Btn, Panel } from './Ui.jsx';
+import { Btn, Surface, LIST } from './Ui.jsx';
 import Pawn from './Pawn.jsx';
 import { SettingsList } from './TopBar.jsx';
 
@@ -65,8 +65,10 @@ function Roster({ slots, setSlots, onNext, onBack }) {
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 py-6">
       <button type="button" onClick={onBack} className="self-start font-display text-lg">← Back</button>
       <h2 className="font-display text-4xl text-white text-stroke-sm">Who's playing?</h2>
+      <Surface className="px-4 py-1">
+      <div className={LIST}>
       {slots.map((s, i) => (
-        <Panel key={i} className="flex flex-col gap-2">
+        <div key={i} className="flex flex-col gap-2 py-3">
           <div className="flex items-center gap-2">
             <Pawn color={PLAYER_COLORS[i]} className="size-9 shrink-0" />
             <input id={`player-${i}`} value={s.name} maxLength={14} onChange={e => update(i, { name: e.target.value })} className="min-w-0 flex-1 rounded-xl border-[2.5px] border-ink bg-white px-3 py-2 text-base font-extrabold focus:outline-none" />
@@ -83,10 +85,12 @@ function Roster({ slots, setSlots, onNext, onBack }) {
               </>
             )}
           </div>
-        </Panel>
+        </div>
       ))}
+      </div>
+      </Surface>
       {slots.length < 4 && <Btn variant="ghost" onClick={() => setSlots([...slots, newBot(slots.length)])}>+ Add player</Btn>}
-      <Panel className="py-2"><SettingsList /></Panel>
+      <Surface className="px-2 py-1"><SettingsList /></Surface>
       <p className="text-xs font-extrabold text-ink">Tap a bot's level or style to change it. Hard bots borrow smarter and time the stock market.</p>
       <span className="flex-1" />
       <Btn size="lg" disabled={!slots.some(s => !s.isBot)} onClick={onNext}>Next</Btn>
@@ -116,10 +120,10 @@ function Draft({ slot, offer, dreamOffer, onReroll, rerolled, onDone }) {
                 <span className="font-display text-sm">{'★'.repeat(difficulty[p.id])}<span className="opacity-25">{'★'.repeat(3 - difficulty[p.id])}</span></span>
               </div>
               <div className="text-xs font-extrabold text-ink-soft">{p.en}</div>
-              <div className="mt-2 grid grid-cols-3 gap-1.5 text-center text-xs font-extrabold">
-                <div className="rounded-lg border-2 border-ink/15 bg-white/70 py-1"><div className="text-ink-soft">Income</div><div className="font-display text-sm">{fmt(m.salary)}{p.variable ? '~' : ''}</div></div>
-                <div className="rounded-lg border-2 border-ink/15 bg-white/70 py-1"><div className="text-ink-soft">Expenses</div><div className="font-display text-sm text-red-600">{fmt(m.exp)}</div></div>
-                <div className="rounded-lg border-2 border-ink/15 bg-white/70 py-1"><div className="text-ink-soft">Cash</div><div className="font-display text-sm">{fmt(p.cash)}</div></div>
+              <div className="mt-2 flex flex-wrap gap-x-4 text-sm font-bold">
+                <span>Earns <b className="font-display">{fmt(m.salary)}{p.variable ? '~' : ''}</b></span>
+                <span>Spends <b className="font-display text-red-600">{fmt(m.exp)}</b></span>
+                <span>Cash <b className="font-display">{fmt(p.cash)}</b></span>
               </div>
               <div className="mt-2 text-sm font-bold">{p.trait}</div>
             </button>

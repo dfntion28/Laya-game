@@ -3,7 +3,7 @@ import { useUi } from '../store/uiStore.js';
 import { dreamById, fmt } from '../engine/engine.js';
 import { FT_WIN_GAIN } from '../data/constants.js';
 import { professionById } from '../data/professions.js';
-import { Btn, Stat } from './Ui.jsx';
+import { Btn, Figure } from './Ui.jsx';
 import Pawn from './Pawn.jsx';
 
 const CONFETTI = [
@@ -43,10 +43,10 @@ export function EscapeOverlay() {
       <h2 className="mt-2 font-display text-5xl leading-none text-mustard text-stroke">LAYA!</h2>
       <p className="mt-2 font-display text-xl">{game.players.length > 1 ? `${p.name} is out of the Rat Race` : 'You\'re out of the Rat Race'}</p>
       <p className="mt-2 text-[15px] font-bold text-ink-soft">{pend.text}</p>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-left">
-        <Stat label="Months" value={p.escapedMonth} />
-        <Stat label="Turns" value={p.escapedTurn} />
-        <div className="col-span-2"><Stat label="Fast Track cashflow" value={fmt(p.ft.cashflow)} tone="text-green-700" /></div>
+      <div className="mt-4 grid grid-cols-3 gap-2 border-y-2 border-ink/10 py-3">
+        <Figure label="Months" value={p.escapedMonth} />
+        <Figure label="Turns" value={p.escapedTurn} />
+        <Figure label="New cashflow" value={fmt(p.ft.cashflow)} tone="text-green-700" />
       </div>
       <p className="mt-3 text-sm font-bold">Next: buy your {dream.name} ({fmt(dream.cost)}), or add {fmt(FT_WIN_GAIN)} to your cashflow.</p>
       {!p.isBot ? (
@@ -71,9 +71,9 @@ export function EndScreen() {
       <div className="text-6xl">{how === 'dream' ? dream.emoji : '🏆'}</div>
       <h2 className="mt-2 font-display text-5xl leading-none text-mustard text-stroke">{youWon ? 'YOU WIN!' : `${winner.name.toUpperCase()} WINS`}</h2>
       <p className="mt-2 font-display text-lg">{how === 'dream' ? `Bought the dream: ${dream.name}` : 'Hit the Fast Track cashflow goal'}</p>
-      <div className="mt-4 flex flex-col gap-2 text-left">
+      <div className="mt-4 flex flex-col divide-y-2 divide-ink/10 border-y-2 border-ink/10 text-left">
         {[...game.players].sort((a, b) => (b.id === game.winnerId) - (a.id === game.winnerId)).map(p => (
-          <div key={p.id} className="flex items-center gap-3 rounded-xl border-[2.5px] border-ink bg-white p-2.5">
+          <div key={p.id} className="flex items-center gap-3 py-2.5">
             <Pawn color={p.color} className="size-9 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="font-extrabold">{p.name}{p.id === game.winnerId ? ' (winner)' : ''}</div>

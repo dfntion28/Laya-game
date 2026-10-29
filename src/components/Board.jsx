@@ -31,7 +31,7 @@ function Cell({ index, type, track, owner, dreamers, onTap }) {
       className={`relative flex flex-col items-center justify-center overflow-hidden rounded-lg border-[2.5px] border-ink p-0.5 text-center shadow-[inset_0_-4px_0_rgb(0_0_0/0.18),inset_0_3px_0_rgb(255_255_255/0.35)] ${cellGrid[index]} ${spaceTone[meta.tone]}`}
     >
       <Icon name={meta.icon} className={corner ? 'size-[62%]' : 'size-[52%]'} />
-      <span className="mt-px w-full truncate font-display text-[8px] leading-none tracking-wide text-white text-stroke-sm sm:text-xs">
+      <span className="mt-0.5 w-full truncate font-display text-[9px] leading-none tracking-wide text-white label-shadow sm:text-xs">
         {deal ? fmtShort(deal.cost) : meta.label}
       </span>
       {owner && <span className={`absolute right-0.5 top-0.5 size-2.5 rounded-full border-2 border-ink sm:size-3.5 ${playerTone[owner.color].bg}`} />}

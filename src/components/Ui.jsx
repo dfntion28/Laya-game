@@ -1,10 +1,11 @@
-// Shared building blocks for the chunky cartoon look.
+// Shared building blocks. Rule of thumb: thick outlines and drop shadows mean "you can tap this".
+// Information sits as plain text on a single paper surface, separated by spacing and thin dividers.
 const BTN = {
   primary: 'bg-mustard text-ink',
   good: 'bg-lettuce text-ink',
   bad: 'bg-tomato text-white',
   blue: 'bg-ocean text-white',
-  ghost: 'bg-paper text-ink',
+  ghost: 'bg-white text-ink',
 };
 
 export function Btn({ children, onClick, disabled, variant = 'primary', size = 'md', className = '' }) {
@@ -21,23 +22,42 @@ export function Btn({ children, onClick, disabled, variant = 'primary', size = '
   );
 }
 
-export function Panel({ children, className = '' }) {
-  return <section className={`rounded-2xl border-[3px] border-ink bg-paper p-3 text-ink pop-shadow ${className}`}>{children}</section>;
+// The one container a screen region gets.
+export function Surface({ children, className = '' }) {
+  return <div className={`rounded-3xl border-[3px] border-ink bg-paper text-ink pop-shadow ${className}`}>{children}</div>;
 }
 
-export function Tag({ children, tone = 'bg-tomato text-white', className = '' }) {
+export function SectionTitle({ children, right }) {
   return (
-    <span className={`inline-block -rotate-2 rounded-lg border-[2.5px] border-ink px-2 py-0.5 font-display text-sm tracking-wide pop-shadow-sm ${tone} ${className}`}>
-      {children}
-    </span>
+    <div className="flex items-baseline justify-between gap-2 pb-1 pt-4 first:pt-0">
+      <h3 className="font-display text-xl">{children}</h3>
+      {right && <span className="font-display text-xl">{right}</span>}
+    </div>
   );
 }
 
-export function Stat({ label, value, tone = '' }) {
+// Label on the left, value on the right. Stack these inside a `divide-y` list.
+export function Row({ label, sub, value, tone = '', children }) {
   return (
-    <div className="rounded-xl border-[2.5px] border-ink bg-white px-3 py-2 pop-shadow-sm">
-      <div className="text-[11px] font-extrabold uppercase tracking-wide text-ink-soft">{label}</div>
-      <div className={`font-display text-xl leading-tight ${tone}`}>{value}</div>
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="min-w-0">
+        <span className="block text-[15px] font-bold leading-tight">{label}</span>
+        {sub && <span className="block text-xs font-bold text-ink-soft">{sub}</span>}
+      </span>
+      {value !== undefined && <span className={`shrink-0 font-display text-lg ${tone}`}>{value}</span>}
+      {children}
+    </div>
+  );
+}
+
+export const LIST = 'flex flex-col divide-y-2 divide-ink/10';
+
+// A headline number with a small label above it. No box.
+export function Figure({ label, value, tone = '', big = false }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[11px] font-extrabold uppercase tracking-wider text-ink-soft">{label}</div>
+      <div className={`truncate font-display leading-tight ${big ? 'text-3xl' : 'text-xl'} ${tone}`}>{value}</div>
     </div>
   );
 }

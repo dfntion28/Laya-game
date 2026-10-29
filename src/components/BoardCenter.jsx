@@ -7,14 +7,13 @@ import { landingPreview, fmt } from '../engine/engine.js';
 import { spaceTone } from '../lib/theme.js';
 import Dice from './Dice.jsx';
 import Icon from './Icon.jsx';
-import Pawn from './Pawn.jsx';
 
 function DiskartePips({ p }) {
   return (
-    <span className="flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-1.5 py-0.5" title="Diskarte: spend one to move ±1 or reroll">
-      <span className="font-display text-[10px] leading-none sm:text-xs">DISKARTE</span>
+    <span className="flex items-center gap-1" title="Diskarte: spend one to move ±1 or reroll">
+      <span className="text-[11px] font-extrabold uppercase tracking-wide text-ink-soft">Diskarte</span>
       {Array.from({ length: Math.max(p.diskarteMax, p.diskarte) }, (_, i) => (
-        <span key={i} className={`size-2.5 rounded-full border-2 border-ink sm:size-3 ${i < p.diskarte ? 'bg-mustard' : 'bg-white'}`} />
+        <span key={i} className={`size-2.5 rounded-full border-2 border-ink ${i < p.diskarte ? 'bg-mustard' : 'bg-white'}`} />
       ))}
     </span>
   );
@@ -69,21 +68,20 @@ export default function BoardCenter({ inspect, track, onCloseInspect }) {
 
   return (
     <div className="relative flex size-full flex-col items-center justify-between p-2 sm:p-4">
-      <div className="flex w-full items-start justify-between gap-1.5">
-        <span className="flex min-w-0 items-center gap-1 rounded-full border-2 border-ink bg-paper py-0.5 pl-0.5 pr-2 pop-shadow-sm">
-          <Pawn color={p.color} className="size-6 sm:size-8" />
-          <span className="truncate font-display text-sm leading-none sm:text-lg">{p.name}</span>
-        </span>
-        <DiskartePips p={p} />
+      <div className="text-center leading-tight">
+        {game.players.length > 1 && (
+          <div className="font-display text-lg sm:text-2xl">{p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn' : `${p.name}'s turn`}</div>
+        )}
+        <div className="text-xs font-extrabold text-ink-soft sm:text-sm">
+          {p.track === 'fast' ? 'Fast Track' : `${MONTHS[p.month % 12]}, year ${Math.floor(p.month / 12) + 1}`}
+        </div>
       </div>
 
-      <div className="flex flex-col items-center gap-1">
-        <span className="rounded-md border-2 border-ink bg-paper px-2 font-display text-xs tracking-wide sm:text-sm">
-          {p.track === 'fast' ? 'FAST TRACK' : `${MONTHS[p.month % 12].toUpperCase()} · YEAR ${Math.floor(p.month / 12) + 1}`}
-        </span>
-        <div className="flex gap-3 py-2 sm:gap-4">
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex gap-3 sm:gap-4">
           {dice.values.map((v, i) => <Dice key={i} value={v} rollId={dice.rollId} rolling={dice.rolling} size={dice.values.length > 2 ? 'sm' : 'md'} />)}
         </div>
+        <DiskartePips p={p} />
       </div>
 
       <div className="flex w-full flex-col items-center gap-1">
@@ -98,7 +96,7 @@ export default function BoardCenter({ inspect, track, onCloseInspect }) {
         )}
         {human && pend?.kind === 'move' && !busy && (
           <>
-            <span className="rounded-md bg-paper/90 px-1.5 text-[10px] font-extrabold sm:text-xs">Use 1 Diskarte to change your move?</span>
+            <span className="text-[11px] font-extrabold sm:text-xs">Spend 1 Diskarte to change it?</span>
             <div className="flex w-full gap-1">
               {pend.total > 1 && <MoveChoice label="−1" space={landingPreview(game, p, pend.total - 1)} onClick={() => dispatch({ type: 'ADJUST', delta: -1 })} />}
               <MoveChoice main label={`GO ${pend.total}`} space={landingPreview(game, p, pend.total)} onClick={() => dispatch({ type: 'GO' })} />
@@ -109,7 +107,7 @@ export default function BoardCenter({ inspect, track, onCloseInspect }) {
             </button>
           </>
         )}
-        {p.isBot && <span className="animate-pulse rounded-md bg-paper/90 px-2 font-display text-sm">{p.name} is thinking...</span>}
+        {p.isBot && <span className="animate-pulse font-display text-sm">thinking...</span>}
       </div>
 
       {inspect !== null && inspect !== undefined && <InspectBubble index={inspect} track={track} onClose={onCloseInspect} />}
