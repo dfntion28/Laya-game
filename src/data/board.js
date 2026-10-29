@@ -1,22 +1,22 @@
 // Both tracks use the same 24-cell square loop (7x7 grid perimeter). Corners are paydays.
 
 export const spaceTypes = {
-  sahod:     { label: 'Sahod',      emoji: '💰', tone: 'gold',   help: 'Payday. Dadaan o tatapak: kolektahin ang cashflow mo. Isang buwan ang lumipas.' },
-  oport:     { label: 'Oportunidad', emoji: '💼', tone: 'green', help: 'Pumili ng Maliit o Malaking Deal. Bumili ng assets na nagbibigay ng passive income.' },
-  gastos:    { label: 'Gastos',     emoji: '🛍️', tone: 'red',    help: 'Doodads. Mga gastusing hindi maiiwasan — pero minsan may pagpipilian.' },
-  merkado:   { label: 'Merkado',    emoji: '📈', tone: 'violet', help: 'Market event. May buyer para sa assets mo, o nagbago ang ekonomiya.' },
-  buhay:     { label: 'Buhay',      emoji: '🌦️', tone: 'sky',    help: 'Life event. Anak, kasal, promotion, sakit — ganyan ang buhay.' },
-  aral:      { label: 'Aral',       emoji: '🎓', tone: 'amber',  help: 'Financial education. Bumili ng skill na permanenteng tutulong sa iyo.' },
-  tulong:    { label: 'Tulong',     emoji: '🤝', tone: 'rose',   help: 'Charity. Mag-donate ng 10% ng kita: 2 dice sa 3 turns at +1 Diskarte.' },
-  tanggal:   { label: 'Tanggal',    emoji: '📦', tone: 'slate',  help: 'Downsized. Walang sahod sa susunod na 2 Sahod. Passive income lang ang aasahan mo.' },
-  koneksyon: { label: 'Koneksyon',  emoji: '🧑‍🤝‍🧑', tone: 'teal', help: 'Network card. Itago at gamitin sa tamang panahon.' },
+  sahod:     { label: 'Payday',    icon: 'coin',   tone: 'gold',   help: 'Pass or land here to collect your monthly cashflow. One month goes by.' },
+  oport:     { label: 'Deal',      icon: 'deal',   tone: 'green',  help: 'Pick a small or big deal. Buy assets that pay you every month.' },
+  gastos:    { label: 'Expense',   icon: 'bag',    tone: 'red',    help: 'Stuff you pay for whether you like it or not. Sometimes you get a choice.' },
+  merkado:   { label: 'Market',    icon: 'chart',  tone: 'violet', help: 'A buyer wants your property, or the economy shifts.' },
+  buhay:     { label: 'Life',      icon: 'life',   tone: 'sky',    help: 'Babies, weddings, promotions, hospital bills.' },
+  aral:      { label: 'Seminar',   icon: 'cap',    tone: 'amber',  help: 'Pay for a skill that helps you for the rest of the game.' },
+  tulong:    { label: 'Charity',   icon: 'heart',  tone: 'rose',   help: 'Give 10% of your income. Roll 2 dice for 3 turns and get +1 Diskarte.' },
+  tanggal:   { label: 'Laid Off',  icon: 'box',    tone: 'slate',  help: 'No salary for 2 paydays. Only passive income comes in.' },
+  koneksyon: { label: 'Contacts',  icon: 'people', tone: 'teal',   help: 'Draw a contact card. Keep it and use it when it counts.' },
   // Fast Track
-  cfday:     { label: 'Cashflow Day', emoji: '💎', tone: 'gold', help: 'Kolektahin ang buong Fast Track cashflow mo.' },
-  ftdeal:    { label: 'Negosyo',    emoji: '🏢', tone: 'green',  help: 'Malaking negosyo. Bilhin para dagdagan ang cashflow mo.' },
-  gamble:    { label: 'Sugal-Negosyo', emoji: '🎲', tone: 'violet', help: 'High-risk venture. Magbayad, mag-roll, at umasa.' },
-  pangarap:  { label: 'Pangarap',   emoji: '🌟', tone: 'pink',   help: 'Dream space. Kung ito ang pangarap mo at kaya mo — bilhin at manalo!' },
-  sakuna:    { label: 'Sakuna',     emoji: '⚖️', tone: 'red',    help: 'Disaster. Kaso, audit, o away-pamilya — mawawalan ka ng cash.' },
-  foundation:{ label: 'Foundation', emoji: '🕊️', tone: 'rose',   help: `Mag-donate ng ₱1M: 3 dice sa susunod na 3 turns.` },
+  cfday:     { label: 'Cashflow',  icon: 'gem',    tone: 'gold',   help: 'Collect your full Fast Track cashflow.' },
+  ftdeal:    { label: 'Business',  icon: 'tower',  tone: 'green',  help: 'A big business. Buy it to raise your cashflow.' },
+  gamble:    { label: 'Long Shot', icon: 'dice',   tone: 'violet', help: 'Pay in, roll one die, hope for the best.' },
+  pangarap:  { label: 'Dream',     icon: 'star',   tone: 'pink',   help: 'If this is your dream and you can afford it, buy it and win.' },
+  sakuna:    { label: 'Disaster',  icon: 'bolt',   tone: 'red',    help: 'A lawsuit, an audit, or a family fight. You lose part of your cash.' },
+  foundation:{ label: 'Donate',    icon: 'heart',  tone: 'rose',   help: 'Donate ₱1M to roll 3 dice for 3 turns.' },
 };
 
 export const ratRace = [

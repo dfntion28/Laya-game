@@ -59,13 +59,13 @@ export function taxFor(p) {
 // Itemized monthly expenses, in display order.
 export function expenseLines(p) {
   const lines = [
-    { label: 'Tax at Kontribusyon', amount: taxFor(p) },
-    { label: 'Bahay, Pagkain, Bills', amount: p.living },
+    { label: 'Tax and SSS/PhilHealth/Pag-IBIG', amount: taxFor(p) },
+    { label: 'Rent, food and bills', amount: p.living },
   ];
-  if (p.family) lines.push({ label: 'Padala sa Pamilya', amount: p.family });
-  if (p.children) lines.push({ label: `Mga Anak (${p.children})`, amount: p.children * CHILD_COST });
+  if (p.family) lines.push({ label: 'Padala to family', amount: p.family });
+  if (p.children) lines.push({ label: `Kids (${p.children})`, amount: p.children * CHILD_COST });
   const ins = insuranceCost(p);
-  if (p.insured) lines.push({ label: p.freeInsurance > 0 ? 'Insurance (libre)' : 'Insurance', amount: ins });
+  if (p.insured) lines.push({ label: p.freeInsurance > 0 ? 'Insurance (free)' : 'Insurance', amount: ins });
   for (const l of p.liabilities) lines.push({ label: l.name, amount: l.payment, liabilityId: l.id });
   return lines;
 }
@@ -128,7 +128,7 @@ export function netWorth(p, prices) {
 }
 
 export function creditTier(score) {
-  if (score >= CREDIT_GOOD) return { label: 'Maganda', tone: 'good' };
+  if (score >= CREDIT_GOOD) return { label: 'Good', tone: 'good' };
   if (score >= CREDIT_BANK_MIN) return { label: 'Okay', tone: 'ok' };
-  return { label: 'Masama — 5-6 lang', tone: 'bad' };
+  return { label: 'Bad, banks won\'t lend', tone: 'bad' };
 }

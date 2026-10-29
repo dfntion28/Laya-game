@@ -77,6 +77,10 @@ function makePlayer(s, cfg, index) {
     name: cfg.name || `Player ${index + 1}`,
     color: PLAYER_COLORS[index % PLAYER_COLORS.length],
     isBot: !!cfg.isBot,
+    botLevel: cfg.botLevel || 'normal',
+    botStyle: cfg.botStyle || 'balanced',
+    // How good a buyer offer must be (x down payment) before a bot sells.
+    botSellAt: { easy: 2.5, normal: 1.6, hard: 1.3 }[cfg.botLevel || 'normal'],
     professionId: prof.id,
     emoji: prof.emoji,
     traitKey: prof.traitKey,
@@ -199,7 +203,7 @@ function gainKoneksyon(ctx, p) {
   const card = draw(ctx.s, 'koneksyon');
   if (p.hand.length >= p.handMax) p.hand.shift();
   p.hand.push(card.id);
-  log(ctx, p, `Nakakuha ng Koneksyon: ${card.name}`, 'good');
+  log(ctx, p, `New contact: ${card.name}`, 'good');
   return card;
 }
 
@@ -233,8 +237,8 @@ function addFiveSix(ctx, p, amount) {
   p.credit = clampCredit(p.credit - 40);
   p.cleanPaydays = 0;
   ctx.fx.push({ type: 'cash', pid: p.id, amount, label: '5-6 loan' });
-  toast(ctx, `${p.name}: napilitang umutang sa 5-6 (20%/buwan)!`, 'bad', p.id);
-  log(ctx, p, `Umutang ng ${fmt(amount)} sa 5-6 lender.`, 'bad');
+  toast(ctx, `${p.name} had to borrow from a 5-6 lender (20%/mo)`, 'bad', p.id);
+  log(ctx, p, `Borrowed ${fmt(amount)} from a 5-6 lender.`, 'bad');
 }
 
 // Cover negative cash: bank first, then 5-6, then bankruptcy.
@@ -246,7 +250,7 @@ function settle(ctx, p) {
   const amount = Math.ceil(-p.cash / LOAN_STEP) * LOAN_STEP;
   if (maxBankLoan(p) >= amount) {
     addBankLoan(ctx, p, amount, true);
-    log(ctx, p, `Kulang ang cash. Emergency bank loan ${fmt(amount)}.`, 'warn');
+    log(ctx, p, `Short on cash. Emergency bank loan: ${fmt(amount)}.`, 'warn');
     return;
   }
   const fiveSix = p.liabilities.find(l => l.kind === 'fivesix')?.balance || 0;
@@ -274,8 +278,8 @@ function bankrupt(ctx, p) {
   p.diskarte = 0;
   p.stats.bankruptcies++;
   ctx.fx.push({ type: 'bankrupt', pid: p.id });
-  toast(ctx, `${p.name}: BANKRUPT! Naibenta ang lahat ng assets.`, 'bad', p.id);
-  log(ctx, p, 'Na-bankrupt. Naibenta ang assets sa kalahati, hinati ang mga utang.', 'bad');
+  toast(ctx, `${p.name} went bankrupt. Assets sold.`, 'bad', p.id);
+  log(ctx, p, 'Bankrupt. Assets sold at half price, debts cut in half.', 'bad');
 }
 
 // ─── Turn flow ──────────────────────────────────────────────────────────────
@@ -289,14 +293,14 @@ function startTurn(ctx) {
   if (s.turn % 8 === 0 && rand(s) < 0.3) {
     const options = ['bull', 'normal', 'bear'].filter(c => c !== s.market);
     s.market = options[Math.floor(rand(s) * options.length)];
-    toast(ctx, `Nagbago ang merkado: ${marketLabel(s.market)}`, 'info');
-    log(ctx, null, `Nagbago ang merkado: ${marketLabel(s.market)}.`);
+    toast(ctx, `Market shift: ${marketLabel(s.market)}`, 'info');
+    log(ctx, null, `Market shift: ${marketLabel(s.market)}.`);
   }
   s.pending = { kind: 'roll', pid: p.id };
   ctx.fx.push({ type: 'turn', pid: p.id });
 }
 
-export const marketLabel = m => (m === 'bull' ? 'Bull 🐂' : m === 'bear' ? 'Bear 🐻' : 'Normal ⚖️');
+export const marketLabel = m => (m === 'bull' ? 'Bull market' : m === 'bear' ? 'Bear market' : 'Steady market');
 
 function endTurn(ctx) {
   const { s } = ctx;
@@ -321,11 +325,11 @@ function enterFastTrack(ctx, p) {
   p.charityTurns = 0;
   p.cash += cf;
   ctx.fx.push({ type: 'escape', pid: p.id });
-  log(ctx, p, `LAYA! Nakatakas sa Rat Race sa buwan ${p.month}. Fast Track cashflow: ${fmt(cf)}.`, 'great');
+  log(ctx, p, `Out of the Rat Race in month ${p.month}. Fast Track cashflow: ${fmt(cf)}.`, 'great');
   ctx.s.pending = {
     kind: 'escape', pid: p.id,
-    title: 'LAYA KA NA!',
-    text: `Ang passive income mo (${fmt(passive)}) ay mas malaki na sa gastos mo. Hindi mo na kailangang magtrabaho para mabuhay. Welcome sa Fast Track!`,
+    title: 'You\'re out!',
+    text: `Your passive income (${fmt(passive)}) now covers your expenses. Work is optional from here.`,
   };
 }
 
@@ -395,19 +399,19 @@ function payday(ctx, p, atStep, exact) {
   if (m === 11) {
     if (p.thirteenth && p.jobless === 0) {
       p.cash += p.salaryBase;
-      notes.push(`13th month +${fmt(p.salaryBase)}`);
+      notes.push(`13th month pay +${fmt(p.salaryBase)}`);
     } else if (p.variable) {
       p.cash += 20_000;
       notes.push('Holiday rush +₱20,000');
     }
     const pasko = 10_000 + p.children * 3_000;
     p.cash -= pasko;
-    notes.push(`Pasko −${fmt(pasko)}`);
+    notes.push(`Pasko spending −${fmt(pasko)}`);
   }
   if (m === 5 && p.children > 0) {
     const tuition = p.children * TUITION_PER_CHILD;
     p.cash -= tuition;
-    notes.push(`Pasukan −${fmt(tuition)}`);
+    notes.push(`School fees −${fmt(tuition)}`);
   }
   if (TYPHOON_MONTHS.includes(m) && d6(s) === 1) {
     const props = p.assets.filter(a => a.kind === 'realestate').length;
@@ -416,7 +420,7 @@ function payday(ctx, p, atStep, exact) {
     if (p.insured) dmg *= 1 - INSURANCE_COVER;
     dmg = Math.round(dmg);
     p.cash -= dmg;
-    notes.push(`Bagyo −${fmt(dmg)}`);
+    notes.push(`Typhoon damage −${fmt(dmg)}`);
   }
   if (p.traitKey === 'family_risk' && d6(s) === 1) {
     p.cash -= 25_000;
@@ -435,7 +439,7 @@ function payday(ctx, p, atStep, exact) {
     for (const l of done) {
       p.credit = clampCredit(p.credit + 20);
       p.stats.paidOff++;
-      notes.push(`Bayad na: ${l.name}!`);
+      notes.push(`Paid off ${l.name}`);
     }
   }
 
@@ -445,12 +449,12 @@ function payday(ctx, p, atStep, exact) {
   if (p.cleanPaydays % 6 === 0) p.credit = clampCredit(p.credit + 10);
   if (exact) {
     addDiskarte(p, 1);
-    notes.push('Eksaktong tapak: +1 Diskarte');
+    notes.push('Exact landing: +1 Diskarte');
   }
   const month = MONTHS[m];
   p.month++;
   ctx.fx.push({ type: 'payday', pid: p.id, net, salary, passive, expenses, atStep, month, notes });
-  log(ctx, p, `Sahod (${month}): ${net >= 0 ? '+' : ''}${fmt(net)}${notes.length ? ' · ' + notes.join(' · ') : ''}`, net >= 0 ? 'good' : 'bad');
+  log(ctx, p, `Payday (${month}): ${net >= 0 ? '+' : ''}${fmt(net)}${notes.length ? ' · ' + notes.join(' · ') : ''}`, net >= 0 ? 'good' : 'bad');
   settle(ctx, p);
 }
 
@@ -490,25 +494,25 @@ function resolveSpace(ctx, p) {
       s.pending = {
         ...base, kind: 'tulong', amount,
         options: [
-          { key: 'give', label: `Mag-donate ${fmt(amount)}`, sub: '2 dice sa 3 turns + 1 Diskarte', disabled: p.cash < amount },
-          { key: 'skip', label: 'Hindi muna' },
+          { key: 'give', label: `Donate ${fmt(amount)}`, sub: 'Roll 2 dice for 3 turns, +1 Diskarte', disabled: p.cash < amount },
+          { key: 'skip', label: 'Not now' },
         ],
       };
       return;
     }
     case 'tanggal': {
       if (p.traitKey === 'job_secure') {
-        info(ctx, p, '🛡️', 'Safe ka!', 'May tanggalan sa opisina, pero may security of tenure ka. Walang epekto.');
+        info(ctx, p, '🛡️', 'Layoffs, but not you', 'Government job security. Nothing happens.');
       } else {
         p.jobless = 2;
-        log(ctx, p, 'Na-downsize! Walang sahod sa susunod na 2 Sahod.', 'bad');
-        info(ctx, p, '📦', 'Na-downsize Ka!', 'Walang sahod sa susunod na 2 Sahod. Ang passive income mo lang ang aasahan mo. Ito ang dahilan kung bakit hindi "security" ang trabaho.');
+        log(ctx, p, 'Laid off. No salary for the next 2 paydays.', 'bad');
+        info(ctx, p, '📦', 'Laid off', 'No salary for the next 2 paydays. Only your passive income keeps coming in.');
       }
       return;
     }
     case 'koneksyon': {
       const card = gainKoneksyon(ctx, p);
-      info(ctx, p, card.emoji, `Koneksyon: ${card.name}`, `${card.text} Nakatago sa iyong hand — gamitin sa tamang panahon.`);
+      info(ctx, p, card.emoji, `Koneksyon: ${card.name}`, `${card.text} It goes in your hand until you need it.`);
       return;
     }
     case 'ftdeal':
@@ -517,13 +521,13 @@ function resolveSpace(ctx, p) {
       const ownerId = s.ftOwned[p.position];
       if (type === 'ftdeal' && ownerId) {
         const owner = byId(s, ownerId);
-        info(ctx, p, deal.emoji, deal.name, `Pag-aari na ito ni ${owner.name}.`);
+        info(ctx, p, deal.emoji, deal.name, `${owner.name} already owns this.`);
         return;
       }
       s.pending = {
         ...base, kind: type, pos: p.position,
         options: [
-          { key: 'buy', label: type === 'gamble' ? `Mag-invest ${fmt(deal.cost)}` : `Bilhin ${fmt(deal.cost)}`, disabled: p.cash < deal.cost },
+          { key: 'buy', label: type === 'gamble' ? `Invest ${fmt(deal.cost)}` : `Buy for ${fmt(deal.cost)}`, disabled: p.cash < deal.cost },
           { key: 'pass', label: 'Pass' },
         ],
       };
@@ -535,13 +539,13 @@ function resolveSpace(ctx, p) {
         s.pending = {
           ...base, kind: 'dream', dreamId: dream.id,
           options: [
-            { key: 'buy', label: `Bilhin ang Pangarap ${fmt(dream.cost)}`, disabled: p.cash < dream.cost },
-            { key: 'pass', label: 'Hindi pa kaya — ipon muna' },
+            { key: 'buy', label: `Buy it for ${fmt(dream.cost)}`, disabled: p.cash < dream.cost },
+            { key: 'pass', label: 'Not yet, keep saving' },
           ],
         };
       } else {
         const owners = s.players.filter(o => o.dreamSpace === p.position).map(o => o.name);
-        info(ctx, p, '🌟', 'Pangarap ng Iba', owners.length ? `Ito ang pangarap ni ${owners.join(', ')}. Ang sa iyo ay nasa ibang space.` : 'Magandang pangarap, pero hindi ito ang sa iyo.');
+        info(ctx, p, '🌟', 'Someone else\'s dream', owners.length ? `This is ${owners.join(', ')}'s dream. Yours is on another space.` : 'Nice dream, but not yours.');
       }
       return;
     }
@@ -549,8 +553,8 @@ function resolveSpace(ctx, p) {
       const d = ftDisasters[p.position];
       const loss = Math.round(p.cash * d.pct);
       const shield = p.hand.find(id => getCard(id).use === 'expense');
-      const options = [{ key: 'ok', label: `Tanggapin (−${fmt(loss)})` }];
-      if (shield) options.unshift({ key: `use:${shield}`, label: `Gamitin: ${getCard(shield).name}`, sub: 'I-cancel ang sakuna' });
+      const options = [{ key: 'ok', label: `Take the hit (−${fmt(loss)})` }];
+      if (shield) options.unshift({ key: `use:${shield}`, label: `Use ${getCard(shield).name}`, sub: 'Cancels this' });
       s.pending = { ...base, kind: 'sakuna', pos: p.position, loss, options };
       return;
     }
@@ -558,8 +562,8 @@ function resolveSpace(ctx, p) {
       s.pending = {
         ...base, kind: 'foundation',
         options: [
-          { key: 'give', label: `Mag-donate ${fmt(FT_CHARITY_COST)}`, sub: '3 dice sa susunod na 3 turns', disabled: p.cash < FT_CHARITY_COST },
-          { key: 'skip', label: 'Hindi muna' },
+          { key: 'give', label: `Donate ${fmt(FT_CHARITY_COST)}`, sub: 'Roll 3 dice for 3 turns', disabled: p.cash < FT_CHARITY_COST },
+          { key: 'skip', label: 'Not now' },
         ],
       };
       return;
@@ -585,11 +589,11 @@ function describeEffects(p, effects) {
   const e = effects || {};
   if (e.cash) parts.push(`${e.cash > 0 ? '+' : ''}${fmt(e.cash)}`);
   if (e.medical) parts.push(`−${fmt(medicalCost(p, e.medical))}${p.insured ? ' (insured)' : ''}`);
-  if (e.perChild && p.children) parts.push(`${fmt(e.perChild * p.children)} (mga anak)`);
-  if (e.installment) parts.push(`+${fmt(e.installment.payment)}/buwan × ${e.installment.months}`);
-  if (e.revolving) parts.push(`+${fmt(e.revolving.balance)} utang`);
-  if (e.living) parts.push(`+${fmt(e.living)}/buwan`);
-  if (e.child) parts.push(`+${fmt(CHILD_COST)}/buwan`);
+  if (e.perChild && p.children) parts.push(`${fmt(e.perChild * p.children)} (kids)`);
+  if (e.installment) parts.push(`+${fmt(e.installment.payment)}/mo × ${e.installment.months}`);
+  if (e.revolving) parts.push(`+${fmt(e.revolving.balance)} debt`);
+  if (e.living) parts.push(`+${fmt(e.living)}/mo`);
+  if (e.child) parts.push(`+${fmt(CHILD_COST)}/mo`);
   return parts.join(' · ');
 }
 
@@ -599,11 +603,11 @@ function cardOptions(p, card, deck) {
     options = card.options.map(o => ({ key: o.key, label: o.label, sub: describeEffects(p, o.effects) }));
   } else {
     const sub = describeEffects(p, card.effects);
-    options = [{ key: 'ok', label: deck === 'gastos' ? 'Bayaran' : 'OK', sub }];
+    options = [{ key: 'ok', label: deck === 'gastos' ? 'Pay' : 'OK', sub }];
   }
   if (deck === 'gastos') {
     const shield = p.hand.find(id => getCard(id).use === 'expense');
-    if (shield) options.push({ key: `use:${shield}`, label: `Gamitin: ${getCard(shield).name}`, sub: 'I-cancel ang gastos na ito' });
+    if (shield) options.push({ key: `use:${shield}`, label: `Use ${getCard(shield).name}`, sub: 'Cancels this expense' });
   }
   return options;
 }
@@ -616,7 +620,7 @@ function applyEffects(ctx, p, e, label) {
   if (e.installment) {
     const i = e.installment;
     p.liabilities.push(makeLiability(s, i.name, i.payment * i.months, { payment: i.payment, months: i.months }, 'consumer'));
-    toast(ctx, `+${fmt(i.payment)}/buwan: ${i.name}`, 'bad', p.id);
+    toast(ctx, `${i.name}: +${fmt(i.payment)}/mo`, 'bad', p.id);
   }
   if (e.revolving) {
     const r = e.revolving;
@@ -631,7 +635,7 @@ function applyEffects(ctx, p, e, label) {
   }
   if (e.living) {
     p.living += e.living;
-    toast(ctx, `Gastos +${fmt(e.living)}/buwan`, 'bad', p.id);
+    toast(ctx, `Expenses +${fmt(e.living)}/mo`, 'bad', p.id);
   }
   if (e.koneksyon) gainKoneksyon(ctx, p);
   if (e.diskarte) addDiskarte(p, e.diskarte);
@@ -662,10 +666,10 @@ function applyEffects(ctx, p, e, label) {
     cash(ctx, p, -e.gamble.cost, 'Invest');
     if (roll >= e.gamble.need) {
       cash(ctx, p, e.gamble.win, 'Panalo!');
-      log(ctx, p, `Swerte! Roll ${roll}: +${fmt(e.gamble.win)}`, 'good');
+      log(ctx, p, `Rolled ${roll} and it paid off: +${fmt(e.gamble.win)}`, 'good');
     } else {
-      log(ctx, p, `Roll ${roll}: nawala ang ${fmt(e.gamble.cost)}. Scam pala.`, 'bad');
-      toast(ctx, `Roll ${roll}: Scam pala! −${fmt(e.gamble.cost)}`, 'bad', p.id);
+      log(ctx, p, `Rolled ${roll}. It was a scam. Lost ${fmt(e.gamble.cost)}.`, 'bad');
+      toast(ctx, `Rolled ${roll}. Scam! −${fmt(e.gamble.cost)}`, 'bad', p.id);
     }
   }
   settle(ctx, p);
@@ -680,8 +684,8 @@ function resolveCardOption(ctx, key) {
     const cardId = key.slice(4);
     if (!p.hand.includes(cardId)) return;
     p.hand = p.hand.filter(id => id !== cardId);
-    log(ctx, p, `Ginamit ang ${getCard(cardId).name}: na-cancel ang ${card.name}.`, 'good');
-    toast(ctx, `Na-cancel ang ${card.name}!`, 'good', p.id);
+    log(ctx, p, `Used ${getCard(cardId).name} to skip ${card.name}.`, 'good');
+    toast(ctx, `Skipped ${card.name}`, 'good', p.id);
     endTurn(ctx);
     return;
   }
@@ -728,7 +732,7 @@ function resolveMarket(ctx, p, card) {
         for (const a of [...o.assets]) {
           if (!offerMatches(card, a)) continue;
           const proceeds = offerPrice(s, card, a) - a.mortgage;
-          if (proceeds > a.down * 1.6 || (a.cf <= 0 && proceeds >= 0)) sellAsset(ctx, o, a, proceeds, card.name);
+          if (proceeds > a.down * o.botSellAt || (a.cf <= 0 && proceeds >= 0)) sellAsset(ctx, o, a, proceeds, card.name);
         }
       }
       const anyHuman = s.players.some(o => !o.isBot && o.track === 'rat' && o.assets.some(a => offerMatches(card, a)));
@@ -765,7 +769,7 @@ function resolveMarket(ctx, p, card) {
       break;
     case 'inflation':
       for (const o of s.players) if (o.track === 'rat') o.living += card.amount;
-      log(ctx, null, `${card.name}: lahat +${fmt(card.amount)}/buwan.`, 'bad');
+      log(ctx, null, `${card.name}: everyone +${fmt(card.amount)}/mo.`, 'bad');
       break;
     case 'tenant': {
       const rentals = realEstateOf(p).filter(a => a.sub !== 'land');
@@ -804,8 +808,8 @@ function sellAsset(ctx, p, a, proceeds, label) {
   const gain = proceeds - (a.down ?? 0);
   p.stats.sold++;
   p.stats.gains += gain;
-  ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Naibenta: ${a.name}` });
-  log(ctx, p, `Naibenta ang ${a.name} (${label}): ${fmt(proceeds)} cash${gain ? `, ${gain >= 0 ? 'kita' : 'lugi'} ${fmt(Math.abs(gain))}` : ''}.`, gain >= 0 ? 'good' : 'bad');
+  ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Sold ${a.name}` });
+  log(ctx, p, `Sold ${a.name} (${label}) for ${fmt(proceeds)} cash${gain ? `, ${gain >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(gain))}` : ''}.`, gain >= 0 ? 'good' : 'bad');
   settle(ctx, p);
 }
 
@@ -868,7 +872,7 @@ function buyDeal(ctx, a) {
       p.assets.push({ id: uid(s, 'A'), kind: 'stock', symbol: card.symbol, name: stocks[card.symbol].name, emoji: stocks[card.symbol].emoji, shares: qty, avgCost: price, down: qty * price, mortgage: 0 });
     }
     ctx.fx.push({ type: 'cash', pid: p.id, amount: -qty * price, label: `${qty.toLocaleString()} ${card.symbol}` });
-    log(ctx, p, `Bumili ng ${qty.toLocaleString()} ${card.symbol} @ ₱${price}.`, 'good');
+    log(ctx, p, `Bought ${qty.toLocaleString()} ${card.symbol} at ₱${price}.`, 'good');
     p.stats.deals++;
     return true;
   }
@@ -880,7 +884,7 @@ function buyDeal(ctx, a) {
     if (existing) existing.amount += amount;
     else p.assets.push({ id: uid(s, 'A'), kind: 'mp2', name: 'Pag-IBIG MP2', emoji: '🐷', amount, down: amount, mortgage: 0 });
     ctx.fx.push({ type: 'cash', pid: p.id, amount: -amount, label: 'MP2 deposit' });
-    log(ctx, p, `Nag-deposit ng ${fmt(amount)} sa MP2.`, 'good');
+    log(ctx, p, `Put ${fmt(amount)} into MP2.`, 'good');
     return true;
   }
   const useCardId = a.useCard && p.hand.includes(a.useCard) ? a.useCard : null;
@@ -891,7 +895,7 @@ function buyDeal(ctx, a) {
     if (maxBankLoan(p) < need) return false;
     addBankLoan(ctx, p, need, false);
     p.credit = clampCredit(p.credit - 5);
-    log(ctx, p, `Bank loan ${fmt(need)} para sa down payment.`, 'warn');
+    log(ctx, p, `Bank loan of ${fmt(need)} for the down payment.`, 'warn');
   }
   if (useCardId) p.hand = p.hand.filter(id => id !== useCardId);
   p.cash -= down;
@@ -902,7 +906,7 @@ function buyDeal(ctx, a) {
   p.stats.deals++;
   ctx.fx.push({ type: 'cash', pid: p.id, amount: -down, label: card.name });
   ctx.fx.push({ type: 'buy', pid: p.id, cf: card.cf });
-  log(ctx, p, `Bumili: ${card.name} (down ${fmt(down)}, ${card.cf >= 0 ? '+' : ''}${fmt(card.cf)}/buwan).`, card.cf >= 0 ? 'good' : 'warn');
+  log(ctx, p, `Bought ${card.name} (${fmt(down)} down, ${card.cf >= 0 ? '+' : ''}${fmt(card.cf)}/mo).`, card.cf >= 0 ? 'good' : 'warn');
   return true;
 }
 
@@ -927,8 +931,8 @@ function sellShares(ctx, p, holding, qty, price) {
   p.cash += proceeds;
   p.stats.sold++;
   p.stats.gains += gain;
-  ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Benta ${holding.symbol}` });
-  log(ctx, p, `Nagbenta ng ${qty.toLocaleString()} ${holding.symbol} @ ₱${price}: ${gain >= 0 ? 'kita' : 'lugi'} ${fmt(Math.abs(gain))}.`, gain >= 0 ? 'good' : 'bad');
+  ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Sold ${holding.symbol}` });
+  log(ctx, p, `Sold ${qty.toLocaleString()} ${holding.symbol} at ₱${price}: ${gain >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(gain))}.`, gain >= 0 ? 'good' : 'bad');
 }
 
 // ─── Aral (skills) ─────────────────────────────────────────────────────────
@@ -941,7 +945,7 @@ function openAral(ctx, p, free) {
   const { s } = ctx;
   const available = skills.filter(k => !has(p, k.id));
   if (!available.length) {
-    info(ctx, p, '🎓', 'Master ka na!', 'Natutunan mo na ang lahat ng skills. Ituloy ang pag-invest!');
+    info(ctx, p, '🎓', 'Nothing left to learn', 'You have every skill already.');
     return;
   }
   const offer = shuffled(s, available).slice(0, 3).map(k => k.id);
@@ -976,7 +980,7 @@ function learnSkill(ctx, p, skillId, free) {
     default:
       break;
   }
-  log(ctx, p, `Natutunan: ${skill.name}${cost ? ` (${fmt(cost)})` : ' (libre)'}.`, 'good');
+  log(ctx, p, `Learned ${skill.name}${cost ? ` (${fmt(cost)})` : ' (free)'}.`, 'good');
   return true;
 }
 
@@ -991,12 +995,12 @@ function repay(ctx, p, liabId, amount) {
   p.cash -= pay;
   l.balance -= pay;
   l.payment = l.rate ? Math.round(l.balance * l.rate) : Math.round(l.payment * ratio);
-  ctx.fx.push({ type: 'cash', pid: p.id, amount: -pay, label: `Bayad: ${l.name}` });
+  ctx.fx.push({ type: 'cash', pid: p.id, amount: -pay, label: `Paid ${l.name}` });
   if (l.balance <= 0) {
     p.liabilities = p.liabilities.filter(x => x.id !== l.id);
     p.credit = clampCredit(p.credit + (l.kind === 'fivesix' ? 30 : 20));
     p.stats.paidOff++;
-    toast(ctx, `Bayad na ang ${l.name}! 🎉`, 'good', p.id);
+    toast(ctx, `${l.name} paid off`, 'good', p.id);
     log(ctx, p, `Fully paid: ${l.name}.`, 'good');
   }
   return true;
@@ -1014,7 +1018,7 @@ function fireSale(ctx, p, assetId, qty) {
     p.assets = p.assets.filter(x => x.id !== a.id);
     p.cash += a.amount;
     ctx.fx.push({ type: 'cash', pid: p.id, amount: a.amount, label: 'MP2 withdraw' });
-    log(ctx, p, `Winithdraw ang MP2: ${fmt(a.amount)}.`);
+    log(ctx, p, `Withdrew ${fmt(a.amount)} from MP2.`);
     return true;
   }
   const proceeds = fireSalePrice(s, a) - a.mortgage;
@@ -1044,7 +1048,7 @@ function applyAnytimeCard(ctx, p, cardId) {
       target.balance -= cut;
       target.payment = target.rate ? Math.round(target.balance * target.rate) : Math.round(target.payment * ratio);
       if (target.balance <= 0) p.liabilities = p.liabilities.filter(l => l.id !== target.id);
-      log(ctx, p, `${card.name}: −${fmt(cut)} sa ${target.name}.`, 'good');
+      log(ctx, p, `${card.name}: −${fmt(cut)} off ${target.name}.`, 'good');
       break;
     }
     case 'paluwagan':
@@ -1068,8 +1072,8 @@ function applyAnytimeCard(ctx, p, cardId) {
       return false;
   }
   p.hand = p.hand.filter(id => id !== cardId);
-  if (card.effect !== 'pay_debt_50k') log(ctx, p, `Ginamit ang ${card.name}.`, 'good');
-  toast(ctx, `${card.emoji} ${card.name}!`, 'good', p.id);
+  if (card.effect !== 'pay_debt_50k') log(ctx, p, `Used ${card.name}.`, 'good');
+  toast(ctx, `Used ${card.name}`, 'good', p.id);
   return true;
 }
 
@@ -1089,7 +1093,7 @@ function win(ctx, p, how) {
   s.winnerId = p.id;
   s.pending = { kind: 'win', pid: p.id, how };
   ctx.fx.push({ type: 'win', pid: p.id });
-  log(ctx, p, how === 'dream' ? `NANALO! Nabili ang pangarap: ${dreamById[p.dreamId].name}.` : 'NANALO! Naabot ang Fast Track cashflow goal.', 'great');
+  log(ctx, p, how === 'dream' ? `Won by buying the dream: ${dreamById[p.dreamId].name}.` : 'Won by hitting the Fast Track cashflow goal.', 'great');
 }
 
 // ─── step ──────────────────────────────────────────────────────────────────
@@ -1219,7 +1223,7 @@ function reduce(ctx, a) {
         p.charityTurns = 3;
         p.stats.donated += pend.amount;
         addDiskarte(p, 1);
-        log(ctx, p, `Nag-donate ng ${fmt(pend.amount)}. 2 dice sa 3 turns!`, 'good');
+        log(ctx, p, `Donated ${fmt(pend.amount)}. 2 dice for 3 turns.`, 'good');
         settle(ctx, p);
       }
       endTurn(ctx);
@@ -1235,7 +1239,7 @@ function reduce(ctx, a) {
           s.ftOwned[pend.pos] = p.id;
           p.ft.cashflow += deal.cf;
           p.stats.deals++;
-          log(ctx, p, `Bumili ng ${deal.name}: +${fmt(deal.cf)} cashflow.`, 'good');
+          log(ctx, p, `Bought ${deal.name}: +${fmt(deal.cf)} cashflow.`, 'good');
           ctx.fx.push({ type: 'buy', pid: p.id, cf: deal.cf });
           if (checkFtWin(ctx, p)) return true;
         } else {
@@ -1243,11 +1247,11 @@ function reduce(ctx, a) {
           ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
           if (roll >= deal.need) {
             cash(ctx, p, deal.win, 'Jackpot!');
-            log(ctx, p, `${deal.name}: Roll ${roll} — PANALO ${fmt(deal.win)}!`, 'great');
-            info(ctx, p, deal.emoji, `Roll ${roll}: PANALO!`, `Nagbunga ang ${deal.name}. +${fmt(deal.win)} cash!`, 'good');
+            log(ctx, p, `${deal.name}: rolled ${roll}, won ${fmt(deal.win)}.`, 'great');
+            info(ctx, p, deal.emoji, `Rolled ${roll}. It hit!`, `${deal.name} paid out ${fmt(deal.win)}.`, 'good');
           } else {
-            log(ctx, p, `${deal.name}: Roll ${roll} — nalugi ${fmt(deal.cost)}.`, 'bad');
-            info(ctx, p, deal.emoji, `Roll ${roll}: Lugi`, `Hindi nagtagumpay ang ${deal.name}. Kailangan ng ${deal.need}+.`, 'bad');
+            log(ctx, p, `${deal.name}: rolled ${roll}, lost ${fmt(deal.cost)}.`, 'bad');
+            info(ctx, p, deal.emoji, `Rolled ${roll}. No luck.`, `${deal.name} flopped. You needed ${deal.need} or higher.`, 'bad');
           }
           return true;
         }
@@ -1273,7 +1277,7 @@ function reduce(ctx, a) {
         const id = a.key.slice(4);
         if (!p.hand.includes(id)) return false;
         p.hand = p.hand.filter(x => x !== id);
-        log(ctx, p, `Ginamit ang ${getCard(id).name}: ligtas sa sakuna!`, 'good');
+        log(ctx, p, `Used ${getCard(id).name}. Disaster avoided.`, 'good');
       } else {
         cash(ctx, p, -pend.loss, ftDisasters[pend.pos].name);
         log(ctx, p, `${ftDisasters[pend.pos].name}: −${fmt(pend.loss)}.`, 'bad');
@@ -1288,7 +1292,7 @@ function reduce(ctx, a) {
         cash(ctx, p, -FT_CHARITY_COST, 'Foundation');
         p.charityTurns = 3;
         p.stats.donated += FT_CHARITY_COST;
-        log(ctx, p, `Nag-donate ng ${fmt(FT_CHARITY_COST)} sa foundation.`, 'good');
+        log(ctx, p, `Donated ${fmt(FT_CHARITY_COST)} to the foundation.`, 'good');
       }
       endTurn(ctx);
       return true;
@@ -1308,7 +1312,7 @@ function anytime(ctx, p, a) {
       if (amount <= 0 || amount > maxBankLoan(p)) return false;
       addBankLoan(ctx, p, amount, false);
       p.credit = clampCredit(p.credit - 5);
-      log(ctx, p, `Bank loan: ${fmt(amount)} (${Math.round(bankRate(p) * 100)}%/buwan).`, 'warn');
+      log(ctx, p, `Bank loan: ${fmt(amount)} at ${Math.round(bankRate(p) * 100)}%/mo.`, 'warn');
       return true;
     }
     case 'REPAY':
@@ -1316,7 +1320,7 @@ function anytime(ctx, p, a) {
     case 'INSURANCE':
       p.insured = !!a.on;
       if (!p.insured) p.freeInsurance = 0;
-      log(ctx, p, p.insured ? 'Nag-avail ng insurance.' : 'Kinansela ang insurance.');
+      log(ctx, p, p.insured ? 'Got insurance.' : 'Cancelled insurance.');
       return true;
     case 'SELL_ASSET':
       return fireSale(ctx, p, a.assetId, a.qty);

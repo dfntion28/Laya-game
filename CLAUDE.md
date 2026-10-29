@@ -13,8 +13,8 @@ Read GAMEPLAN.md before writing code.
   `bot.js` = AI player; `finance.js` = derived numbers shared with UI.
 - `src/store/` — `gameStore.js` (Zustand, persisted to localStorage), `uiStore.js` (animation/tab/toast UI state), `fxRunner.js` (turns engine fx into timed animations/sounds).
 - `src/components/` — one component per file, PascalCase.jsx.
-- `src/lib/` — formatting, theme class maps, sound, safe storage.
-- `scripts/simulate.mjs` — headless bot games for balance and crash checks.
+- `src/lib/` — formatting, theme class maps, sound effects, music (WebAudio), safe storage.
+- `scripts/simulate.mjs` — headless bot games for balance and crash checks. `node scripts/simulate.mjs versus 270` checks that Hard bots beat Normal beat Easy.
 
 ## Build rules
 - JavaScript only. No TypeScript.
@@ -23,5 +23,5 @@ Read GAMEPLAN.md before writing code.
 - Game rules change only in `src/engine/` — never in components.
 - After any rules or data change: `node scripts/simulate.mjs 100 1` (must finish with no errors) and check pacing.
 - Before committing: `npm run lint` and `npm run build` must pass.
-- All card and space names keep their Filipino/Tagalog names.
+- Player-facing text is English by default. Use Filipino only for words Filipinos naturally say in English conversation (sari-sari, 5-6, paluwagan, ninong, barkada, padala, Pasko, Diskarte). Keep copy short and plain: no emoji in buttons or headings, no em dashes.
 - No console.log in final code. Comments only where logic is non-obvious.

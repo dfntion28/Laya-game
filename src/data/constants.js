@@ -1,6 +1,6 @@
 // All money values are Philippine Peso (PHP), per month unless noted.
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export const LOAN_STEP = 10_000;
 // Bank loans are interest-only: you pay this % of the balance every Sahod until you repay it.
@@ -19,25 +19,25 @@ export const INSURANCE_COST = 2_500;
 export const INSURANCE_COVER = 0.8;   // insurance pays 80% of medical / disaster bills
 export const CHILD_COST = 6_000;
 export const MAX_CHILDREN = 3;
-export const TUITION_PER_CHILD = 8_000; // every Hunyo (June)
+export const TUITION_PER_CHILD = 8_000; // every June
 
 export const DISKARTE_START = 2;
 export const DISKARTE_MAX = 3;
 export const HAND_MAX = 3;
 
-export const TYPHOON_MONTHS = [6, 7, 8, 9]; // Jul–Oct (0 = Enero)
+export const TYPHOON_MONTHS = [6, 7, 8, 9]; // Jul–Oct (0 = January)
 export const TYPHOON_DAMAGE_PER_PROPERTY = 12_000;
 
 export const MP2_RATE = 0.0055; // Pag-IBIG MP2-style savings, ~6.6%/yr
 
-// Fast Track (Buhay na Malaya)
+// Fast Track
 export const FT_CASHFLOW_MULT = 20;      // passive income x20 becomes your Fast Track cashflow
 export const FT_WIN_GAIN = 1_500_000;    // add this much Fast Track cashflow to win
 export const FT_CHARITY_COST = 1_000_000;
 
 export const MONTHS = [
-  'Enero', 'Pebrero', 'Marso', 'Abril', 'Mayo', 'Hunyo',
-  'Hulyo', 'Agosto', 'Setyembre', 'Oktubre', 'Nobyembre', 'Disyembre',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-export const PLAYER_COLORS = ['amber', 'sky', 'pink', 'lime'];
+export const PLAYER_COLORS = ['red', 'blue', 'green', 'purple'];

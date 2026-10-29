@@ -1,44 +1,56 @@
 @import "tailwindcss";
 
+/* Look: cartoon kitchen-table game. Turquoise sky, wooden board, cream cards with thick ink outlines,
+   chunky "pressable" buttons, bouncy motion. */
 @theme {
-  --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
 
-  /* "Fiesta" palette: turquoise sky, wooden board, plum panels, mango-yellow buttons */
-  --color-night: #2b1740;
-  --color-night-2: #3a1f58;
-  --color-panel: #4a2a70;
-  --color-panel-2: #5b3487;
-  --color-line: #8b5fc4;
-  --color-cream: #fff8e8;
-  --color-muted: #dac8f3;
-  --color-gold: #ffc93c;
-  --color-gold-deep: #f29f05;
-  --color-sky: #22bcd2;
-  --color-good: #34d399;
-  --color-bad: #fb7185;
+  --color-ink: #1f1633;
+  --color-ink-soft: #5b4d72;
+  --color-paper: #fff7e3;
+  --color-paper-2: #ffeabb;
+  --color-sky: #39c3dc;
+  --color-sky-deep: #1d9fbb;
+  --color-tomato: #ff5b3a;
+  --color-mustard: #ffc72c;
+  --color-mustard-deep: #e59a00;
+  --color-lettuce: #5ccb4f;
+  --color-grape: #8b5cf6;
+  --color-berry: #ff4f8b;
+  --color-ocean: #2e8ae6;
+  --color-wood: #c4733a;
+  --color-wood-deep: #6e3a17;
 
-  --animate-hop: hop 0.2s ease-out;
-  --animate-pop: pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
-  --animate-sheet: sheet-up 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
-  --animate-fade: fade-in 0.25s ease-out;
-  --animate-toast: toast-in 0.3s cubic-bezier(0.2, 1.3, 0.4, 1);
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-glow: glow 1.6s ease-in-out infinite;
+  --animate-hop: hop 0.42s cubic-bezier(0.3, 0, 0.4, 1);
+  --animate-pop: pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+  --animate-sheet: sheet-up 0.45s cubic-bezier(0.2, 1.25, 0.4, 1);
+  --animate-fade: fade-in 0.2s ease-out;
+  --animate-toast: toast-in 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+  --animate-bob: bob 1.6s ease-in-out infinite;
+  --animate-breathe: breathe 1.4s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.5s ease-in-out;
   --animate-confetti: confetti 2.8s linear infinite;
-  --animate-shine: shine 2.4s linear infinite;
+  --animate-spin-slow: spin 80s linear infinite;
+  --animate-slam: slam 1.3s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+  --animate-toss: toss 0.75s cubic-bezier(0.25, 0.6, 0.35, 1);
+  --animate-shadow-toss: shadow-toss 0.75s cubic-bezier(0.25, 0.6, 0.35, 1);
+  --animate-coin: coin-fly 0.9s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+  --animate-drop-in: drop-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
 
   @keyframes hop {
-    0% { transform: translateY(0) scale(1); }
-    45% { transform: translateY(-55%) scale(1.15); }
-    100% { transform: translateY(0) scale(1); }
+    0% { transform: translateY(0) scale(1, 1); }
+    15% { transform: translateY(0) scale(1.15, 0.85); }
+    50% { transform: translateY(-70%) scale(0.92, 1.1); }
+    85% { transform: translateY(0) scale(1.2, 0.8); }
+    100% { transform: translateY(0) scale(1, 1); }
   }
   @keyframes pop {
-    0% { transform: scale(0.6); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
   }
   @keyframes sheet-up {
-    0% { transform: translateY(100%); }
+    0% { transform: translateY(105%); }
     100% { transform: translateY(0); }
   }
   @keyframes fade-in {
@@ -46,24 +58,54 @@
     100% { opacity: 1; }
   }
   @keyframes toast-in {
-    0% { transform: translateY(-16px) scale(0.9); opacity: 0; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+    0% { transform: translateY(-30px) scale(0.6) rotate(-6deg); opacity: 0; }
+    100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; }
   }
-  @keyframes float {
+  @keyframes bob {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    50% { transform: translateY(-8%); }
   }
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgb(247 200 67 / 0.55); }
-    50% { box-shadow: 0 0 0 10px rgb(247 200 67 / 0); }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1) rotate(-1deg); }
+    50% { transform: scale(1.05) rotate(1deg); }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-7deg); }
+    75% { transform: rotate(7deg); }
   }
   @keyframes confetti {
     0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
     100% { transform: translateY(110vh) rotate(720deg); opacity: 0.8; }
   }
-  @keyframes shine {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+  @keyframes slam {
+    0% { transform: scale(2.6) rotate(-10deg); opacity: 0; }
+    18% { transform: scale(0.95) rotate(-3deg); opacity: 1; }
+    26% { transform: scale(1.05) rotate(-3deg); }
+    80% { transform: scale(1) rotate(-3deg); opacity: 1; }
+    100% { transform: scale(0.8) rotate(-3deg) translateY(-40px); opacity: 0; }
+  }
+  @keyframes toss {
+    0% { transform: translate(-120%, 30%) rotate(-200deg) scale(0.7); }
+    40% { transform: translate(-20%, -90%) rotate(-40deg) scale(1.05); }
+    70% { transform: translate(5%, 0) rotate(10deg) scale(1.15, 0.8); }
+    85% { transform: translate(0, -18%) rotate(-4deg) scale(0.95, 1.05); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+  }
+  @keyframes shadow-toss {
+    0% { transform: translateX(-120%) scale(0.5); opacity: 0.2; }
+    40% { transform: translateX(-20%) scale(0.6); opacity: 0.15; }
+    70% { transform: translateX(5%) scale(1.15); opacity: 0.35; }
+    100% { transform: translateX(0) scale(1); opacity: 0.3; }
+  }
+  @keyframes coin-fly {
+    0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(var(--tw-coin-x, 0), -160px) scale(1) rotate(540deg); opacity: 0; }
+  }
+  @keyframes drop-in {
+    0% { transform: translateY(-40px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 }
 
@@ -74,8 +116,9 @@ html, body, #root {
 body {
   margin: 0;
   background: var(--color-sky);
-  color: var(--color-cream);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
@@ -85,80 +128,53 @@ button {
   touch-action: manipulation;
 }
 
-/* ── Game surfaces ───────────────────────────────────────────────────── */
-@utility bg-fiesta {
-  background-color: #1fb3c8;
-  background-image:
-    radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.4) 0%, rgb(255 255 255 / 0) 42%),
-    repeating-conic-gradient(from 0deg at 50% 12%, #2cc6db 0deg 9deg, #1aa8be 9deg 18deg);
+:focus-visible {
+  outline: 3px solid var(--color-ocean);
+  outline-offset: 2px;
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
+@utility sunburst {
+  background-image: repeating-conic-gradient(from 0deg at 50% 50%, #47cde4 0deg 9deg, #2fb6d0 9deg 18deg);
 }
 @utility bg-wood {
-  background-color: #c4733a;
+  background-color: var(--color-wood);
   background-image:
-    repeating-linear-gradient(100deg, rgb(255 255 255 / 0.06) 0 6px, rgb(0 0 0 / 0.05) 6px 13px),
+    repeating-linear-gradient(100deg, rgb(255 255 255 / 0.07) 0 6px, rgb(0 0 0 / 0.06) 6px 13px),
     linear-gradient(160deg, #e0954f, #b0602a);
 }
-@utility bg-felt {
-  background-image: radial-gradient(circle at 50% 35%, #34b886 0%, #1d8a63 58%, #136548 100%);
+@utility tablecloth {
+  background-color: #fff3df;
+  background-image:
+    linear-gradient(90deg, rgb(255 91 58 / 0.32) 50%, transparent 50%),
+    linear-gradient(rgb(255 91 58 / 0.32) 50%, transparent 50%);
+  background-size: 28px 28px;
 }
-@utility card-3d {
-  box-shadow: 0 4px 0 rgb(24 10 40 / 0.45);
+@utility pop-shadow {
+  box-shadow: 0 4px 0 var(--color-ink);
 }
-@utility btn-3d {
-  box-shadow: 0 5px 0 #b86a00, 0 8px 16px rgb(0 0 0 / 0.25);
-  &:active { transform: translateY(3px); box-shadow: 0 2px 0 #b86a00; }
+@utility pop-shadow-sm {
+  box-shadow: 0 3px 0 var(--color-ink);
 }
-@utility text-outline {
-  -webkit-text-stroke: 2px #2b1740;
+@utility press {
+  transition: transform 0.08s, box-shadow 0.08s;
+  &:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--color-ink); }
+}
+@utility text-stroke {
+  -webkit-text-stroke: 6px var(--color-ink);
+  paint-order: stroke fill;
+}
+@utility text-stroke-sm {
+  -webkit-text-stroke: 3px var(--color-ink);
   paint-order: stroke fill;
 }
 
-/* ── 3D dice ─────────────────────────────────────────────────────────── */
-@utility die-scene {
-  perspective: 400px;
-}
-@utility die-cube {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
-}
-@utility die-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-}
-@utility die-f1 { transform: rotateY(0deg) translateZ(var(--die-half)); }
-@utility die-f2 { transform: rotateY(90deg) translateZ(var(--die-half)); }
-@utility die-f3 { transform: rotateX(90deg) translateZ(var(--die-half)); }
-@utility die-f4 { transform: rotateX(-90deg) translateZ(var(--die-half)); }
-@utility die-f5 { transform: rotateY(-90deg) translateZ(var(--die-half)); }
-@utility die-f6 { transform: rotateY(180deg) translateZ(var(--die-half)); }
-@utility die-show-1 { transform: rotateX(-12deg) rotateY(12deg); }
-@utility die-show-2 { transform: rotateX(-12deg) rotateY(-78deg); }
-@utility die-show-3 { transform: rotateX(-102deg) rotateY(0deg) rotateZ(12deg); }
-@utility die-show-4 { transform: rotateX(78deg) rotateY(0deg) rotateZ(-12deg); }
-@utility die-show-5 { transform: rotateX(-12deg) rotateY(102deg); }
-@utility die-show-6 { transform: rotateX(-12deg) rotateY(192deg); }
-@utility die-spin {
-  animation: die-spin 0.65s cubic-bezier(0.3, 0.7, 0.4, 1);
-}
-@keyframes die-spin {
-  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.7); }
-  60% { transform: rotateX(540deg) rotateY(380deg) rotateZ(90deg) scale(1.15); }
-  100% { transform: rotateX(720deg) rotateY(720deg) rotateZ(0deg) scale(1); }
-}
-@utility die-size-sm { --die-half: 18px; width: 36px; height: 36px; }
-@utility die-size-md { --die-half: 26px; width: 52px; height: 52px; }
-
-@utility shine-text {
-  background: linear-gradient(90deg, #f7c843 0%, #fff6c9 25%, #f7c843 50%, #c8961a 75%, #f7c843 100%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+/* Fly-out direction for coin bursts. */
+@utility coin-x-l2 { --tw-coin-x: -90px; }
+@utility coin-x-l1 { --tw-coin-x: -45px; }
+@utility coin-x-0 { --tw-coin-x: 0px; }
+@utility coin-x-r1 { --tw-coin-x: 45px; }
+@utility coin-x-r2 { --tw-coin-x: 90px; }
 
 @utility scrollbar-none {
   scrollbar-width: none;

@@ -3,15 +3,28 @@ import { useUi } from '../store/uiStore.js';
 import { dreamById, fmt } from '../engine/engine.js';
 import { FT_WIN_GAIN } from '../data/constants.js';
 import { professionById } from '../data/professions.js';
-import Confetti from './Confetti.jsx';
+import { Btn, Stat } from './Ui.jsx';
+import Pawn from './Pawn.jsx';
+
+const CONFETTI = [
+  'left-[4%] bg-mustard [animation-delay:0s]', 'left-[11%] bg-berry [animation-delay:0.6s]',
+  'left-[18%] bg-ocean [animation-delay:1.2s]', 'left-[25%] bg-lettuce [animation-delay:0.3s]',
+  'left-[32%] bg-tomato [animation-delay:1.8s]', 'left-[39%] bg-grape [animation-delay:0.9s]',
+  'left-[46%] bg-mustard [animation-delay:1.5s]', 'left-[53%] bg-berry [animation-delay:0.2s]',
+  'left-[60%] bg-ocean [animation-delay:2.1s]', 'left-[67%] bg-lettuce [animation-delay:0.7s]',
+  'left-[74%] bg-tomato [animation-delay:1.1s]', 'left-[81%] bg-grape [animation-delay:0.4s]',
+  'left-[88%] bg-mustard [animation-delay:1.6s]', 'left-[95%] bg-berry [animation-delay:1s]',
+  'left-[8%] bg-lettuce [animation-delay:2.4s]', 'left-[29%] bg-ocean [animation-delay:2s]',
+  'left-[50%] bg-tomato [animation-delay:2.6s]', 'left-[71%] bg-mustard [animation-delay:1.4s]',
+];
 
 function Shell({ children }) {
   return (
-    <div className="fixed inset-0 z-50 flex animate-fade items-center justify-center bg-night/90 p-4 backdrop-blur-sm">
-      <Confetti />
-      <div className="relative w-full max-w-md animate-pop rounded-3xl bg-gradient-to-b from-panel-2 to-night-2 p-6 text-center shadow-2xl ring-2 ring-gold/60">
-        {children}
+    <div className="fixed inset-0 z-50 flex animate-fade items-center justify-center bg-ink/55 p-4">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        {CONFETTI.map((c, i) => <span key={i} className={`absolute -top-4 h-4 w-2.5 animate-confetti rounded-sm border-2 border-ink ${c}`} />)}
       </div>
+      <div className="relative w-full max-w-md animate-pop rounded-[28px] border-[4px] border-ink bg-paper p-6 text-center pop-shadow">{children}</div>
     </div>
   );
 }
@@ -26,22 +39,20 @@ export function EscapeOverlay() {
   const dream = dreamById[p.dreamId];
   return (
     <Shell>
-      <div className="text-6xl animate-float">🕊️</div>
-      <h2 className="shine-text mt-2 animate-shine font-display text-4xl font-bold">LAYA KA NA!</h2>
-      <p className="mt-1 text-sm text-muted">{p.name} · nakatakas sa Rat Race</p>
-      <p className="mt-3 text-sm leading-relaxed">{pend.text}</p>
+      <div className="mx-auto w-20 animate-bob"><Pawn color={p.color} className="size-20" /></div>
+      <h2 className="mt-2 font-display text-5xl leading-none text-mustard text-stroke">LAYA!</h2>
+      <p className="mt-2 font-display text-xl">{game.players.length > 1 ? `${p.name} is out of the Rat Race` : 'You\'re out of the Rat Race'}</p>
+      <p className="mt-2 text-[15px] font-bold text-ink-soft">{pend.text}</p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-left">
-        <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted">Buwan</div><div className="font-display text-xl font-bold">{p.escapedMonth}</div></div>
-        <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted">Turns</div><div className="font-display text-xl font-bold">{p.escapedTurn}</div></div>
-        <div className="col-span-2 rounded-xl bg-white/5 p-3 ring-1 ring-white/10"><div className="text-[10px] uppercase text-muted">Fast Track cashflow</div><div className="font-display text-xl font-bold text-good">{fmt(p.ft.cashflow)}</div></div>
+        <Stat label="Months" value={p.escapedMonth} />
+        <Stat label="Turns" value={p.escapedTurn} />
+        <div className="col-span-2"><Stat label="Fast Track cashflow" value={fmt(p.ft.cashflow)} tone="text-green-700" /></div>
       </div>
-      <p className="mt-3 text-xs text-muted">Bagong layunin: bilhin ang {dream.emoji} <b className="text-cream">{dream.name}</b> ({fmt(dream.cost)}) o dagdagan ang cashflow ng {fmt(FT_WIN_GAIN)}.</p>
+      <p className="mt-3 text-sm font-bold">Next: buy your {dream.name} ({fmt(dream.cost)}), or add {fmt(FT_WIN_GAIN)} to your cashflow.</p>
       {!p.isBot ? (
-        <button type="button" onClick={() => dispatch({ type: 'DONE' })} className="mt-5 w-full rounded-2xl bg-gradient-to-b from-amber-300 to-gold-deep btn-3d py-3 font-display text-lg font-bold text-night active:scale-95">
-          🚀 Tara sa Fast Track!
-        </button>
+        <Btn size="lg" className="mt-5 w-full" onClick={() => dispatch({ type: 'DONE' })}>To the Fast Track</Btn>
       ) : (
-        <p className="mt-5 animate-pulse text-sm text-muted">Tuloy ang laro…</p>
+        <p className="mt-5 animate-pulse font-display text-lg">Game continues...</p>
       )}
     </Shell>
   );
@@ -54,31 +65,26 @@ export function EndScreen() {
   const winner = game.players.find(p => p.id === game.winnerId);
   const how = game.pending?.how;
   const dream = dreamById[winner.dreamId];
-  const solo = game.players.length === 1;
+  const youWon = !winner.isBot;
   return (
     <Shell>
-      <div className="text-6xl animate-float">{how === 'dream' ? dream.emoji : '👑'}</div>
-      <h2 className="shine-text mt-2 animate-shine font-display text-4xl font-bold">{solo || !winner.isBot ? 'PANALO!' : `${winner.name} ang nanalo`}</h2>
-      <p className="mt-1 text-sm text-muted">
-        {how === 'dream' ? `Nabili ang pangarap: ${dream.name}` : 'Naabot ang Fast Track cashflow goal'}
-      </p>
+      <div className="text-6xl">{how === 'dream' ? dream.emoji : '🏆'}</div>
+      <h2 className="mt-2 font-display text-5xl leading-none text-mustard text-stroke">{youWon ? 'YOU WIN!' : `${winner.name.toUpperCase()} WINS`}</h2>
+      <p className="mt-2 font-display text-lg">{how === 'dream' ? `Bought the dream: ${dream.name}` : 'Hit the Fast Track cashflow goal'}</p>
       <div className="mt-4 flex flex-col gap-2 text-left">
         {[...game.players].sort((a, b) => (b.id === game.winnerId) - (a.id === game.winnerId)).map(p => (
-          <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-            <span className="text-2xl">{p.emoji}</span>
+          <div key={p.id} className="flex items-center gap-3 rounded-xl border-[2.5px] border-ink bg-white p-2.5">
+            <Pawn color={p.color} className="size-9 shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold">{p.name}{p.id === game.winnerId ? ' 👑' : ''}</div>
-              <div className="text-[11px] text-muted">
-                {professionById[p.professionId].name} · {p.escapedMonth !== null ? `Nakalaya sa buwan ${p.escapedMonth}` : 'Nasa Rat Race pa'} · {p.turns} turns · {p.stats.deals} deals
+              <div className="font-extrabold">{p.name}{p.id === game.winnerId ? ' (winner)' : ''}</div>
+              <div className="text-xs font-bold text-ink-soft">
+                {professionById[p.professionId].name} · {p.escapedMonth !== null ? `escaped in month ${p.escapedMonth}` : 'still in the Rat Race'} · {p.turns} turns · {p.stats.deals} deals
               </div>
             </div>
           </div>
         ))}
       </div>
-      <p className="mt-4 text-xs italic text-violet-200">"Ang mahirap ay nagtatrabaho para sa pera. Ang mayaman ay pinagtatrabaho ang pera para sa kanila."</p>
-      <button type="button" onClick={quit} className="mt-5 w-full rounded-2xl bg-gradient-to-b from-amber-300 to-gold-deep btn-3d py-3 font-display text-lg font-bold text-night active:scale-95">
-        Maglaro Ulit
-      </button>
+      <Btn size="lg" className="mt-5 w-full" onClick={quit}>Play again</Btn>
     </Shell>
   );
 }

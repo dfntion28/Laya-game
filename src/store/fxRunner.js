@@ -1,15 +1,18 @@
-// Turns engine fx events into timed UI effects: dice spin, token hops, toasts, sounds.
+// Turns engine fx events into timed UI effects: dice toss, token hops, toasts, sounds.
 import { useUi } from './uiStore.js';
 import { play, buzz } from '../lib/sfx.js';
 import { fmt } from '../engine/engine.js';
 
-export const STEP_MS = 190;
-const DICE_MS = 650;
+const TIMING = {
+  normal: { step: 430, dice: 850 },
+  fast: { step: 140, dice: 300 },
+};
 
 export function runFx(fx, state) {
   const ui = useUi.getState();
   const muted = ui.muted;
-  const name = pid => state.players.find(p => p.id === pid)?.name ?? '';
+  const actor = state.players.find(p => p.id === fx.find(f => f.pid)?.pid);
+  const speed = actor?.isBot && ui.fastBots ? TIMING.fast : TIMING.normal;
   const multi = state.players.length > 1;
   let t = 0;
   let moveStart = 0;
@@ -23,27 +26,32 @@ export function runFx(fx, state) {
           play('dice', muted);
           buzz(20);
         });
-        t += DICE_MS;
+        t += speed.dice;
+        at(t, () => {
+          useUi.getState().landDice();
+          play('land', muted);
+        });
+        t += 200;
         break;
       case 'move': {
         moveStart = t;
         const steps = f.path.length - 1;
         at(t, () => useUi.getState().startMove(f.pid, f.path, f.track));
         for (let i = 1; i <= steps; i++) {
-          at(t + i * STEP_MS, () => {
+          at(t + i * speed.step, () => {
             useUi.getState().tickMove();
             play('step', muted);
           });
         }
-        t += steps * STEP_MS + 120;
+        t += steps * speed.step + speed.step;
         at(t, () => useUi.getState().endMove());
         break;
       }
       case 'payday':
-        at(moveStart + f.atStep * STEP_MS, () => {
-          const tone = f.net >= 0 ? 'good' : 'bad';
-          const title = f.ft ? 'Cashflow Day!' : `Sahod — ${f.month}`;
-          useUi.getState().pushToast({ text: `${title} ${f.net >= 0 ? '+' : ''}${fmt(f.net)}`, sub: f.notes?.join(' · '), tone, big: true, ms: 3200 });
+        at(moveStart + f.atStep * speed.step, () => {
+          const title = f.ft ? 'Cashflow Day' : `Payday · ${f.month}`;
+          useUi.getState().pushToast({ text: `${title}  ${f.net >= 0 ? '+' : ''}${fmt(f.net)}`, sub: f.notes?.join(' · '), tone: f.net >= 0 ? 'good' : 'bad', big: true, ms: 3200 });
+          if (f.net > 0) useUi.getState().burst();
           play(f.net >= 0 ? 'coin' : 'bad', muted);
           buzz(30);
         });
@@ -69,7 +77,6 @@ export function runFx(fx, state) {
       case 'escape':
       case 'win':
         at(t, () => {
-          useUi.getState().setCelebrate({ kind: f.type, pid: f.pid });
           play('win', muted);
           buzz(300);
         });
@@ -78,7 +85,10 @@ export function runFx(fx, state) {
         const p = state.players.find(x => x.id === f.pid);
         at(t, () => {
           if (p && !p.isBot) useUi.getState().setView(p.id);
-          if (multi) useUi.getState().pushToast({ text: `Turno ni ${name(f.pid)}`, tone: 'info', ms: 1400 });
+          if (multi && p && !(p.isBot && useUi.getState().fastBots)) {
+            useUi.getState().showBanner(p.isBot ? `${p.name}'s turn` : p.name === 'You' ? 'Your turn!' : `${p.name}, you're up!`);
+            play('whoosh', muted);
+          }
         });
         break;
       }
