@@ -1028,7 +1028,7 @@ export function fireSalePrice(s, a) {
   return Math.round(a.cost * 0.85 * cycleMult(s.market) / 1000) * 1000;
 }
 
-function useAnytimeCard(ctx, p, cardId) {
+function applyAnytimeCard(ctx, p, cardId) {
   const card = getCard(cardId);
   if (!card || card.use !== 'anytime' || !p.hand.includes(cardId)) return false;
   switch (card.effect) {
@@ -1321,7 +1321,7 @@ function anytime(ctx, p, a) {
     case 'SELL_ASSET':
       return fireSale(ctx, p, a.assetId, a.qty);
     case 'USE_CARD':
-      return useAnytimeCard(ctx, p, a.cardId);
+      return applyAnytimeCard(ctx, p, a.cardId);
     default:
       return false;
   }
