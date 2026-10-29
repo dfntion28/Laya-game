@@ -2,7 +2,7 @@
 
 ## Project
 Filipino financial literacy board game (Rich Dad Poor Dad / CASHFLOW style). React 19 + Vite + Zustand + Tailwind CSS v4.
-Static site. No backend. No external APIs. **Mobile-first** (portrait phone), scales up to desktop.
+Static site. No backend of our own. The only external service is Supabase Realtime, used as a message relay for online rooms (optional; see README). **Mobile-first** (portrait phone), scales up to desktop.
 
 ## Before every task
 Read GAMEPLAN.md before writing code.
@@ -11,9 +11,12 @@ Read GAMEPLAN.md before writing code.
 - `src/data/` — all game content and constants (professions, cards, board, constants). Peso values in PHP.
 - `src/engine/` — pure rules. `step(state, action) -> { state, fx }`. No React, no DOM, no Math.random (seeded RNG in state).
   `bot.js` = AI player; `finance.js` = derived numbers shared with UI.
+  Some pending decisions belong to a player other than the current one (deal offers, loan requests): use `actorOf(state)`.
 - `src/store/` — `gameStore.js` (Zustand, persisted to localStorage), `uiStore.js` (animation/tab/toast UI state), `fxRunner.js` (turns engine fx into timed animations/sounds).
+  `gameStore.shown` is what the screen renders: it lags behind `game` until the fx animations finish, so results never show before the pawn lands. Display components read `s.shown ?? s.game`; only the bot driver reads `game`.
+- `src/net/` — online rooms. `transport.js` = relay (Supabase, or `?net=local` BroadcastChannel for testing in two tabs); `online.js` = lobby and host/guest protocol. The host runs the engine and broadcasts the full state plus fx after every move; guests send actions and play back what they receive. `netStore.js` says which player this device controls (`controls()`); components use it instead of `!p.isBot`.
 - `src/components/` — one component per file, PascalCase.jsx.
-- `src/lib/` — formatting, theme class maps, sound effects, music (WebAudio), safe storage.
+- `src/lib/` — formatting, theme class maps, sound effects and music (one shared WebAudio context in `audio.js`; start it from click/touchend, not pointerdown, or iPhones stay silent), safe storage.
 - `scripts/simulate.mjs` — headless bot games for balance and crash checks. `node scripts/simulate.mjs versus 270` checks that Hard bots beat Normal beat Easy.
 
 ## Build rules

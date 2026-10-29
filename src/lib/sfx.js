@@ -1,16 +1,5 @@
 // Tiny synthesized sound effects (no audio files). Muted state lives in the UI store.
-let ctx = null;
-
-function audio() {
-  if (typeof window === 'undefined') return null;
-  if (!ctx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;
-    ctx = new AC();
-  }
-  if (ctx.state === 'suspended') ctx.resume();
-  return ctx;
-}
+import { audioContext as audio } from './audio.js';
 
 function tone(freq, start, dur, type = 'sine', gain = 0.08) {
   const a = audio();

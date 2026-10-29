@@ -5,6 +5,7 @@ import { stocks } from '../data/cards.js';
 import { LOAN_STEP, INSURANCE_COST } from '../data/constants.js';
 import { assetCashflow, maxBankLoan, bankRate, insuranceCost } from '../engine/finance.js';
 import { Btn, Surface, SectionTitle, LIST } from './Ui.jsx';
+import { useControls } from '../store/netStore.js';
 
 const ROW = 'py-2.5';
 
@@ -13,7 +14,8 @@ export default function AssetsPanel({ game, p }) {
   const [confirm, setConfirm] = useState(null);
   const [borrow, setBorrow] = useState(LOAN_STEP * 5);
   const moving = game.pending?.kind === 'move' && game.pending.pid === p.id;
-  const canAct = !p.isBot && game.phase === 'playing' && !moving && p.track === 'rat';
+  const control = useControls(game);
+  const canAct = control(p.id) && game.phase === 'playing' && !moving && p.track === 'rat';
   const act = a => dispatch({ ...a, pid: p.id });
   const maxLoan = maxBankLoan(p);
   const borrowAmt = Math.min(borrow, maxLoan);
@@ -32,7 +34,7 @@ export default function AssetsPanel({ game, p }) {
           {p.assets.map(a => {
             const cf = assetCashflow(p, a);
             const value = saleValue(a);
-            const sellable = a.kind !== 'ip';
+            const sellable = a.kind !== 'ip' && a.kind !== 'iou';
             return (
               <div key={a.id} className={ROW}>
                 <div className="flex items-center gap-2">
@@ -44,6 +46,7 @@ export default function AssetsPanel({ game, p }) {
                       {a.kind === 'mp2' && `${fmt(a.amount)} saved`}
                       {(a.kind === 'realestate' || a.kind === 'business') && `Price ${fmt(a.cost)} · owe ${fmt(a.mortgage)} · paid ${fmt(a.down)} down`}
                       {a.kind === 'ip' && 'Can\'t be sold'}
+                      {a.kind === 'iou' && `${fmt(a.amount)} lent at ${Math.round(a.rate * 100)}% a month. They repay when they choose`}
                     </div>
                   </div>
                   <span className={`font-display text-base ${cf >= 0 ? 'text-green-700' : 'text-red-600'}`}>{cf >= 0 ? '+' : ''}{fmt(cf)}</span>
@@ -126,7 +129,7 @@ export default function AssetsPanel({ game, p }) {
                   <div className="text-xs font-bold text-ink-soft">{c.text}</div>
                 </div>
                 {c.use === 'anytime' ? (
-                  <Btn size="sm" variant="good" disabled={p.isBot || game.phase !== 'playing' || moving} onClick={() => act({ type: 'USE_CARD', cardId: id })}>Use</Btn>
+                  <Btn size="sm" variant="good" disabled={!control(p.id) || game.phase !== 'playing' || moving} onClick={() => act({ type: 'USE_CARD', cardId: id })}>Use</Btn>
                 ) : (
                   <span className="text-[11px] font-extrabold text-ink-soft">{c.use === 'deal' ? 'Use on a deal' : 'Use on an expense'}</span>
                 )}

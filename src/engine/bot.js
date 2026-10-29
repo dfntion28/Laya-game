@@ -1,9 +1,9 @@
 // Heuristic AI players. Level sets how sharp the decisions are; style sets what they like to buy.
 // Also drives the headless balance simulations.
 import { stocks, ftDeals } from '../data/cards.js';
-import { LOAN_STEP, FIVE_SIX_RATE } from '../data/constants.js';
+import { LOAN_STEP, FIVE_SIX_RATE, PITCH_STEP, PLAYER_LOAN_MAX } from '../data/constants.js';
 import {
-  getCard, dealDown, dealCards, stockPrice, skillById, skillCost, dreamById, landingPreview,
+  getCard, dealDown, dealCards, stockPrice, skillById, skillCost, dreamById, landingPreview, actorOf, rivals,
 } from './engine.js';
 import { maxBankLoan, bankRate, monthlyCashflow, insuranceCost } from './finance.js';
 
@@ -110,7 +110,58 @@ function dealAction(s, p, card) {
   const need = Math.ceil((down - p.cash) / LOAN_STEP) * LOAN_STEP;
   // Leverage only when the deal out-earns the loan interest.
   if (need <= maxBankLoan(p) && card.cf > need * bankRate(p) * t.borrowEdge) return { type: 'BUY', borrow: true, useCard };
-  return { type: 'PASS' };
+  return loanAsk(s, p, card, need) || pitchAction(s, p, card) || { type: 'PASS' };
+}
+
+// Short for a good deal and the bank says no: ask the richest player at 3%/mo.
+function loanAsk(s, p, card, need) {
+  if (p.botLevel === 'easy' || p.botStyle === 'saver' || need > PLAYER_LOAN_MAX) return null;
+  const rate = 0.03;
+  if (card.cf <= need * rate * tuning(p).borrowEdge) return null;
+  const asked = s.pending.loanAsked || [];
+  const lender = rivals(s, p).filter(o => !asked.includes(o.id) && o.cash >= need).sort((a, b) => b.cash - a.cash)[0];
+  return lender ? { type: 'LOAN_ASK', to: lender.id, amount: need, rate } : null;
+}
+
+// A good deal the bot can't afford is still worth something to a richer player.
+function pitchAction(s, p, card) {
+  if (p.botLevel === 'easy') return null;
+  const pend = s.pending;
+  const buyer = rivals(s, p)
+    .filter(o => !(pend.pitched || []).includes(o.id))
+    .sort((a, b) => b.cash - a.cash)[0];
+  if (!buyer || buyer.cash < card.down) return null;
+  const months = p.botLevel === 'hard' ? 10 : 8;
+  return { type: 'PITCH', to: buyer.id, price: Math.max(PITCH_STEP, Math.round((card.cf * months) / PITCH_STEP) * PITCH_STEP) };
+}
+
+// Is a pitched deal worth `price` on top of its down payment?
+function pitchValue(p, card, price) {
+  const t = tuning(p);
+  const down = dealDown(p, card, null);
+  const total = down + price;
+  const minRoi = t.minRoi * (card.kind === 'realestate' ? t.reMult : t.bizMult);
+  const affordable = p.cash - t.reserve >= total || (p.cash >= price && Math.ceil((total - p.cash) / LOAN_STEP) * LOAN_STEP <= maxBankLoan(p));
+  return { ok: card.cf > 0 && card.cf / Math.max(total, 1) >= minRoi && affordable, borrow: p.cash - t.reserve < total };
+}
+
+function pitchResponse(s, p, pend) {
+  const card = getCard(pend.cardId);
+  if (pend.countered) return { type: pend.counter >= pend.price * 0.5 ? 'PITCH_ACCEPT' : 'PITCH_DECLINE' };
+  const asked = pitchValue(p, card, pend.price);
+  if (asked.ok) return { type: 'PITCH_ACCEPT', borrow: asked.borrow };
+  const offer = Math.round((card.cf * 3) / PITCH_STEP) * PITCH_STEP;
+  const counter = offer < pend.price ? pitchValue(p, card, offer) : null;
+  if (p.botLevel !== 'easy' && counter?.ok) return { type: 'PITCH_COUNTER', price: offer, borrow: counter.borrow };
+  return { type: 'PITCH_DECLINE' };
+}
+
+function loanResponse(s, p, pend) {
+  const borrower = s.players.find(o => o.id === pend.borrower);
+  const safe = monthlyCashflow(borrower) > pend.amount * pend.rate;
+  const spare = p.cash - tuning(p).reserve * 2 >= pend.amount;
+  const minRate = p.botLevel === 'easy' ? 0.01 : 0.02;
+  return { type: pend.rate >= minRate && safe && spare && pend.amount <= p.cash * 0.6 ? 'LOAN_YES' : 'LOAN_NO' };
 }
 
 // Optional chores before rolling: repay costly debt, get insurance, play contact cards.
@@ -140,7 +191,7 @@ function housekeeping(s, p) {
 }
 
 export function botAction(s) {
-  const p = s.players[s.current];
+  const p = actorOf(s);
   const pend = s.pending;
   if (!pend) return null;
   const t = tuning(p);
@@ -172,6 +223,8 @@ export function botAction(s) {
     case 'card': {
       const card = getCard(pend.cardId);
       const shield = pend.options.find(o => o.key.startsWith('use:'));
+      // Easy bots fall for fixers. The others know the odds.
+      if (p.botLevel === 'easy' && pend.options.some(o => o.key === 'fixer') && wobble(s, 11) < 0.4) return { type: 'OPTION', key: 'fixer' };
       if (shield && pend.deck === 'gastos') {
         const worst = card.options ? Math.min(...card.options.map(o => optionValue(p, o.effects))) : optionValue(p, card.effects);
         if (worst < -20_000) return { type: 'OPTION', key: shield.key };
@@ -195,6 +248,10 @@ export function botAction(s) {
       }
       return { type: 'OPTION', key: best.key };
     }
+    case 'pitch':
+      return pitchResponse(s, p, pend);
+    case 'loanask':
+      return loanResponse(s, p, pend);
     case 'offer':
     case 'market':
     case 'info':

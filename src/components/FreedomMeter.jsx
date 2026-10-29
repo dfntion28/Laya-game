@@ -23,7 +23,7 @@ function Num({ label, children, tone = '' }) {
   );
 }
 
-// Lives inside the header. No box of its own.
+// Sits in a plain card in the page. No box of its own.
 export default function FreedomMeter({ p }) {
   if (p.track === 'fast') {
     const dream = dreamById[p.dreamId];

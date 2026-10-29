@@ -7,7 +7,7 @@ import Pawn from './Pawn.jsx';
 
 // Tap a player to see their money. The one whose turn it is gets a yellow highlight.
 export default function PlayerStrip() {
-  const game = useGame(s => s.game);
+  const game = useGame(s => s.shown ?? s.game);
   const viewPid = useUi(s => s.viewPid);
   const setView = useUi(s => s.setView);
   if (game.players.length < 2) return null;
@@ -23,7 +23,7 @@ export default function PlayerStrip() {
             onClick={() => setView(p.id)}
             className={`flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-0.5 pr-2.5 ${active ? 'bg-mustard' : ''} ${viewPid === p.id ? 'ring-2 ring-ink' : ''}`}
           >
-            <span className={active ? 'animate-bob' : ''}><Pawn color={p.color} className="size-7" /></span>
+            <span className={active ? 'animate-bob' : ''}><Pawn color={p.color} job={p.professionId} className="size-7" /></span>
             <span className="text-left leading-none">
               <span className="block max-w-20 truncate text-xs font-extrabold">{p.name}</span>
               <span className="block text-[11px] font-bold text-ink-soft">{p.track === 'fast' ? 'Fast Track · ' : ''}{pct(progress)}</span>

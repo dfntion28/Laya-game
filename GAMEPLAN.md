@@ -8,7 +8,8 @@ Source of truth for numbers is `src/data/*`. This document explains the *why*.
 2. **A decision every turn.** Diskarte (move ±1 / reroll with landing preview), buy/pass/borrow, cash vs installment, sell now vs wait.
 3. **Teach by consequence, not text.** Every card shows its effect on the Freedom Meter; a one-line "Aral" (lesson) sits under it.
 4. **Variability.** 9 professions (draft 3), 8 dreams (draft 3), ~140 cards, market cycles, Philippine calendar seasons, 11 skills, bot opponents with 3 levels and 5 play styles.
-5. **Feel.** Cartoon kitchen-table look (thick outlines, chunky buttons), bouncy motion, a live-synthesized music loop that speeds up on the Fast Track.
+5. **Feel.** Cartoon kitchen-table look (thick outlines, chunky buttons), a character per profession (hard hat, nurse cap, headset...) in the player's color, bouncy motion, a live-synthesized music loop that speeds up on the Fast Track.
+   Only the bottom tab bar is fixed on phones. Header, Freedom meter and cards scroll with the page.
 6. **Language.** English first, with everyday Filipino words where people actually use them.
 
 ## Win flow
@@ -20,9 +21,19 @@ Source of truth for numbers is `src/data/*`. This document explains the *why*.
 On escape: Fast Track cashflow = passive income × 20, paid at every Cashflow Day (corners).
 
 ## Turn
-1. Roll. 2. Optional: spend 1 **Diskarte** to move ±1 or reroll (the buttons show which space each option lands on).
+1. Roll. The die tumbles, then the pawn hops to the rolled space. Nothing (money, card, month) is revealed before it lands.
+2. On landing: "You landed on X". If you have **Diskarte**: Stay here, Back 1, Forward 1, or Reroll from start (1 Diskarte each). The pawn hops again for any change.
 3. Every corner passed = **Payday** (1 month): salary + passive − expenses. Exact landing on Payday = +1 Diskarte.
-4. Resolve the space.
+4. The space's card deals in under the board (beside it on desktop). No pop-up covers the board.
+
+## Player to player (2+ players)
+- **Sell a deal card**: land on a property or business you can't or won't buy, offer it to another player at a price you set. They buy (price to you, plus their own down payment), counter once, or refuse. You can offer it to each player once.
+- **Borrow from a player**: on your turn (before rolling, or on a deal), ask a player for a loan at 1, 2, 3 or 5% a month. If they agree, you pay them interest every Payday until you repay. It counts as their passive income. If you escape, your player loans are paid off first. Bankruptcy halves what you owe them.
+- **Fixer (lagay)**: on an Expense card of ₱10K or more, pay a fixer 30% to make it go away. Before rolling, pay ₱20K to hold a rival's permit (their next property or business costs ₱30K more). Either way, a roll of 1 or 2 means caught: pay the bill plus a 50% fine (or a ₱50K fine), credit −40.
+- Bots: Normal and Hard sell deals they can't afford and ask the richest player for loans; they lend at 2%+ when it's safe. Easy bots fall for fixers.
+
+## Online
+Create a room, share the link or 5-letter code, 2 to 4 players (host can fill seats with bots). Each phone shows only its own player's decisions; everyone sees every roll and hop. The host's phone is the referee. Message relay: Supabase Realtime (free tier).
 
 ## Rat Race spaces
 Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market ×3 · Life ×2 · Seminar · Charity · Laid Off · Contacts.
@@ -34,7 +45,7 @@ Payday ×4 (corners) · Deal ×8 (choose small or big) · Expense ×3 · Market 
 | Normal | Buys deals above ~22% yearly return, borrows only when the deal beats the interest by 20% |
 | Hard | Lower return bar, borrows at a 5% edge, times stocks tighter, sells to buyers sooner, buys seminars earlier |
 
-Styles (Landlord, Hustler, Trader, Saver, Balanced) shift what a bot prefers. `node scripts/simulate.mjs versus 270`: Hard 144, Normal 118, Easy 8 wins.
+Styles (Landlord, Hustler, Trader, Saver, Balanced) shift what a bot prefers. `node scripts/simulate.mjs versus 270`: Hard 145, Normal 115, Easy 10 wins (it also prints how often player-to-player moves happen).
 Fast bots: setting that cuts bot animation and think time to near zero.
 
 ## Economy rules
@@ -58,4 +69,4 @@ Guro ★★, Nars ★, BPO ★★, Inhinyero ★, Kawani ★★, Seaman ★, Neg
 - Every rule change must be re-checked with the simulator; it also fails on any exception or NaN.
 
 ## Out of scope (ideas for later)
-Online multiplayer, accounts/leaderboards, offline service worker, more languages (English toggle).
+Accounts/leaderboards, host hand-off when the host leaves, offline service worker, more languages (English toggle).

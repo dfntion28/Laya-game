@@ -41,3 +41,19 @@ export const MONTHS = [
 ];
 
 export const PLAYER_COLORS = ['red', 'blue', 'green', 'purple'];
+
+// Player-to-player (2+ players)
+export const PITCH_STEP = 5_000;           // asking price steps when selling a deal card to a player
+export const PITCH_MAX = 1_000_000;
+export const PLAYER_LOAN_MAX = 500_000;
+export const PLAYER_LOAN_RATES = [0.01, 0.02, 0.03, 0.05]; // per month, chosen by the borrower
+export const FIXER_SHARE = 0.3;            // a fixer charges 30% of the bill to make it go away
+export const FIXER_MIN_BILL = 10_000;
+export const FIXER_CAUGHT_MAX = 2;         // d6 roll of 1-2 = caught
+export const FIXER_FINE_MULT = 0.5;        // caught: pay the bill plus 50% fine on top of the fee
+export const FIXER_CREDIT_HIT = 40;
+export const PERMIT_HOLD_COST = 20_000;    // what you pay a fixer to hold a rival's permit
+export const PERMIT_HOLD_FEE = 30_000;     // extra the rival pays on their next property or business
+export const PERMIT_CAUGHT_FINE = 50_000;
+
+export const MAX_PLAYERS = PLAYER_COLORS.length;

@@ -28,8 +28,8 @@ export default function HelpModal() {
   const setHelp = useUi(s => s.setHelp);
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-50 flex animate-fade items-end justify-center bg-ink/50 sm:items-center" onClick={() => setHelp(false)}>
-      <div className="max-h-[90dvh] w-full max-w-lg animate-sheet overflow-y-auto rounded-t-[28px] border-[4px] border-b-0 border-ink bg-paper p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-[28px] sm:border-b-[4px]" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex animate-fade items-center justify-center bg-ink/50 p-3" onClick={() => setHelp(false)}>
+      <div className="max-h-[88dvh] w-full max-w-lg animate-pop overflow-y-auto rounded-[28px] border-[4px] border-ink bg-paper p-5 pop-shadow" onClick={e => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-display text-3xl">How to play</h2>
           <button type="button" aria-label="Close" onClick={() => setHelp(false)} className="press pop-shadow-sm grid size-11 place-items-center rounded-full border-[2.5px] border-ink bg-white"><Icon name="close" className="size-5" /></button>
