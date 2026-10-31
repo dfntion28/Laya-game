@@ -29,7 +29,7 @@ const MARKET_LABEL = { bear: '🐻 Bear', normal: '➡️ Normal', bull: '📈 B
 const AUTO_EFFECTS = new Set([
   'skip_bir_penalty', 'brrrr_ltv_80pct', 'first_look_big_deal',
   'skip_title_delay', 'next_deal_analysis', 'waive_one_loan_interest',
-  'rehab_cost_minus_20pct',
+  'rehab_cost_minus_20pct', 'skip_tenant_damage_roll',
 ]);
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ export default function FinancialStatement({ playerId }) {
   const totalIncome   = activeIncome !== null ? activeIncome + passiveIncome : null;
 
   const totalExpenses = displayPlayer.monthlyExpenses + displayPlayer.familyExpenses;
-  const totalOutflow  = totalDeductions + totalExpenses + loanPayments;
+  const totalOutflow  = totalDeductions - insuranceCost + totalExpenses + loanPayments;
   const cashFlow      = totalIncome !== null ? totalIncome - totalOutflow : null;
 
   const escapeTarget  = totalExpenses + loanPayments;
@@ -205,7 +205,8 @@ export default function FinancialStatement({ playerId }) {
           </div>
         )}
 
-        <Row label="Monthly Expenses" value={php(displayPlayer.monthlyExpenses)} valueColor="var(--color-red)" />
+        {/* Premium lives inside monthlyExpenses; it is listed under Deductions, so show it once */}
+        <Row label="Monthly Expenses" value={php(displayPlayer.monthlyExpenses - insuranceCost)} valueColor="var(--color-red)" />
 
         {displayPlayer.familyExpenses > 0 && (
           <Row label="Family Remittance" value={php(displayPlayer.familyExpenses)} valueColor="var(--color-red)" />
@@ -310,10 +311,10 @@ export default function FinancialStatement({ playerId }) {
               className="text-[9px] font-bold tracking-[2px] uppercase pb-1 border-b border-[#3a2a0a] mb-[6px] mt-[8px]"
               style={{ fontFamily: 'var(--font-display)', color: '#8a6a1a' }}
             >
-              Speculative Deals
+              Naghihintay ng Resulta
             </p>
             {activeTrapDeals.filter(t => !t.resolved).map(t => (
-              <div key={t.cardId} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
+              <div key={t.entryId ?? t.cardId} className="flex items-center py-[5px] border-b border-[#0d2030] gap-2">
                 <span className="text-[12px] flex-1" style={{ color: '#f59e0b' }}>
                   {t.card.name}
                 </span>
@@ -487,6 +488,13 @@ export default function FinancialStatement({ playerId }) {
           style={{ background: '#1e3a5f' }}
         >
           {displayPlayer.creditScore} · {tier.label}
+        </span>
+
+        <span
+          className="rounded-[10px] px-2 py-[2px] text-[#c9a227] bg-[#2e2510] border border-[#5a4a1a]"
+          title="Financial IQ: nadaragdagan sa tamang kuwenta at matalinong desisyon"
+        >
+          🧠 Talino {displayPlayer.talino ?? 0}
         </span>
 
         {displayPlayer.insuranceActive && (

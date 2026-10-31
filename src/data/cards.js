@@ -163,61 +163,73 @@ export const smallDeals = [
   {
     id: 'sd31', name: 'Nagpaarkila ng Parking Slot sa BGC Condo',
     purchasePrice: 0, cashFlow: 4500, exclusive: false,
+    description: 'May parking slot ka sa condo pero wala kang kotse. May naghahanap ng slot: ₱4,500/buwan.',
     lesson: 'Ang parking slot na hindi mo ginagamit ay maaaring mapagkakitaan.',
   },
   {
     id: 'sd32', name: 'Naglagay ng Vending Machine sa Opisina',
     purchasePrice: 18000, cashFlow: 2200, exclusive: false,
+    description: '₱18,000 para sa snack vending machine sa opisina ng kaibigan. ₱2,200/buwan net.',
     lesson: 'Kahit maliit na makina, nagtatrabaho ito para sa iyo 24/7.',
   },
   {
     id: 'sd33', name: 'Nagrenta ng Kagamitan tuwing Events (Rev Share)',
     purchasePrice: 0, cashFlow: 1800, exclusive: false,
+    description: 'Ang sound system mo ay pwedeng paupahan sa events ng kakilala. Hatian ng kita: ₱1,800/buwan.',
     lesson: 'Hindi mo kailangang mag-ari ng asset para kumita — pwedeng rev share arrangement.',
   },
   {
     id: 'sd34', name: 'Stock Photo Royalties — Isinubmit sa Shutterstock',
     purchasePrice: 0, cashFlow: 900, exclusive: false,
+    description: 'Ang mga lumang litrato mo ay pwedeng ibenta online bilang stock photos. ₱900/buwan royalties.',
     lesson: 'Ang intellectual property ay nagbibigay ng kita kahit natutulog ka.',
   },
   {
     id: 'sd35', name: 'Nagpaarkila ng Rooftop para sa Cell Tower',
     purchasePrice: 0, cashFlow: 6500, exclusive: true,
+    description: 'Gusto ng telco na maglagay ng cell site sa rooftop mo. ₱6,500/buwan na lease.',
     lesson: 'Ang mga telecom company ay naghahanap ng espasyo — ikaw ang may-ari nito.',
   },
   {
     id: 'sd36', name: 'Nagbenta ng Digital Template sa Shopee',
     purchasePrice: 2000, cashFlow: 1500, exclusive: false,
+    description: '₱2,000 para gumawa ng digital planner template. ₱1,500/buwan na benta.',
     lesson: 'Digital products: isang beses gumawa, paulit-ulit na kita.',
   },
   {
     id: 'sd37', name: 'Nagpaupa ng Kwarto sa Boarder',
     purchasePrice: 5000, cashFlow: 3500, exclusive: false,
+    description: '₱5,000 para ayusin ang bakanteng kwarto. ₱3,500/buwan mula sa boarder.',
     lesson: 'Ang kwarto na bakante ay gastos. Ang kwartong may tao ay kita.',
   },
   {
     id: 'sd38', name: 'Water Refilling Station Franchise Slot',
     purchasePrice: 35000, cashFlow: 5000, exclusive: true,
+    description: '₱35,000 para sa franchise slot ng water refilling station. ₱5,000/buwan net.',
     lesson: 'Ang franchise ay nagbibigay ng sistema na pati na-test na.',
   },
   {
     id: 'sd39', name: 'Nagpautang sa P2P Lending Platform (SeedIn)',
     purchasePrice: 50000, cashFlow: 2500, exclusive: false,
+    description: '₱50,000 sa P2P lending platform. ₱2,500/buwan kung walang mag-default.',
     lesson: 'Ang P2P lending ay naglalagay ng iyong pera sa trabaho — may risk ng default.',
   },
   {
     id: 'sd40', name: 'YouTube Channel — Nagmonetize ng Old Videos',
     purchasePrice: 0, cashFlow: 1200, exclusive: false,
+    description: 'Na-monetize ang mga lumang video mo. ₱1,200/buwan sa ads.',
     lesson: 'Ang lumang content ay pwedeng magbigay ng bagong kita.',
   },
   {
     id: 'sd41', name: 'Nag-sublease ng Bahagi ng Office Space',
     purchasePrice: 0, cashFlow: 8000, exclusive: true,
+    description: 'Bakante ang kalahati ng opisina mo. May startup na gustong umupa: ₱8,000/buwan.',
     lesson: 'Ang espasyong hindi mo ginagamit buong araw ay asset na naka-idle.',
   },
   {
     id: 'sd42', name: 'Nagpadala ng OFW Remittance Fund sa REIT',
     purchasePrice: 20000, cashFlow: 1800, exclusive: false,
+    description: '₱20,000 mula sa padala, inilagay sa REIT. ₱1,800/buwan na dividend.',
     lesson: 'Ang remittance ay hindi lang pang-gastos — pwede ring pang-invest.',
   },
 
@@ -228,6 +240,7 @@ export const smallDeals = [
     cardType: 'trap_deal', trapDelay: 4,
     trapBullOutcome: { cashFlow: 0, oneTimeGain: 100000, description: 'Natapos ang condo — ibinenta mo ng tubo na ₱100,000!' },
     trapBearOutcome: { cashFlow: 0, oneTimeLoss: 180000, description: 'Nalugi ang developer — nawala ang iyong buong puhunan.' },
+    description: '₱180,000 reservation sa pre-selling condo. Walang kita habang ginagawa. Kikita lang kung maibenta nang may tubo.',
     lesson: 'Ang pre-selling ay speculative — hindi guaranteed ang kita.',
   },
   {
@@ -236,6 +249,7 @@ export const smallDeals = [
     cardType: 'trap_deal', trapDelay: 3,
     trapBullOutcome: { cashFlow: 3000, oneTimeGain: 0, description: 'Kumikita ang negosyo — +₱3,000/month passive income.' },
     trapBearOutcome: { cashFlow: 0, oneTimeLoss: 80000, description: 'Nagsara ang negosyo — nawala ang puhunan mo.' },
+    description: '₱80,000 puhunan sa bagong negosyo ng kaibigan. Walang kita hangga\'t hindi lumalago.',
     lesson: 'Ang pamumuhunan sa kaibigan ay may sentimental at financial na risk.',
   },
   {
@@ -244,6 +258,7 @@ export const smallDeals = [
     cardType: 'trap_deal', trapDelay: 2,
     trapBullOutcome: { cashFlow: 5000, oneTimeGain: 0, description: 'Stable ang yield farm — +₱5,000/month passive income.' },
     trapBearOutcome: { cashFlow: 0, oneTimeLoss: 100000, description: 'Rug pull — nawala ang buong puhunan.' },
+    description: '₱100,000 sa DeFi yield farm na nangangako ng mataas na APY.',
     lesson: 'Ang mataas na yield ay kadalasang may katumbas na mataas na risk.',
   },
   {
@@ -252,6 +267,7 @@ export const smallDeals = [
     cardType: 'trap_deal', trapDelay: 3,
     trapBullOutcome: { cashFlow: 2000, oneTimeGain: 0, description: 'Consistent ang trades — +₱2,000/month net.' },
     trapBearOutcome: { cashFlow: 0, oneTimeLoss: 50000, description: 'Account blown — wala nang natira sa trading account.' },
+    description: '₱50,000 trading account para sa forex. "Kikita ka habang natutulog."',
     lesson: 'Ang forex trading ay hindi passive income — ito ay aktibong spekulasyon.',
   },
   {
@@ -260,6 +276,7 @@ export const smallDeals = [
     cardType: 'trap_deal', trapDelay: 2,
     trapBullOutcome: { cashFlow: 0, oneTimeGain: 0, description: 'Walang income. ₱30,000 ang halaga ng aralin: suriin ang datos bago mag-invest.' },
     trapBearOutcome: { cashFlow: 0, oneTimeLoss: 0, description: 'Walang income. Parehong resulta ang bull at bear para sa MLM.' },
+    description: '₱30,000 starter kit. "Passive income ito kapag naka-recruit ka ng 5."',
     lesson: 'Ang MLM ay nagbebenta ng pangarap. Datos: mas maraming naglugi kaysa kumita.',
   },
 ];
@@ -393,26 +410,31 @@ export const bigDeals = [
   {
     id: 'bd21', name: 'Nag-acquire ng Existing Shopee Store (May Established Reviews)',
     purchasePrice: 120000, cashFlow: 9000, exclusive: true,
+    description: '₱120,000 para sa Shopee store na may 4.9 rating at regular na benta. ₱9,000/buwan net.',
     lesson: 'Mas mura ang bumili ng cash-flowing business kaysa magsimula ng bago.',
   },
   {
     id: 'bd22', name: 'Nagtayo ng Self-Storage Facility sa Probinsya',
     purchasePrice: 350000, cashFlow: 18000, liabilityPayment: 2000, exclusive: true,
+    description: '₱350,000 para gawing self-storage ang lumang bodega. ₱18,000/buwan.',
     lesson: 'Ang tao ay nagdadagdag ng gamit — self-storage ay recession-resistant.',
   },
   {
     id: 'bd23', name: 'Solar Panel sa Commercial Property — FIT-All Program',
     purchasePrice: 500000, cashFlow: 22000, exclusive: true,
+    description: '₱500,000 solar panels sa commercial roof. ₱22,000/buwan mula sa natipid at naibentang kuryente.',
     lesson: 'Ang enerhiya na hindi mo nagastos ay energy na ibinenta mo sa Meralco.',
   },
   {
     id: 'bd24', name: 'Biniling TNVS Franchise — Driver sa Boundary',
     purchasePrice: 200000, cashFlow: 12000, exclusive: true,
+    description: '₱200,000 para sa TNVS unit at prangkisa. Driver sa boundary: ₱12,000/buwan sa iyo.',
     lesson: 'Ang boundary scheme ay naglalagay ng ibang tao sa trabaho para sa iyo.',
   },
   {
     id: 'bd25', name: 'Naglagay ng ATM Terminal — Transaction Fee Income',
     purchasePrice: 280000, cashFlow: 14500, exclusive: true,
+    description: '₱280,000 ATM terminal sa mataong lugar. ₱14,500/buwan sa transaction fees.',
     lesson: 'Ang bawat transaksyon ng ibang tao ay maliit na kita para sa may-ari ng terminal.',
   },
 ];
@@ -420,102 +442,182 @@ export const bigDeals = [
 // ─── Gastos / Expense Cards ───────────────────────────────────────────────────
 // type: 'liability' | 'expense' | 'cash'
 // minRound: earliest round this card can appear (formula in GAMEPLAN Part B)
-// g1–g25: original 25 cards; g26–g35: new cards
+// g1–g25: original 25 cards; g26–g36: new cards
+//
+// choices (optional): the player picks how to meet the situation. Each choice
+// carries its own effect fields (cashLoss, addedMonthlyPayment + addedLiability,
+// addedMonthlyExpense, salaryIncrease) or a special type:
+//   'none'   — no cost
+//   'gamble' — stake cash, win `payout` on a D6 roll >= winOn
+//   'lend'   — cash out now, repaid after `delay` rounds on a D6 roll >= repayOn
+//   'scam'   — cash out now, pays `bait`/month, then vanishes after `delay` rounds
+// cashPrice on an installment choice = what the same item costs in cash.
+// wise: true marks the financially sound option (+1 Talino when chosen).
+// The top-level effect fields mirror choice 'a' so older code paths still work.
 export const gastosCards = [
   {
     id: 'g1',  name: 'Bagong Kotse (Installment)',
     type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 8,
-    description: 'Na-tempt sa showroom. ₱18,000/month sa loob ng 48 buwan.',
+    description: 'Sira na ang lumang sasakyan at kailangan mo ng transportasyon papasok. Nasa showroom ka at may "low monthly" promo.',
+    choices: [
+      { id: 'a', label: 'Brand-new, 48 buwang hulog', type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, cashPrice: 720000 },
+      { id: 'b', label: 'Second-hand na kotse (cash)', type: 'cash', cashLoss: 280000, wise: true },
+      { id: 'c', label: 'Mag-commute muna', type: 'expense', addedMonthlyExpense: 3500, wise: true, note: 'Mas mabagal ang biyahe, pero walang utang at walang depreciation.' },
+    ],
   },
   {
     id: 'g2',  name: 'iPhone (In-house Financing)',
     type: 'liability', addedMonthlyPayment: 4500, addedLiability: 54000, minRound: 4,
-    description: 'Pinakabago na modelo. ₱4,500/month sa 12 buwan.',
+    description: 'Basag na ang screen at mabagal na ang phone mo. Kailangan mo ng phone para sa trabaho. Inaalok ka ng pinakabagong modelo.',
+    choices: [
+      { id: 'a', label: 'Flagship, in-house financing 12 buwan', type: 'liability', addedMonthlyPayment: 4500, addedLiability: 54000, cashPrice: 45000 },
+      { id: 'b', label: 'Flagship, cash', type: 'cash', cashLoss: 45000 },
+      { id: 'c', label: 'Mid-range na phone, cash', type: 'cash', cashLoss: 12000, wise: true, note: 'Tumatawag, nagte-text, at nagpapatakbo ng work apps — iyon ang kailangan.' },
+    ],
   },
   {
     id: 'g3',  name: 'Anak sa Pribadong Paaralan',
     type: 'expense', addedMonthlyExpense: 8000, permanent: true, minRound: 6,
-    description: '+₱8,000/month na permanenteng dagdag sa gastusin.',
+    description: 'Papasok na sa paaralan ang anak mo. Kailangan ninyong pumili ng eskwelahan.',
+    choices: [
+      { id: 'a', label: 'Pribadong paaralan', type: 'expense', addedMonthlyExpense: 8000 },
+      { id: 'b', label: 'Public school + tutor tuwing weekend', type: 'expense', addedMonthlyExpense: 2500 },
+    ],
   },
   {
     id: 'g4',  name: 'Online Sugal (E-Sabong/Poker)',
     type: 'cash', cashLoss: 30000, minRound: 6,
-    description: 'Maling taya. Nawala ₱30,000 mula sa cash.',
+    description: 'Inaya ka ng kaibigan: "Sigurado \'to, pare! Nanalo ako kahapon." ₱30,000 ang taya, doble ang balik kung manalo.',
+    choices: [
+      { id: 'a', label: 'Tumaya ng ₱30,000', type: 'gamble', stake: 30000, payout: 30000, winOn: 6 },
+      { id: 'b', label: 'Huwag tumaya', type: 'none', wise: true, note: '1 sa 6 ang tsansang manalo. Ang average na resulta ng tayang ito ay −₱20,000.' },
+    ],
   },
   {
     id: 'g5',  name: 'Baha — Walang Insurance',
     type: 'cash', cashLoss: 80000, mitigatedByInsurance: true, insuranceCost: 10000, minRound: 10,
-    description: '₱80,000 repair. ₱10,000 lang kung insured.',
+    description: 'Pinasok ng baha ang bahay. ₱80,000 ang repair. ₱10,000 lang kung insured.',
   },
   {
     id: 'g6',  name: 'Medical Emergency (Walang HMO)',
     type: 'cash', cashLoss: 150000, mitigatedByInsurance: true, insuranceCost: 50000, minRound: 10,
-    description: '₱150,000 ospital. ₱50,000 lang kung insured.',
+    description: 'Biglaang operasyon. ₱150,000 ang ospital. ₱50,000 lang kung insured.',
   },
   {
     id: 'g7',  name: 'Credit Card Hindi Binabayaran',
-    type: 'liability', addedMonthlyPayment: 5000, addedLiability: 50000, creditScorePenalty: -50, minRound: 4,
-    description: '3.5%/month interest. Credit score -50.',
+    type: 'liability', addedMonthlyPayment: 5000, addedLiability: 60000, creditScorePenalty: -50, minRound: 4,
+    description: 'Dumating ang statement: ₱50,000. Ang "minimum amount due" ay ₱5,000 lang. Hanggang 3%/buwan ang interes sa natitira.',
+    choices: [
+      { id: 'a', label: 'Minimum payment lang', type: 'liability', addedMonthlyPayment: 5000, addedLiability: 60000, cashPrice: 50000, creditScorePenalty: -30 },
+      { id: 'b', label: 'Bayaran nang buo (cash)', type: 'cash', cashLoss: 50000, wise: true },
+    ],
   },
   {
     id: 'g8',  name: '5-6 Loan Trap',
-    type: 'liability', addedMonthlyPayment: 10000, addedLiability: 50000, minRound: 8,
-    description: '₱50K sa 5-6. ₱10K/month bayad sa 6 buwan.',
+    type: 'liability', addedMonthlyPayment: 10000, addedLiability: 60000, minRound: 8,
+    description: 'May biglaang bayarin na ₱50,000. May nag-aalok ng pautang sa kanto: "Walang requirements, cash agad!"',
+    choices: [
+      { id: 'a', label: '5-6 sa kanto', type: 'liability', addedMonthlyPayment: 10000, addedLiability: 60000, cashPrice: 50000 },
+      { id: 'b', label: 'SSS Salary Loan (tantiya: 24 buwan)', type: 'liability', addedMonthlyPayment: 2300, addedLiability: 55200, cashPrice: 50000, wise: true },
+      { id: 'c', label: 'Gamitin ang ipon', type: 'cash', cashLoss: 50000, wise: true },
+    ],
   },
   {
     id: 'g9',  name: 'Major Car Repair',
     type: 'cash', cashLoss: 45000, minRound: 6,
-    description: 'Napalitan ng makina ng kotse. ₱45,000.',
+    description: 'Napalitan ng makina ng kotse. ₱45,000. Walang paraan para iwasan ito.',
   },
   {
     id: 'g10', name: 'Renovation Frenzy',
     type: 'cash', cashLoss: 60000, minRound: 10,
-    description: 'Home improvement na hindi nagdagdag ng halaga.',
+    description: 'May tulo ang bubong. Habang inaayos, naisip mong ipa-renovate na rin ang buong bahay.',
+    choices: [
+      { id: 'a', label: 'Full renovation', type: 'cash', cashLoss: 60000 },
+      { id: 'b', label: 'Ayusin lang ang tulo at kable', type: 'cash', cashLoss: 15000, wise: true },
+    ],
   },
   {
     id: 'g11', name: 'Gadgets para sa Pamilya',
     type: 'cash', cashLoss: 80000, minRound: 10,
-    description: 'Phones para sa apat na miyembro. ₱80,000.',
+    description: 'Humihingi ng bagong phone ang buong pamilya. Isa lang ang talagang sira na.',
+    choices: [
+      { id: 'a', label: 'Flagship para sa lahat (cash)', type: 'cash', cashLoss: 80000 },
+      { id: 'b', label: 'Flagship para sa lahat (12 buwang hulog)', type: 'liability', addedMonthlyPayment: 8000, addedLiability: 96000, cashPrice: 80000 },
+      { id: 'c', label: 'Palitan lang ang sira (mid-range)', type: 'cash', cashLoss: 12000, wise: true },
+    ],
   },
   {
     id: 'g12', name: 'Maling Investment (Scam)',
     type: 'cash', cashLoss: 100000, minRound: 10,
-    description: 'Na-scam sa investment scheme. Nawala ₱100,000.',
+    description: 'Ang "investment" na pinasukan mo noong isang taon ay naglaho. Walang secondary license sa SEC ang kumpanya. Nawala ang ₱100,000.',
   },
   {
     id: 'g13', name: 'Pamilya — Bagong Upa',
     type: 'expense', addedMonthlyExpense: 5000, permanent: true, minRound: 6,
-    description: 'Napilitang lumipat ng mas mahal na bahay. +₱5,000/month.',
+    description: 'Ibinenta ng landlord ang inuupahan ninyo. Kailangang lumipat sa loob ng isang buwan.',
+    choices: [
+      { id: 'a', label: 'Mas malaking unit, malapit sa mall', type: 'expense', addedMonthlyExpense: 5000 },
+      { id: 'b', label: 'Kaparehong laki, medyo mas malayo', type: 'expense', addedMonthlyExpense: 1500, wise: true },
+    ],
   },
   {
     id: 'g14', name: 'Utang ng Kapatid (Pinanghiram)',
     type: 'cash', cashLoss: 40000, minRound: 6,
-    description: 'Pamilya nangangailangan. ₱40,000 ang nilabas. Hindi mababawi.',
+    description: 'Nangangailangan ang kapatid mo ng ₱40,000. "Babayaran kita, promise."',
+    choices: [
+      { id: 'a', label: 'Ipahiram ang ₱40,000 (walang usapan)', type: 'lend', amount: 40000, repayOn: 6, delay: 3 },
+      { id: 'b', label: 'Ipahiram na may nakasulat na kasunduan', type: 'lend', amount: 40000, repayOn: 4, delay: 3, wise: true },
+      { id: 'c', label: 'Magbigay ng ₱15,000 bilang tulong (hindi utang)', type: 'cash', cashLoss: 15000, wise: true, note: 'Ang regalo ay hindi naghihintay ng bayad — walang sama ng loob kapag hindi naibalik.' },
+    ],
   },
   {
     id: 'g15', name: 'Maluho na Bakasyon (Boracay, Business Class)',
     type: 'cash', cashLoss: 70000, minRound: 10,
-    description: 'YOLO trip. ₱70,000 all-in para sa pamilya.',
+    description: 'Matagal na ninyong pangarap ang Boracay. Paano ninyo ito babayaran?',
+    choices: [
+      { id: 'a', label: 'Business class, all-in (cash)', type: 'cash', cashLoss: 70000 },
+      { id: 'b', label: 'Business class, credit card installment', type: 'liability', addedMonthlyPayment: 7000, addedLiability: 84000, cashPrice: 70000 },
+      { id: 'c', label: 'Promo fare at simpleng hotel', type: 'cash', cashLoss: 25000, wise: true },
+    ],
   },
   {
     id: 'g16', name: 'Kasal — Grand Reception',
     type: 'cash', cashLoss: 250000, minRound: 10,
-    description: 'Malaking kasal na hindi kaya ng budget. ₱250,000.',
+    description: 'Ikakasal ka na! Gusto ng pamilya ng engrandeng handaan.',
+    choices: [
+      { id: 'a', label: 'Grand reception (cash)', type: 'cash', cashLoss: 250000 },
+      { id: 'b', label: 'Grand reception, wedding loan', type: 'liability', addedMonthlyPayment: 12000, addedLiability: 288000, cashPrice: 250000 },
+      { id: 'c', label: 'Simpleng kasal at salu-salo', type: 'cash', cashLoss: 60000, wise: true },
+    ],
   },
   {
     id: 'g17', name: 'Appliances on Installment (Ref + TV + Washer)',
     type: 'liability', addedMonthlyPayment: 6000, addedLiability: 72000, minRound: 4,
-    description: 'Pinabili ng bagong appliances. ₱6,000/month sa 12 buwan.',
+    description: 'Sira na ang ref. May "0% interest" daw na promo sa appliance center para sa ref + TV + washer.',
+    choices: [
+      { id: 'a', label: 'Lahat, 12 buwang hulog', type: 'liability', addedMonthlyPayment: 6000, addedLiability: 72000, cashPrice: 55000, note: 'Ang "0% interest" ay madalas nakatago sa mas mataas na presyo kumpara sa cash.' },
+      { id: 'b', label: 'Lahat, cash', type: 'cash', cashLoss: 55000 },
+      { id: 'c', label: 'Ref lang muna (cash)', type: 'cash', cashLoss: 20000, wise: true },
+    ],
   },
   {
     id: 'g18', name: 'Pinautang ang Kaibigan (Negosyo)',
     type: 'cash', cashLoss: 50000, minRound: 6,
-    description: 'Inutangan ng kaibigan para sa negosyo. Hindi nagbalik.',
+    description: 'Humihiram ang matalik mong kaibigan ng ₱50,000 para sa bago niyang negosyo.',
+    choices: [
+      { id: 'a', label: 'Ipahiram, walang kasulatan', type: 'lend', amount: 50000, repayOn: 5, delay: 3 },
+      { id: 'b', label: 'Ipahiram, may promissory note at schedule', type: 'lend', amount: 50000, repayOn: 3, delay: 3, wise: true },
+      { id: 'c', label: 'Tumanggi nang maayos', type: 'none', wise: true },
+    ],
   },
   {
     id: 'g19', name: 'Sagot sa Pag-aaral ng Kapatid (College)',
     type: 'expense', addedMonthlyExpense: 6000, permanent: true, minRound: 6,
-    description: '+₱6,000/month para sa tuition at allowance ng kapatid.',
+    description: 'Papasok na sa kolehiyo ang bunsong kapatid. Ikaw ang inaasahan ng pamilya.',
+    choices: [
+      { id: 'a', label: 'Sagutin lahat (₱6,000/buwan)', type: 'expense', addedMonthlyExpense: 6000 },
+      { id: 'b', label: 'Hatian ng magkakapatid + mag-apply ng scholarship', type: 'expense', addedMonthlyExpense: 2500 },
+    ],
   },
   {
     id: 'g20', name: 'Bagyo — Hindi Narepair ang Bubong',
@@ -530,12 +632,20 @@ export const gastosCards = [
   {
     id: 'g22', name: 'Mall Sale Impulse Buying',
     type: 'cash', cashLoss: 35000, minRound: 6,
-    description: '₱35,000 na gamit na hindi naman kailangan.',
+    description: '11.11 sale! Puno ang cart mo ng ₱35,000 na "sulit" na gamit.',
+    choices: [
+      { id: 'a', label: 'Checkout lahat', type: 'cash', cashLoss: 35000 },
+      { id: 'b', label: '24-oras na patakaran: kailangan lang ang bilhin', type: 'cash', cashLoss: 8000, wise: true },
+    ],
   },
   {
     id: 'g23', name: 'Bagong Muwebles (Interior Design Frenzy)',
     type: 'cash', cashLoss: 65000, minRound: 10,
-    description: 'Pinalamutian ng bahay. ₱65,000 sa muwebles at dekorasyon.',
+    description: 'Luma na ang sofa at mesa. Nakakita ka ng magandang set sa furniture store.',
+    choices: [
+      { id: 'a', label: 'Bagong set, kumpleto', type: 'cash', cashLoss: 65000 },
+      { id: 'b', label: 'Paunti-unti, may second-hand', type: 'cash', cashLoss: 18000, wise: true },
+    ],
   },
   {
     id: 'g24', name: 'Sakit ng Magulang (Walang PhilHealth)',
@@ -545,59 +655,127 @@ export const gastosCards = [
   {
     id: 'g25', name: 'Legal Dispute sa Katabi (Property)',
     type: 'cash', cashLoss: 45000, minRound: 6,
-    description: 'Kaso sa korte dahil sa property boundary. ₱45,000 legal fees.',
+    description: 'Inaangkin ng kapitbahay ang isang metro ng lupa ninyo. Kailangang ayusin.',
+    choices: [
+      { id: 'a', label: 'Idemanda agad sa korte', type: 'cash', cashLoss: 45000 },
+      { id: 'b', label: 'Dumaan muna sa Lupong Tagapamayapa ng barangay', type: 'cash', cashLoss: 5000, wise: true, note: 'Karamihan ng alitan ng magkapitbahay sa iisang lungsod ay dumadaan muna sa barangay bago umabot sa korte.' },
+    ],
   },
 
-  // ── New gastos cards g26–g35 ─────────────────────────────────────────────────
+  // ── New gastos cards g26–g36 ─────────────────────────────────────────────────
   {
     id: 'g26', name: 'Biniling Brand-New na Kotse (Na-Finance ng 5 Taon)',
-    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 6,
+    type: 'liability', addedMonthlyPayment: 15000, addedLiability: 900000, minRound: 6,
+    description: 'Ang dealer: "₱15,000 lang kada buwan, 5 taon!" Gusto mo ng sasakyan para sa pamilya.',
     lesson: 'Ang bagong kotse ay depreciating liability — hindi investment. Tingnan ang income statement.',
+    choices: [
+      { id: 'a', label: 'Brand-new, 60 buwang hulog', type: 'liability', addedMonthlyPayment: 15000, addedLiability: 900000, cashPrice: 720000 },
+      { id: 'b', label: 'Second-hand na kotse (cash)', type: 'cash', cashLoss: 280000, wise: true },
+      { id: 'c', label: 'Mag-commute at mag-Grab kung kailangan', type: 'expense', addedMonthlyExpense: 3500, wise: true },
+    ],
   },
   {
     id: 'g27', name: "Whole Life Insurance 'Para sa Investment'",
     type: 'expense', addedMonthlyExpense: 8500, permanent: true, minRound: 3,
+    description: 'Inaalok ka ng kaibigang agent: "Insurance na, investment pa! ₱8,500 lang kada buwan."',
     lesson: "Ang insurance na may 'savings component' ay mahal na insurance — hindi tunay na investment.",
+    choices: [
+      { id: 'a', label: 'Pumirma (₱8,500/buwan)', type: 'expense', addedMonthlyExpense: 8500 },
+      { id: 'b', label: 'Term life lang, mas mababang premium', type: 'expense', addedMonthlyExpense: 1500, wise: true, note: 'Isang paraan ito: hiwalay ang proteksyon at ang investment. Ikumpara ang sum assured at gastos bago pumili.' },
+      { id: 'c', label: 'Pag-iisipan muna', type: 'none' },
+    ],
   },
   {
     id: 'g28', name: 'Timeshare Resort Unit',
     type: 'cash', cashLoss: 90000, addedMonthlyExpense: 3000, permanent: true, minRound: 8,
+    description: 'Libreng buffet... kapalit ng 90-minutong sales pitch. "Pirma na lang, sir/ma\'am — ngayon lang ang presyong ito."',
     lesson: 'Ang timeshare ay may resale value na malapit sa zero. Ito ay prepaid vacation, hindi real estate.',
+    choices: [
+      { id: 'a', label: 'Pumirma', type: 'cash', cashLoss: 90000, addedMonthlyExpense: 3000 },
+      { id: 'b', label: 'Tumanggi at umuwi', type: 'none', wise: true, note: '"Ngayon lang ang presyo" ay pressure tactic. Ang magandang deal ay hindi nawawala sa loob ng isang gabi.' },
+    ],
   },
   {
     id: 'g29', name: "Premium Credit Card Annual Fee 'Para sa Rewards'",
     type: 'cash', cashLoss: 5000, minRound: 1,
+    description: 'Dumating ang ₱5,000 annual fee ng premium card mo. Halos hindi mo nagagamit ang rewards.',
     lesson: 'Ang reward points ay may value lamang kung mas malaki kaysa sa annual fee at interes.',
+    choices: [
+      { id: 'a', label: 'Bayaran ang annual fee', type: 'cash', cashLoss: 5000 },
+      { id: 'b', label: 'Tumawag at humiling ng fee waiver', type: 'none', wise: true },
+    ],
   },
   {
     id: 'g30', name: 'Renovation ng Rented Apartment',
     type: 'cash', cashLoss: 45000, minRound: 4,
+    description: 'Gusto mong pagandahin ang inuupahan mong apartment.',
     lesson: 'Ang pagpapaganda ng bahay ng ibang tao ay hindi mo investment.',
+    choices: [
+      { id: 'a', label: 'Bagong tiles, pintura, at cabinets', type: 'cash', cashLoss: 45000 },
+      { id: 'b', label: 'Kausapin ang landlord; ayusin lang ang kailangan', type: 'cash', cashLoss: 6000, wise: true },
+    ],
   },
   {
     id: 'g31', name: 'MBA Degree — Kinuha ng Pautang',
     type: 'cash', cashLoss: 120000, minRound: 6,
+    description: 'Tinanggap ka sa isang MBA program. Mataas ang tuition, pero mataas din ang posibleng sahod pagkatapos.',
     lesson: 'Ang edukasyon ay may ROI — pero ang utang para dito ay may tunay na cost na kailangang kalkulahin.',
+    choices: [
+      { id: 'a', label: 'MBA, may student loan', type: 'liability', addedMonthlyPayment: 6000, addedLiability: 144000, salaryIncrease: 5000 },
+      { id: 'b', label: 'Online certification (cash)', type: 'cash', cashLoss: 15000, salaryIncrease: 1500 },
+      { id: 'c', label: 'Huwag muna', type: 'none' },
+    ],
   },
   {
     id: 'g32', name: "Nagbili ng Jewelry Bilang 'Investment'",
     type: 'cash', cashLoss: 60000, minRound: 5,
+    description: 'Inaalok ka ng alahas: "Hindi bumababa ang presyo ng ginto, investment ito!"',
     lesson: 'Ang alahas ay may emotional value — pero ang resale ay halos laging mas mababa kaysa purchase price.',
+    choices: [
+      { id: 'a', label: 'Bilhin (₱60,000)', type: 'cash', cashLoss: 60000 },
+      { id: 'b', label: 'Huwag bilhin', type: 'none', wise: true },
+    ],
   },
   {
     id: 'g33', name: "Nagbili ng Bagong Motorcycle 'Para sa Business'",
     type: 'liability', addedMonthlyPayment: 8000, addedLiability: 288000, minRound: 3,
+    description: 'Gusto mong mag-deliver tuwing weekend. Kailangan mo ng motor.',
     lesson: 'Kailangang mas malaki ang kita ng negosyo kaysa sa buwanang amortization ng sasakyan.',
+    choices: [
+      { id: 'a', label: 'Big bike, 36 buwang hulog', type: 'liability', addedMonthlyPayment: 8000, addedLiability: 288000, cashPrice: 220000 },
+      { id: 'b', label: 'Second-hand na scooter (cash)', type: 'cash', cashLoss: 45000, wise: true },
+      { id: 'c', label: 'Huwag muna ituloy', type: 'none' },
+    ],
   },
   {
     id: 'g34', name: "Lupa sa Lalawigan — 'Pangmatagalang Investment'",
     type: 'cash', cashLoss: 150000, addedMonthlyExpense: 1500, permanent: true, minRound: 8,
+    description: 'Ibinebenta ng tiyuhin ang lupang walang daan at walang umuupa. "Tataas ang presyo nito balang araw."',
     lesson: 'Ang lupa na walang kita ay gastos sa tax at oportunidad. Hindi ito passive income.',
+    choices: [
+      { id: 'a', label: 'Bilhin', type: 'cash', cashLoss: 150000, addedMonthlyExpense: 1500 },
+      { id: 'b', label: 'Huwag bilhin', type: 'none', wise: true },
+    ],
   },
   {
     id: 'g35', name: 'Japan Trip — YOLO Family Vacation (Business Class)',
     type: 'cash', cashLoss: 85000, minRound: 4,
+    description: 'Cherry blossom season! Nag-aaya ang pamilya sa Japan.',
     lesson: 'Ang karanasan ay may halaga — pero kailangan mong malaman kung saan nanggaling ang pera.',
+    choices: [
+      { id: 'a', label: 'Business class (cash)', type: 'cash', cashLoss: 85000 },
+      { id: 'b', label: 'Business class, travel loan', type: 'liability', addedMonthlyPayment: 8000, addedLiability: 96000, cashPrice: 85000 },
+      { id: 'c', label: 'Domestic trip muna', type: 'cash', cashLoss: 20000, wise: true },
+    ],
+  },
+  {
+    id: 'g36', name: "Kaibigan: '5% Kada Buwan, Guaranteed!'",
+    type: 'cash', cashLoss: 100000, minRound: 4,
+    description: 'Kumikita raw ang mga kakilala mo. "₱100,000 lang, 5% kada buwan, guaranteed! Mas malaki pa kung mag-invite ka."',
+    choices: [
+      { id: 'a', label: 'Mag-invest ng ₱100,000', type: 'scam', amount: 100000, bait: 5000, delay: 2 },
+      { id: 'b', label: 'I-check muna sa SEC', type: 'none', wise: true, note: 'Walang secondary license ang kumpanya para tumanggap ng investment. Lumabas din ito sa SEC advisory.' },
+    ],
   },
 ];
 

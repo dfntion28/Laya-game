@@ -27,6 +27,7 @@ import {
   CREDIT_MISSED_PAYMENT,
   CREDIT_CARD_PENALTY,
 } from '../data/gameConstants.js';
+import { loadDiscoveredLessons, saveDiscoveredLessons, LESSON_CONCEPTS } from '../data/lessons.js';
 
 // ─── Module-level UID counter ─────────────────────────────────────────────────
 
@@ -128,8 +129,31 @@ function createPlayerState(name, professionId, color = 'amber') {
     timeDeposits: [],
     activeTrapDeals: [],
     creditLine: null,
+    // Learning layer
+    talino: 0,
+    seenTips: [],
+    stats: {
+      choicesMade: 0, wiseChoices: 0, financingPremium: 0,
+      uninsuredLoss: 0, insuranceSaved: 0,
+      scamLoss: 0, gambleNet: 0, lendLost: 0, lendRecovered: 0,
+      quizCorrect: 0, quizTotal: 0,
+      dealsBought: 0, dealsPassed: 0, goodDealsBought: 0, badDealsAvoided: 0,
+      loansFinished: 0,
+    },
   };
 }
+
+function bumpStats(player, delta) {
+  const stats = { ...player.stats };
+  for (const [k, v] of Object.entries(delta)) stats[k] = (stats[k] || 0) + v;
+  return stats;
+}
+
+const d6 = () => Math.floor(Math.random() * 6) + 1;
+
+// Installment-style debts (balance = sum of remaining payments) shrink every
+// payday; bank loans and mortgages keep their balance until paid at Bangko.
+const AMORTIZING_SOURCES = new Set(['starting', 'gastos']);
 
 function patchPlayer(players, playerId, patcher) {
   return players.map(p => (p.id === playerId ? { ...p, ...patcher(p) } : p));
@@ -169,6 +193,8 @@ const INITIAL_STATE = {
 
 export const useGameStore = create((set, get) => ({
   ...INITIAL_STATE,
+  // Lesson journal persists across games in this browser
+  discoveredLessons: loadDiscoveredLessons(),
 
   // ── Setup ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +202,7 @@ export const useGameStore = create((set, get) => ({
     const players = playerSetups.map(s => createPlayerState(s.name, s.professionId, s.color));
     set({
       ...INITIAL_STATE,
+      discoveredLessons: get().discoveredLessons,
       phase: 'playing',
       players,
       deckStates: {
@@ -336,6 +363,22 @@ export const useGameStore = create((set, get) => ({
       }
     }
 
+    // Tenant roll per rental (GAMEPLAN #4). Property Manager card cancels one bad roll.
+    const rolledTenants = [...tenantRolls];
+    let propertyManagerUsed = false;
+    const hasPropertyManager = player.heldNetworkCards.some(c => c.effect === 'skip_tenant_damage_roll');
+    for (const asset of player.assets) {
+      if (asset.assetType !== 'real_estate' || !(asset.monthlyIncome > 0)) continue;
+      if (rolledTenants.some(r => r.assetId === asset.instanceId)) continue;
+      let roll = d6();
+      const bad = roll === TENANT_VACANCY_ROLL || roll === TENANT_DAMAGE_ROLL;
+      if (bad && hasPropertyManager && !propertyManagerUsed) {
+        propertyManagerUsed = true;
+        roll = 6;
+      }
+      rolledTenants.push({ assetId: asset.instanceId, roll, name: asset.name });
+    }
+
     // Passive income with tenant and OFW risk modifiers
     let passiveIncome = 0;
     for (const asset of player.assets) {
@@ -343,7 +386,7 @@ export const useGameStore = create((set, get) => ({
       if (asset.instanceId === ofwMissedAssetId) {
         // OFW family mismanaged — skip this month
       } else if (asset.assetType === 'real_estate') {
-        const tenantResult = tenantRolls.find(r => r.assetId === asset.instanceId);
+        const tenantResult = rolledTenants.find(r => r.assetId === asset.instanceId);
         if (!tenantResult) {
           passiveIncome += base;
         } else if (tenantResult.roll === TENANT_VACANCY_ROLL) {
@@ -391,11 +434,22 @@ export const useGameStore = create((set, get) => ({
     // ── Part E: Trap deal resolution ─────────────────────────────────────────
     let resolvedAssets = [...player.assets];
     const trapResolutions = [];
+    const statDelta = {};
     const updatedTrapDeals = (player.activeTrapDeals || []).map(entry => {
       if (!entry.resolved && entry.triggersOnRound <= state.round) {
-        const outcome = state.marketCycle === 'bull'
-          ? entry.card.trapBullOutcome
-          : entry.card.trapBearOutcome;
+        // Loans to family/friends resolve on a D6; speculative deals on the market cycle
+        const success = entry.successOn
+          ? d6() >= entry.successOn
+          : state.marketCycle === 'bull';
+        const outcome = success ? entry.card.trapBullOutcome : entry.card.trapBearOutcome;
+        if (entry.removeAssetId) {
+          resolvedAssets = resolvedAssets.filter(a => a.instanceId !== entry.removeAssetId);
+        }
+        if (entry.kind === 'lend') {
+          if (success) statDelta.lendRecovered = (statDelta.lendRecovered || 0) + entry.amount;
+          else statDelta.lendLost = (statDelta.lendLost || 0) + entry.amount;
+        }
+        if (entry.kind === 'scam') statDelta.scamLoss = (statDelta.scamLoss || 0) + entry.amount;
         if (outcome.cashFlow > 0) {
           resolvedAssets = [...resolvedAssets, {
             instanceId: uid('asset'),
@@ -412,7 +466,7 @@ export const useGameStore = create((set, get) => ({
         }
         if (outcome.oneTimeGain > 0) newCash += outcome.oneTimeGain;
         if (outcome.oneTimeLoss > 0) newCash = Math.max(0, newCash - outcome.oneTimeLoss);
-        trapResolutions.push({ entry, outcome });
+        trapResolutions.push({ entry, outcome, success });
         return { ...entry, resolved: true };
       }
       return entry;
@@ -443,10 +497,32 @@ export const useGameStore = create((set, get) => ({
       newCash -= creditLineInterest;
     }
 
+    // ── Installment amortization ─────────────────────────────────────────────
+    const finishedLoans = [];
+    const amortizedLiabilities = [];
+    for (const lib of player.liabilities) {
+      if (!AMORTIZING_SOURCES.has(lib.source)) { amortizedLiabilities.push(lib); continue; }
+      const balance = lib.balance - (lib.payment || 0);
+      if (balance <= 0) finishedLoans.push(lib);
+      else amortizedLiabilities.push({ ...lib, balance });
+    }
+    if (finishedLoans.length) {
+      creditScore = clampCredit(creditScore + CREDIT_LOAN_PAID * finishedLoans.length);
+      statDelta.loansFinished = finishedLoans.length;
+    }
+
     set({
-      players: patchPlayer(state.players, playerId, () => ({
+      players: patchPlayer(state.players, playerId, p => ({
         cash: newCash,
         assets: resolvedAssets,
+        liabilities: amortizedLiabilities,
+        stats: bumpStats(p, statDelta),
+        heldNetworkCards: propertyManagerUsed
+          ? (() => {
+              const idx = p.heldNetworkCards.findIndex(c => c.effect === 'skip_tenant_damage_roll');
+              return p.heldNetworkCards.filter((_, i) => i !== idx);
+            })()
+          : p.heldNetworkCards,
         activeTrapDeals: updatedTrapDeals,
         timeDeposits: updatedTimeDeposits,
         creditScore,
@@ -479,8 +555,16 @@ export const useGameStore = create((set, get) => ({
     } else if (ofwRoll !== null && ofwRoll > 1) {
       get().addLog(`✅ OFW assets: ligtas ngayong round (D6: ${ofwRoll})`, playerId);
     }
+    for (const r of rolledTenants) {
+      if (r.roll === TENANT_VACANCY_ROLL) get().addLog(`🏚 Bakante: "${r.name}" — walang renta ngayong Sahod Day (D6: 1)`, playerId);
+      else if (r.roll === TENANT_DAMAGE_ROLL) get().addLog(`🔧 Sira sa "${r.name}" — −${fmtPhp(TENANT_DAMAGE_COST)} repair (D6: 2)`, playerId);
+    }
+    if (propertyManagerUsed) get().addLog('🧰 Property Manager: naiwasan ang bakante/sira sa isang property', playerId);
+    for (const lib of finishedLoans) {
+      get().addLog(`✅ Tapos na ang hulog: "${lib.name}" — +${fmtPhp(lib.payment)}/buwan sa cash flow, +50 credit`, playerId);
+    }
     for (const { entry, outcome } of trapResolutions) {
-      get().addLog(`🎲 ${player.name} — Trap Deal resolved: ${outcome.description}`, playerId);
+      get().addLog(`🎲 ${entry.card.name}: ${outcome.description}`, playerId);
     }
     for (const deposit of tdPrincipalLogs) {
       get().addLog(`🏦 ${player.name} — Time Deposit matured: ${fmtPhp(deposit.amount)} principal returned.`, playerId);
@@ -488,6 +572,15 @@ export const useGameStore = create((set, get) => ({
     if (creditLineInterest > 0) {
       get().addLog(`💳 ${player.name} — Credit Line interest: ${fmtPhp(creditLineInterest)} deducted.`, playerId);
     }
+
+    return {
+      inflow, totalOutflow, palContrib, net,
+      vacancies: rolledTenants.filter(r => r.roll === TENANT_VACANCY_ROLL).map(r => r.name),
+      damages: rolledTenants.filter(r => r.roll === TENANT_DAMAGE_ROLL).map(r => r.name),
+      finishedLoans: finishedLoans.map(l => l.name),
+      trapResolutions: trapResolutions.map(r => r.outcome.description),
+      missedPayment: !canCoverExpenses,
+    };
   },
 
   // ── Loans ──────────────────────────────────────────────────────────────────
@@ -886,6 +979,7 @@ export const useGameStore = create((set, get) => ({
         players: patchPlayer(state.players, playerId, p => ({
           cash: p.cash - (card.purchasePrice || 0),
           activeTrapDeals: [...(p.activeTrapDeals || []), {
+            entryId: uid('trap'),
             cardId: card.id,
             card,
             triggersOnRound: round + card.trapDelay,
@@ -947,12 +1041,18 @@ export const useGameStore = create((set, get) => ({
       const loss = player.insuranceActive && card.mitigatedByInsurance
         ? card.insuranceCost
         : card.cashLoss;
+      const insured = player.insuranceActive && card.mitigatedByInsurance;
       set(state => ({
         players: patchPlayer(state.players, playerId, p => ({
           cash: p.cash - loss,
           // also apply any monthly expense increase on combo-cash cards (g28, g34)
           ...(card.addedMonthlyExpense
             ? { monthlyExpenses: p.monthlyExpenses + card.addedMonthlyExpense }
+            : {}),
+          ...(card.mitigatedByInsurance
+            ? { stats: bumpStats(p, insured
+                ? { insuranceSaved: card.cashLoss - card.insuranceCost }
+                : { uninsuredLoss: card.cashLoss - card.insuranceCost }) }
             : {}),
         })),
       }));
@@ -1213,12 +1313,16 @@ export const useGameStore = create((set, get) => ({
       }
 
       case 'disaster_cash_loss': {
+        const diff = card.cashLoss - card.insuranceCost;
         set(state => ({
           players: state.players.map(p => {
-            const loss = p.insuranceActive && card.mitigatedByInsurance
-              ? card.insuranceCost
-              : card.cashLoss;
-            return { ...p, cash: p.cash - loss };
+            const insured = p.insuranceActive && card.mitigatedByInsurance;
+            const loss = insured ? card.insuranceCost : card.cashLoss;
+            return {
+              ...p,
+              cash: p.cash - loss,
+              stats: bumpStats(p, insured ? { insuranceSaved: diff } : { uninsuredLoss: diff }),
+            };
           }),
         }));
         break;
@@ -1343,6 +1447,158 @@ export const useGameStore = create((set, get) => ({
     return { success: true };
   },
 
+  // ── Learning layer ─────────────────────────────────────────────────────────
+
+  // Applies the option a player picked on a Gastos card. Returns an outcome
+  // object for the debrief (dice result, what happened).
+  applyGastosChoice: (playerId, card, choice) => {
+    const { players, round } = get();
+    const player = players.find(p => p.id === playerId);
+    if (!player || !choice) return null;
+
+    let outcome = { text: null };
+    const patch = {};
+    let cash = player.cash;
+    const statDelta = { choicesMade: 1, wiseChoices: choice.wise ? 1 : 0 };
+
+    if (choice.cashLoss) cash -= choice.cashLoss;
+    if (choice.addedMonthlyExpense) patch.monthlyExpenses = player.monthlyExpenses + choice.addedMonthlyExpense;
+    if (choice.salaryIncrease) patch.salary = player.salary + choice.salaryIncrease;
+    if (choice.addedMonthlyPayment) {
+      patch.liabilities = [...player.liabilities, {
+        id: uid('lib'),
+        name: card.name.split(' (')[0],
+        balance: choice.addedLiability,
+        payment: choice.addedMonthlyPayment,
+        source: 'gastos',
+        linkedAssetId: null,
+      }];
+      patch.creditScore = clampCredit(player.creditScore + (choice.creditScorePenalty ?? CREDIT_NEW_LOAN));
+      if (choice.cashPrice) statDelta.financingPremium = choice.addedLiability - choice.cashPrice;
+    }
+
+    if (choice.type === 'gamble') {
+      const roll = d6();
+      const won = roll >= choice.winOn;
+      cash += won ? choice.payout : -choice.stake;
+      statDelta.gambleNet = won ? choice.payout : -choice.stake;
+      outcome = {
+        roll, won,
+        text: won
+          ? `D6: ${roll} — Nanalo ka ng ${fmtPhp(choice.payout)}! Pero 5 sa 6 na beses, ito ay talo. Ang swerte ay hindi diskarte.`
+          : `D6: ${roll} — Talo. −${fmtPhp(choice.stake)}. Kailangan ng 6 para manalo (1 sa 6 na tsansa).`,
+      };
+    }
+
+    if (choice.type === 'lend' || choice.type === 'scam') {
+      cash -= choice.amount;
+      const entry = {
+        entryId: uid('trap'),
+        cardId: card.id,
+        kind: choice.type,
+        amount: choice.amount,
+        triggersOnRound: round + choice.delay,
+        resolved: false,
+      };
+      if (choice.type === 'lend') {
+        entry.successOn = choice.repayOn;
+        entry.card = {
+          name: `Pautang: ${card.name.split(' (')[0]}`,
+          trapBullOutcome: { cashFlow: 0, oneTimeGain: choice.amount, description: `Naibalik ang ${fmtPhp(choice.amount)}!` },
+          trapBearOutcome: { cashFlow: 0, description: `Hindi na naibalik ang ${fmtPhp(choice.amount)}.` },
+        };
+        const chance = Math.round(((7 - choice.repayOn) / 6) * 100);
+        outcome = { text: `Inilabas mo ang ${fmtPhp(choice.amount)}. Tsansang maibalik sa loob ng ${choice.delay} rounds: ${chance}%.` };
+      } else {
+        const bait = {
+          instanceId: uid('asset'),
+          cardId: card.id,
+          name: card.name,
+          currentValue: choice.amount,
+          originalCost: choice.amount,
+          monthlyIncome: choice.bait,
+          assetType: 'business',
+          mortgageLiabilityId: null,
+          isUrban: false,
+          isCondo: false,
+          scam: true,
+        };
+        patch.assets = [...player.assets, bait];
+        entry.removeAssetId = bait.instanceId;
+        entry.successOn = 7; // never succeeds
+        entry.card = {
+          name: card.name,
+          trapBullOutcome: { cashFlow: 0, description: '' },
+          trapBearOutcome: { cashFlow: 0, description: `Hindi na ma-contact ang "kumpanya". Nawala ang ${fmtPhp(choice.amount)}.` },
+        };
+        outcome = { text: `Lumabas sa assets mo ang +${fmtPhp(choice.bait)}/buwan. Abangan ang susunod na ${choice.delay} rounds.` };
+      }
+      patch.activeTrapDeals = [...(player.activeTrapDeals || []), entry];
+    }
+
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        ...patch,
+        cash,
+        talino: p.talino + (choice.wise ? 1 : 0),
+        stats: bumpStats(p, statDelta),
+      })),
+    }));
+    get().addLog(`💸 ${card.name.split(' (')[0]}: ${choice.label}${outcome.roll ? ` (D6: ${outcome.roll})` : ''}`, playerId);
+    return outcome;
+  },
+
+  // verdict comes from analyzeDeal(); good buys and avoided bad deals earn Talino
+  recordDealDecision: (playerId, { bought, verdict, usedAdvisor }) => {
+    const earned = (bought && verdict === 'good') || (!bought && verdict === 'bad') ? 1 : 0;
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        talino: p.talino + earned,
+        stats: bumpStats(p, {
+          dealsBought: bought ? 1 : 0,
+          dealsPassed: bought ? 0 : 1,
+          goodDealsBought: bought && verdict === 'good' ? 1 : 0,
+          badDealsAvoided: !bought && verdict === 'bad' ? 1 : 0,
+        }),
+        heldNetworkCards: usedAdvisor
+          ? (() => {
+              const idx = p.heldNetworkCards.findIndex(c => c.effect === 'next_deal_analysis');
+              return p.heldNetworkCards.filter((_, i) => i !== idx);
+            })()
+          : p.heldNetworkCards,
+      })),
+    }));
+    return earned;
+  },
+
+  recordQuiz: (playerId, correct) => {
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        talino: p.talino + (correct ? 1 : 0),
+        stats: bumpStats(p, { quizTotal: 1, quizCorrect: correct ? 1 : 0 }),
+      })),
+    }));
+  },
+
+  // Returns true when the concept is new to this browser's journal
+  discoverLesson: (conceptId) => {
+    if (!conceptId || !LESSON_CONCEPTS[conceptId]) return false;
+    const current = get().discoveredLessons;
+    if (current.includes(conceptId)) return false;
+    const next = [...current, conceptId];
+    set({ discoveredLessons: next });
+    saveDiscoveredLessons(next);
+    return true;
+  },
+
+  markTipSeen: (playerId, tipId) => {
+    set(state => ({
+      players: patchPlayer(state.players, playerId, p => ({
+        seenTips: [...(p.seenTips || []), tipId],
+      })),
+    }));
+  },
+
   // ── Network card use ───────────────────────────────────────────────────────
 
   useNetworkCard: (playerId, effectKey) => {
@@ -1415,7 +1671,8 @@ export const useGameStore = create((set, get) => ({
     const player = players.find(p => p.id === playerId);
     if (!player) return { escapedRatRace: false, wonGame: false };
 
-    const totalPassiveIncome = computePassiveIncome(player.assets);
+    // Scam "returns" are not real passive income and must not free anyone
+    const totalPassiveIncome = computePassiveIncome(player.assets.filter(a => !a.scam));
     const loanPayments       = computeLoanPayments(player.liabilities);
     const totalExpenses      = player.monthlyExpenses + loanPayments + player.familyExpenses;
     const escapedRatRace     = totalPassiveIncome >= totalExpenses;
@@ -1520,7 +1777,7 @@ export const useGameStore = create((set, get) => ({
 
   clearPendingAction: () => set({ pendingSpaceAction: null, animationComplete: false, playerJustLanded: false }),
 
-  resetGame: () => set({ ...INITIAL_STATE }),
+  resetGame: () => set({ ...INITIAL_STATE, discoveredLessons: get().discoveredLessons }),
 
   // ── Convenience selectors ──────────────────────────────────────────────────
 
