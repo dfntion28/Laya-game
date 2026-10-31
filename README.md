@@ -17,7 +17,10 @@ Online play needs a free [Supabase](https://supabase.com) project to pass messag
 1. Create a free Supabase project.
 2. In the project, open **Project Settings → API** and copy the **Project URL** and the **anon public** key (newer projects call it the *publishable* key). This key is meant to be public.
 3. Open **Realtime → Settings** and make sure **Allow public access** is on.
-4. In Vercel: **Project → Settings → Environment Variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production and Preview, then redeploy.
+4. Give the two values to the build:
+   - GitHub Pages (this repo's `deploy.yml`): **Repo → Settings → Secrets and variables → Actions → Variables tab → New repository variable**. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then re-run the "Deploy to GitHub Pages" workflow (Actions tab → Run workflow).
+   - Vercel: **Project → Settings → Environment Variables**, add the same two names for Production and Preview, then redeploy.
+   - Local dev: put both lines in a `.env.local` file (already ignored by git).
 
 Notes: free projects pause after 7 days without use; resume them from the Supabase dashboard. Anyone with a room code can join that room, so share it only with your players.
 
