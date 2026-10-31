@@ -1,864 +1,326 @@
-// ─── Small Deal Cards ─────────────────────────────────────────────────────────
-// sd1–sd30: original 30 cards (exclusive added where monthlyIncome >= 5000)
-// sd31–sd42: new passive income cards
-// sd43–sd47: trap deal cards
+// Card decks. Company and coin names are fictional. Peso values are game approximations.
+// cf = net monthly cashflow after the mortgage/loan on the asset.
+
+export const stocks = {
+  SARI: { name: 'Sari Holdings',     emoji: '🏬', low: 5,  high: 40,  dps: 0,    note: 'Growth stock. No dividends, so you only win by selling higher.' },
+  KAPE: { name: 'Kape Kultura',      emoji: '☕', low: 10, high: 80,  dps: 0,    note: 'Coffee chain stock. Swings hard both ways.' },
+  PRT:  { name: 'Pinoy REIT',        emoji: '🏢', low: 20, high: 40,  dps: 0.16, note: 'REIT. Pays a dividend every month, around 6-7% a year.' },
+  BYN:  { name: 'Bayanihan Telco',   emoji: '📡', low: 25, high: 60,  dps: 0.18, note: 'Boring blue chip with a steady dividend.' },
+  BYC:  { name: 'BayaniCoin',        emoji: '🪙', low: 1,  high: 100, dps: 0,    note: 'Crypto. Pays nothing while you hold it. Pure speculation.' },
+};
+
+const stock = (id, symbol, price) => ({ id, kind: 'stock', symbol, price });
+
 export const smallDeals = [
-  {
-    id: 'sd1',  name: '5-door Apartment (Cabanatuan, Nueva Ecija)',
-    cost: 800000, downPayment: 160000, mortgage: 640000, mortgagePayment: 5000,
-    monthlyIncome: 12000, assetType: 'real_estate', exclusive: true,
-    description: 'Lumang apartment sa Nueva Ecija. ₱12,000 gross rent. ₱5,000 mortgage. ₱7,000 net.',
-  },
-  {
-    id: 'sd2',  name: 'AREIT REIT Shares (500 shares @ ₱360)',
-    cost: 180000, monthlyIncome: 900, assetType: 'stock',
-    description: 'AREIT sa PSE. 6% annual dividend yield. ₱900/month.',
-  },
-  {
-    id: 'sd3',  name: 'Sari-Sari Store (Barangay)',
-    cost: 40000, monthlyIncome: 3500, assetType: 'business',
-    description: 'Maliit na tindahan. ₱3,500/month net. Risk: Gastos cards can close it temporarily.',
-  },
-  {
-    id: 'sd4',  name: 'Grab Car Partnership',
-    cost: 60000, monthlyIncome: 5000, assetType: 'business', exclusive: true,
-    description: 'Kotse sa partner-driver. ₱5,000/month net pagkatapos ng maintenance.',
-  },
-  {
-    id: 'sd5',  name: 'Online Dropshipping Setup',
-    cost: 15000, monthlyIncome: 2000, assetType: 'business',
-    description: 'E-commerce store. ₱2,000/month net. Mababang puhunan.',
-  },
-  {
-    id: 'sd6',  name: 'MREIT Shares (1000 shares @ ₱20)',
-    cost: 200000, monthlyIncome: 1100, assetType: 'stock',
-    description: 'Megaworld REIT. Stable REIT na naka-list sa PSE.',
-  },
-  {
-    id: 'sd7',  name: 'Studio Condo para Paupahan (QC near Katipunan)',
-    cost: 1200000, downPayment: 240000, mortgage: 960000, mortgagePayment: 8000,
-    monthlyIncome: 9000, assetType: 'real_estate', exclusive: true,
-    description: 'Mahirap gawing cashflow positive. ₱9K rent minus ₱8K mortgage = ₱1K lang net.',
-  },
-  {
-    id: 'sd8',  name: 'Kooperatiba Lending (₱100,000)',
-    cost: 100000, monthlyIncome: 500, assetType: 'lending',
-    description: 'Pera sa kooperatiba sa 6% p.a. interest.',
-  },
-  {
-    id: 'sd9',  name: 'Self-Service Laundry Shop',
-    cost: 250000, monthlyIncome: 8000, assetType: 'business', exclusive: true,
-    description: 'Coin laundry sa mataong lugar. Labor-light. ₱8,000/month net.',
-  },
-  {
-    id: 'sd10', name: 'BDO Preferred Shares',
-    cost: 100000, monthlyIncome: 600, assetType: 'stock',
-    description: 'Fixed-dividend preferred shares. ₱600/month.',
-  },
-  {
-    id: 'sd11', name: 'Bodega para Paupa (Valenzuela)',
-    cost: 500000, downPayment: 100000, mortgage: 400000, mortgagePayment: 3500,
-    monthlyIncome: 8000, assetType: 'real_estate', exclusive: true,
-    description: 'Bodega na inaarkila ng maliit na negosyo. ₱8K rent, ₱3.5K mortgage.',
-  },
-  {
-    id: 'sd12', name: 'Online Tutorial Business',
-    cost: 20000, monthlyIncome: 4000, assetType: 'business',
-    description: 'Nag-set up ng review class online. ₱4,000/month net.',
-  },
-  {
-    id: 'sd13', name: 'Boarding House Room (1 room, Malate)',
-    cost: 300000, downPayment: 60000, mortgage: 240000, mortgagePayment: 2000,
-    monthlyIncome: 5000, assetType: 'real_estate', exclusive: true,
-    description: 'Isang silid sa boarding house. ₱5K rent, ₱2K mortgage.',
-  },
-  {
-    id: 'sd14', name: 'Dividends: Globe Telecom (100 shares)',
-    cost: 90000, monthlyIncome: 400, assetType: 'stock',
-    description: 'GLO shares sa PSE. Matatag na dividend payer.',
-  },
-  {
-    id: 'sd15', name: 'Vending Machine (Office Building)',
-    cost: 35000, monthlyIncome: 2500, assetType: 'business',
-    description: 'Snack vending machine na naka-install sa opisina. ₱2,500/month net.',
-  },
-  {
-    id: 'sd16', name: 'Pag-IBIG MP2 Savings (₱200,000)',
-    cost: 200000, monthlyIncome: 1500, assetType: 'lending',
-    description: 'Modified Pag-IBIG II. 7–9% p.a. average dividend. ₱1,500/month estimated.',
-  },
-  {
-    id: 'sd17', name: 'FILRT REIT Shares (2000 shares @ ₱8.50)',
-    cost: 170000, monthlyIncome: 850, assetType: 'stock',
-    description: 'Filinvest REIT. Naka-list sa PSE. Quarterly dividends, ~6% p.a.',
-  },
-  {
-    id: 'sd18', name: 'Tricycle Franchise (1 unit, Cavite)',
-    cost: 80000, monthlyIncome: 4000, assetType: 'business',
-    description: 'Isang tricycle sa partner-driver. ₱4,000/month net. ₱133/araw.',
-  },
-  {
-    id: 'sd19', name: '1-Bedroom Apartment (Batangas City)',
-    cost: 550000, downPayment: 110000, mortgage: 440000, mortgagePayment: 3500,
-    monthlyIncome: 7500, assetType: 'real_estate', exclusive: true,
-    description: '1BR apartment. ₱7,500 rent, ₱3,500 mortgage. ₱4,000 net/month.',
-  },
-  {
-    id: 'sd20', name: 'Printing at Photocopy Shop (Malapit sa Pamantasan)',
-    cost: 120000, monthlyIncome: 6000, assetType: 'business', exclusive: true,
-    description: 'Malapit sa kolehiyo. ₱6,000/month net pagkatapos ng utilities at supplies.',
-  },
-  {
-    id: 'sd21', name: 'CREIT REIT Shares (5000 shares @ ₱2.80)',
-    cost: 140000, monthlyIncome: 700, assetType: 'stock',
-    description: 'Citicore Energy REIT. Renewable energy ang tenants. ~6% p.a. dividend.',
-  },
-  {
-    id: 'sd22', name: 'Airbnb — Spare Room (Baguio)',
-    cost: 50000, monthlyIncome: 6500, assetType: 'business', exclusive: true,
-    description: 'Ini-rent ang isang kwarto sa Baguio. ₱6,500/month average. May seasonality.',
-  },
-  {
-    id: 'sd23', name: 'Water Refilling Station',
-    cost: 180000, monthlyIncome: 7000, assetType: 'business', exclusive: true,
-    description: 'Tubig negosyo sa residential area. ₱7,000/month net. Mababang overhead.',
-  },
-  {
-    id: 'sd24', name: 'Nail Spa / Beauty Bar (Space Rentahan)',
-    cost: 150000, monthlyIncome: 8000, assetType: 'business', exclusive: true,
-    description: 'Maliit na beauty bar. ₱8,000/month net. ₱3,000 upa sa espasyo.',
-  },
-  {
-    id: 'sd25', name: 'Angkas Driver Partnership',
-    cost: 50000, monthlyIncome: 3500, assetType: 'business',
-    description: 'Motor sa partner-driver. ₱3,500/month net. Low capital, daily income.',
-  },
-  {
-    id: 'sd26', name: 'Solar Panel Lease (Iniarkila ang Bubong ng Kaibigan)',
-    cost: 120000, monthlyIncome: 3000, assetType: 'lending',
-    description: 'Naglagay ng solar panels sa bubong ng iba. ₱3,000/month lease income.',
-  },
-  {
-    id: 'sd27', name: 'Home-Based Bake Shop (Online Orders)',
-    cost: 30000, monthlyIncome: 4500, assetType: 'business',
-    description: 'Bread at pastries sa orders lang. ₱4,500/month net. Mababang puhunan.',
-  },
-  {
-    id: 'sd28', name: 'SSS PESO Fund (₱150,000)',
-    cost: 150000, monthlyIncome: 750, assetType: 'lending',
-    description: 'SSS Personal Equity and Savings Option. ~6% p.a. ₱750/month estimated.',
-  },
-  {
-    id: 'sd29', name: 'Kubo at Camote Farm (Batangas, 500 sqm)',
-    cost: 200000, monthlyIncome: 4000, assetType: 'agriculture',
-    description: 'Maliit na farm na inaarkila ng magsasaka. ₱4,000/month lease income.',
-  },
-  {
-    id: 'sd30', name: 'E-Loading / GCash Cash-In Point',
-    cost: 25000, monthlyIncome: 3000, assetType: 'business',
-    description: 'Maliit na e-loading business sa tindahan. ₱3,000/month commission net.',
-  },
-
-  // ── New small deal cards sd31–sd42 ──────────────────────────────────────────
-  {
-    id: 'sd31', name: 'Nagpaarkila ng Parking Slot sa BGC Condo',
-    purchasePrice: 0, cashFlow: 4500, exclusive: false,
-    lesson: 'Ang parking slot na hindi mo ginagamit ay maaaring mapagkakitaan.',
-  },
-  {
-    id: 'sd32', name: 'Naglagay ng Vending Machine sa Opisina',
-    purchasePrice: 18000, cashFlow: 2200, exclusive: false,
-    lesson: 'Kahit maliit na makina, nagtatrabaho ito para sa iyo 24/7.',
-  },
-  {
-    id: 'sd33', name: 'Nagrenta ng Kagamitan tuwing Events (Rev Share)',
-    purchasePrice: 0, cashFlow: 1800, exclusive: false,
-    lesson: 'Hindi mo kailangang mag-ari ng asset para kumita — pwedeng rev share arrangement.',
-  },
-  {
-    id: 'sd34', name: 'Stock Photo Royalties — Isinubmit sa Shutterstock',
-    purchasePrice: 0, cashFlow: 900, exclusive: false,
-    lesson: 'Ang intellectual property ay nagbibigay ng kita kahit natutulog ka.',
-  },
-  {
-    id: 'sd35', name: 'Nagpaarkila ng Rooftop para sa Cell Tower',
-    purchasePrice: 0, cashFlow: 6500, exclusive: true,
-    lesson: 'Ang mga telecom company ay naghahanap ng espasyo — ikaw ang may-ari nito.',
-  },
-  {
-    id: 'sd36', name: 'Nagbenta ng Digital Template sa Shopee',
-    purchasePrice: 2000, cashFlow: 1500, exclusive: false,
-    lesson: 'Digital products: isang beses gumawa, paulit-ulit na kita.',
-  },
-  {
-    id: 'sd37', name: 'Nagpaupa ng Kwarto sa Boarder',
-    purchasePrice: 5000, cashFlow: 3500, exclusive: false,
-    lesson: 'Ang kwarto na bakante ay gastos. Ang kwartong may tao ay kita.',
-  },
-  {
-    id: 'sd38', name: 'Water Refilling Station Franchise Slot',
-    purchasePrice: 35000, cashFlow: 5000, exclusive: true,
-    lesson: 'Ang franchise ay nagbibigay ng sistema na pati na-test na.',
-  },
-  {
-    id: 'sd39', name: 'Nagpautang sa P2P Lending Platform (SeedIn)',
-    purchasePrice: 50000, cashFlow: 2500, exclusive: false,
-    lesson: 'Ang P2P lending ay naglalagay ng iyong pera sa trabaho — may risk ng default.',
-  },
-  {
-    id: 'sd40', name: 'YouTube Channel — Nagmonetize ng Old Videos',
-    purchasePrice: 0, cashFlow: 1200, exclusive: false,
-    lesson: 'Ang lumang content ay pwedeng magbigay ng bagong kita.',
-  },
-  {
-    id: 'sd41', name: 'Nag-sublease ng Bahagi ng Office Space',
-    purchasePrice: 0, cashFlow: 8000, exclusive: true,
-    lesson: 'Ang espasyong hindi mo ginagamit buong araw ay asset na naka-idle.',
-  },
-  {
-    id: 'sd42', name: 'Nagpadala ng OFW Remittance Fund sa REIT',
-    purchasePrice: 20000, cashFlow: 1800, exclusive: false,
-    lesson: 'Ang remittance ay hindi lang pang-gastos — pwede ring pang-invest.',
-  },
-
-  // ── Trap deal cards sd43–sd47 ────────────────────────────────────────────────
-  {
-    id: 'sd43', name: 'Pre-Selling Condo sa Taguig — Maagang Pumasok',
-    purchasePrice: 180000, cashFlow: 0, exclusive: false,
-    cardType: 'trap_deal', trapDelay: 4,
-    trapBullOutcome: { cashFlow: 0, oneTimeGain: 100000, description: 'Natapos ang condo — ibinenta mo ng tubo na ₱100,000!' },
-    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 180000, description: 'Nalugi ang developer — nawala ang iyong buong puhunan.' },
-    lesson: 'Ang pre-selling ay speculative — hindi guaranteed ang kita.',
-  },
-  {
-    id: 'sd44', name: 'Nagpuhunan sa Negosyo ng Kaibigan',
-    purchasePrice: 80000, cashFlow: 0, exclusive: false,
-    cardType: 'trap_deal', trapDelay: 3,
-    trapBullOutcome: { cashFlow: 3000, oneTimeGain: 0, description: 'Kumikita ang negosyo — +₱3,000/month passive income.' },
-    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 80000, description: 'Nagsara ang negosyo — nawala ang puhunan mo.' },
-    lesson: 'Ang pamumuhunan sa kaibigan ay may sentimental at financial na risk.',
-  },
-  {
-    id: 'sd45', name: 'Crypto Staking — Naglagay sa DeFi Yield Farm',
-    purchasePrice: 100000, cashFlow: 0, exclusive: false,
-    cardType: 'trap_deal', trapDelay: 2,
-    trapBullOutcome: { cashFlow: 5000, oneTimeGain: 0, description: 'Stable ang yield farm — +₱5,000/month passive income.' },
-    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 100000, description: 'Rug pull — nawala ang buong puhunan.' },
-    lesson: 'Ang mataas na yield ay kadalasang may katumbas na mataas na risk.',
-  },
-  {
-    id: 'sd46', name: 'Forex Hobby Trader',
-    purchasePrice: 50000, cashFlow: 0, exclusive: false,
-    cardType: 'trap_deal', trapDelay: 3,
-    trapBullOutcome: { cashFlow: 2000, oneTimeGain: 0, description: 'Consistent ang trades — +₱2,000/month net.' },
-    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 50000, description: 'Account blown — wala nang natira sa trading account.' },
-    lesson: 'Ang forex trading ay hindi passive income — ito ay aktibong spekulasyon.',
-  },
-  {
-    id: 'sd47', name: "Naging MLM 'Investor' para sa Kaibigan",
-    purchasePrice: 30000, cashFlow: 0, exclusive: false,
-    cardType: 'trap_deal', trapDelay: 2,
-    trapBullOutcome: { cashFlow: 0, oneTimeGain: 0, description: 'Walang income. ₱30,000 ang halaga ng aralin: suriin ang datos bago mag-invest.' },
-    trapBearOutcome: { cashFlow: 0, oneTimeLoss: 0, description: 'Walang income. Parehong resulta ang bull at bear para sa MLM.' },
-    lesson: 'Ang MLM ay nagbebenta ng pangarap. Datos: mas maraming naglugi kaysa kumita.',
-  },
+  stock('s1', 'SARI', 5), stock('s2', 'SARI', 10), stock('s3', 'SARI', 20), stock('s4', 'SARI', 30), stock('s5', 'SARI', 40),
+  stock('s6', 'KAPE', 10), stock('s7', 'KAPE', 30), stock('s8', 'KAPE', 55), stock('s9', 'KAPE', 80),
+  stock('s10', 'PRT', 20), stock('s11', 'PRT', 30), stock('s12', 'PRT', 40),
+  stock('s13', 'BYN', 25), stock('s14', 'BYN', 45),
+  stock('s15', 'BYC', 2), stock('s16', 'BYC', 40), stock('s17', 'BYC', 100),
+  { id: 's18', kind: 'mp2', name: 'Pag-IBIG MP2 Savings', aral: 'Safe, but at 0.55% a month it will take forever to cover your bills.' },
+  { id: 's19', kind: 'mp2', name: 'Pag-IBIG MP2 Savings', aral: 'Savings are a starting point. Assets are what get you out.' },
+  { id: 's20', kind: 'realestate', sub: 'house', name: 'Foreclosed Bungalow, Bulacan', emoji: '🏠', cost: 900_000, down: 90_000, cf: 4_000, units: 1, aral: 'You make your money when you buy, not when you sell.' },
+  { id: 's21', kind: 'realestate', sub: 'house', name: 'Townhouse, Cavite', emoji: '🏘️', cost: 2_200_000, down: 220_000, cf: 3_500, units: 1 },
+  { id: 's22', kind: 'realestate', sub: 'condo', name: 'Studio Condo, Cubao', emoji: '🏙️', cost: 1_800_000, down: 180_000, cf: 1_500, units: 1, aral: 'Thin cashflow. Is it an asset or just something to post about?' },
+  { id: 's23', kind: 'realestate', sub: 'condo', name: 'Bedspace Unit, U-Belt', emoji: '🛏️', cost: 650_000, down: 65_000, cf: 3_200, units: 1 },
+  { id: 's24', kind: 'realestate', sub: 'condo', name: 'Pre-selling Condo, BGC', emoji: '🌆', cost: 6_000_000, down: 300_000, cf: -7_000, units: 1, aral: 'Negative cashflow means it takes money out of your pocket. That makes it a liability.' },
+  { id: 's25', kind: 'realestate', sub: 'house', name: 'Duplex, Antipolo', emoji: '🏡', cost: 2_600_000, down: 260_000, cf: 7_000, units: 2 },
+  { id: 's26', kind: 'realestate', sub: 'land', name: 'Farm Lot, Batangas', emoji: '🌾', cost: 350_000, down: 350_000, cf: 0, units: 1, aral: 'Land pays nothing today. You are betting on a buyer later.' },
+  { id: 's27', kind: 'business', name: 'Sari-sari Store', emoji: '🏪', cost: 50_000, down: 50_000, cf: 3_000 },
+  { id: 's28', kind: 'business', name: 'Vending Machines (3)', emoji: '🥤', cost: 60_000, down: 60_000, cf: 3_200 },
+  { id: 's29', kind: 'business', name: 'Pisonet Shop (5 PCs)', emoji: '🖥️', cost: 80_000, down: 80_000, cf: 3_800 },
+  { id: 's30', kind: 'business', name: 'Food Cart Franchise', emoji: '🌭', cost: 150_000, down: 150_000, cf: 6_500, aral: 'A franchise is a system. The system does the work, not you.' },
+  { id: 's31', kind: 'business', name: 'Online Store', emoji: '📦', cost: 20_000, down: 20_000, cf: 1_200 },
+  { id: 's32', kind: 'business', name: 'Water Refilling Station', emoji: '💧', cost: 250_000, down: 125_000, cf: 7_500 },
+  { id: 's33', kind: 'business', name: 'Rice Store', emoji: '🍚', cost: 120_000, down: 120_000, cf: 4_800 },
+  { id: 's34', kind: 'business', name: 'E-bike Rentals (4)', emoji: '🛵', cost: 100_000, down: 100_000, cf: 4_200 },
+  { id: 's35', kind: 'business', name: 'Ukay-ukay Stall', emoji: '👕', cost: 40_000, down: 40_000, cf: 2_400 },
+  { id: 's36', kind: 'business', name: 'Coin Laundry', emoji: '🧺', cost: 180_000, down: 90_000, cf: 5_200 },
 ];
 
-// ─── Big Deal Cards ───────────────────────────────────────────────────────────
-// All cards have exclusive: true
-// bd1–bd20: original 20 cards; bd21–bd25: new cards
 export const bigDeals = [
-  {
-    id: 'bd1',  name: '3-Unit Townhouse (Marikina)',
-    cost: 4500000, downPayment: 900000, mortgage: 3600000, mortgagePayment: 18000,
-    monthlyIncome: 42000, netIncome: 24000, assetType: 'real_estate', exclusive: true,
-    description: '3 units na nakatayo na. ₱42K gross rent, ₱18K mortgage. ₱24K net/month.',
-  },
-  {
-    id: 'bd2',  name: 'Commercial Lot (LIMA Estate, Laguna)',
-    cost: 3200000, downPayment: 3200000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'land', appreciates: true, exclusive: true,
-    description: 'Industrial zone na lot. Walang kita ngayon. Malaking gain sa hinaharap.',
-  },
-  {
-    id: 'bd3',  name: '10-Door Apartment Compound (Quezon City)',
-    cost: 9000000, downPayment: 2700000, mortgage: 6300000, mortgagePayment: 35000,
-    monthlyIncome: 85000, netIncome: 50000, assetType: 'real_estate', exclusive: true,
-    description: '₱85K gross rent, ₱35K mortgage, ₱50K net/month.',
-  },
-  {
-    id: 'bd4',  name: 'Pre-Selling Condo (BGC, Taguig)',
-    cost: 6800000, downPayment: 1360000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'real_estate', risk: 'delivery_risk', appreciates: true, exclusive: true,
-    description: 'Pre-selling. Walang kita ngayon. 3 years delivery. Risk ng hindi matatapos.',
-  },
-  {
-    id: 'bd5',  name: 'Farm Lot (Batangas, 2 hectares)',
-    cost: 2500000, downPayment: 2500000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 8000, assetType: 'agriculture', exclusive: true,
-    description: 'Inaarkila ng magsasaka. ₱8K/month pasture fee.',
-  },
-  {
-    id: 'bd6',  name: 'Food Franchise Regional Masterfranchise (Visayas)',
-    cost: 2000000, downPayment: 2000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 25000, assetType: 'business', exclusive: true,
-    description: 'Regional rights sa franchise. ₱25K/month royalty.',
-  },
-  {
-    id: 'bd7',  name: 'Gas Station (Provincial, Leased Site)',
-    cost: 5000000, downPayment: 5000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 60000, assetType: 'business', exclusive: true,
-    description: 'Dealer-owned, leased site. ₱60K/month net.',
-  },
-  {
-    id: 'bd8',  name: '4-Storey Apartment Building (Caloocan)',
-    cost: 12000000, downPayment: 3600000, mortgage: 8400000, mortgagePayment: 50000,
-    monthlyIncome: 120000, netIncome: 70000, assetType: 'real_estate', exclusive: true,
-    description: '20 units. ₱120K gross, ₱50K mortgage. ₱70K net.',
-  },
-  {
-    id: 'bd9',  name: 'Pension House / Bed and Breakfast (Baguio)',
-    cost: 8000000, downPayment: 2400000, mortgage: 5600000, mortgagePayment: 32000,
-    monthlyIncome: 90000, netIncome: 58000, assetType: 'real_estate', exclusive: true,
-    description: '15 rooms sa Baguio. ₱90K gross, ₱32K mortgage. ₱58K net. May seasonality.',
-  },
-  {
-    id: 'bd10', name: 'Events Place / Function Hall (Pampanga)',
-    cost: 4500000, downPayment: 1350000, mortgage: 3150000, mortgagePayment: 17500,
-    monthlyIncome: 50000, netIncome: 32500, assetType: 'business', exclusive: true,
-    description: 'Events venue. Average 4 bookings/month. ₱50K gross, ₱32.5K net.',
-  },
-  {
-    id: 'bd11', name: 'Cold Storage Warehouse for Lease (Bulacan)',
-    cost: 6000000, downPayment: 1800000, mortgage: 4200000, mortgagePayment: 25000,
-    monthlyIncome: 70000, netIncome: 45000, assetType: 'real_estate', exclusive: true,
-    description: 'Cold chain logistics property. ₱70K/month lease, ₱25K mortgage. ₱45K net.',
-  },
-  {
-    id: 'bd12', name: 'Multi-Level Parking Building (Binondo, Manila)',
-    cost: 15000000, downPayment: 4500000, mortgage: 10500000, mortgagePayment: 55000,
-    monthlyIncome: 130000, netIncome: 75000, assetType: 'real_estate', exclusive: true,
-    description: '5 levels, 80 slots. ₱130K gross, ₱55K mortgage. ₱75K net/month.',
-  },
-  {
-    id: 'bd13', name: 'Pre-Selling Lot (South Road Properties, Cebu)',
-    cost: 3800000, downPayment: 3800000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 0, assetType: 'land', appreciates: true, exclusive: true,
-    description: 'Premium lot sa Cebu business district. Walang kita ngayon. Mataas na potential.',
-  },
-  {
-    id: 'bd14', name: '6-Door Apartment (Cagayan de Oro)',
-    cost: 5500000, downPayment: 1650000, mortgage: 3850000, mortgagePayment: 21000,
-    monthlyIncome: 54000, netIncome: 33000, assetType: 'real_estate', exclusive: true,
-    description: '6 units sa CDO. ₱54K gross, ₱21K mortgage. ₱33K net/month.',
-  },
-  {
-    id: 'bd15', name: 'Car Wash Franchise (6-Bay, Clark, Pampanga)',
-    cost: 3500000, downPayment: 3500000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 45000, assetType: 'business', exclusive: true,
-    description: 'High-traffic na car wash sa Clark. ₱45K/month net pagkatapos ng staff at utilities.',
-  },
-  {
-    id: 'bd16', name: 'Resort (3 cottages + pool, Batangas Beach)',
-    cost: 7500000, downPayment: 2250000, mortgage: 5250000, mortgagePayment: 30000,
-    monthlyIncome: 80000, netIncome: 50000, assetType: 'business', exclusive: true,
-    description: 'Maliit na beach resort. ₱80K gross, ₱30K mortgage. ₱50K net. May off-season.',
-  },
-  {
-    id: 'bd17', name: 'Commercial Building (Ground Floor Shops, Mandaluyong)',
-    cost: 18000000, downPayment: 5400000, mortgage: 12600000, mortgagePayment: 70000,
-    monthlyIncome: 160000, netIncome: 90000, assetType: 'real_estate', exclusive: true,
-    description: '4 commercial units. ₱160K gross, ₱70K mortgage. ₱90K net/month.',
-  },
-  {
-    id: 'bd18', name: 'Mango Plantation (2 hectares, Guimaras)',
-    cost: 2800000, downPayment: 2800000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 12000, assetType: 'agriculture', exclusive: true,
-    description: 'Established mango trees. ₱12K/month average net. May harvest seasonality.',
-  },
-  {
-    id: 'bd19', name: 'Fast Food Franchise (National Brand, Mall Kiosk)',
-    cost: 4000000, downPayment: 4000000, mortgage: 0, mortgagePayment: 0,
-    monthlyIncome: 55000, assetType: 'business', exclusive: true,
-    description: 'Mall-based food kiosk ng kilalang brand. ₱55K/month net royalty income.',
-  },
-  {
-    id: 'bd20', name: 'Mixed-Use Building (Shops + Apartments, Davao)',
-    cost: 14000000, downPayment: 4200000, mortgage: 9800000, mortgagePayment: 54000,
-    monthlyIncome: 140000, netIncome: 86000, assetType: 'real_estate', exclusive: true,
-    description: '4 commercial + 8 residential units. ₱140K gross, ₱54K mortgage. ₱86K net.',
-  },
-
-  // ── New big deal cards bd21–bd25 ─────────────────────────────────────────────
-  {
-    id: 'bd21', name: 'Nag-acquire ng Existing Shopee Store (May Established Reviews)',
-    purchasePrice: 120000, cashFlow: 9000, exclusive: true,
-    lesson: 'Mas mura ang bumili ng cash-flowing business kaysa magsimula ng bago.',
-  },
-  {
-    id: 'bd22', name: 'Nagtayo ng Self-Storage Facility sa Probinsya',
-    purchasePrice: 350000, cashFlow: 18000, liabilityPayment: 2000, exclusive: true,
-    lesson: 'Ang tao ay nagdadagdag ng gamit — self-storage ay recession-resistant.',
-  },
-  {
-    id: 'bd23', name: 'Solar Panel sa Commercial Property — FIT-All Program',
-    purchasePrice: 500000, cashFlow: 22000, exclusive: true,
-    lesson: 'Ang enerhiya na hindi mo nagastos ay energy na ibinenta mo sa Meralco.',
-  },
-  {
-    id: 'bd24', name: 'Biniling TNVS Franchise — Driver sa Boundary',
-    purchasePrice: 200000, cashFlow: 12000, exclusive: true,
-    lesson: 'Ang boundary scheme ay naglalagay ng ibang tao sa trabaho para sa iyo.',
-  },
-  {
-    id: 'bd25', name: 'Naglagay ng ATM Terminal — Transaction Fee Income',
-    purchasePrice: 280000, cashFlow: 14500, exclusive: true,
-    lesson: 'Ang bawat transaksyon ng ibang tao ay maliit na kita para sa may-ari ng terminal.',
-  },
+  { id: 'b1', kind: 'realestate', sub: 'apartment', name: '4-Door Apartment, Marikina', emoji: '🏢', cost: 5_000_000, down: 500_000, cf: 16_000, units: 4, aral: 'Leverage: you put in 10% and collect 100% of the rent.' },
+  { id: 'b2', kind: 'realestate', sub: 'apartment', name: '8-Door Apartment, Laguna', emoji: '🏢', cost: 8_000_000, down: 800_000, cf: 30_000, units: 8 },
+  { id: 'b3', kind: 'realestate', sub: 'apartment', name: 'Dorm near UP Diliman', emoji: '🎒', cost: 9_000_000, down: 900_000, cf: 36_000, units: 10 },
+  { id: 'b4', kind: 'realestate', sub: 'apartment', name: '6-Unit Townhouse Row, Bacolod', emoji: '🏘️', cost: 6_000_000, down: 600_000, cf: 21_000, units: 6 },
+  { id: 'b5', kind: 'realestate', sub: 'house', name: 'Two Duplexes, Pampanga', emoji: '🏡', cost: 4_000_000, down: 400_000, cf: 13_000, units: 4 },
+  { id: 'b6', kind: 'realestate', sub: 'commercial', name: '3-Storey Commercial Building, Davao', emoji: '🏬', cost: 9_000_000, down: 900_000, cf: 34_000, units: 1 },
+  { id: 'b7', kind: 'realestate', sub: 'commercial', name: 'Warehouse, Valenzuela', emoji: '🏭', cost: 3_500_000, down: 350_000, cf: 12_000, units: 1 },
+  { id: 'b8', kind: 'realestate', sub: 'land', name: 'Lot in Tagaytay', emoji: '⛰️', cost: 3_000_000, down: 450_000, cf: -6_000, units: 1, aral: 'Speculation. It only pays if a buyer shows up.' },
+  { id: 'b9', kind: 'realestate', sub: 'condo', name: 'Two Pre-selling Condos, Makati', emoji: '🌆', cost: 9_000_000, down: 450_000, cf: -11_000, units: 2, aral: 'Looks like an investment. Costs you every month.' },
+  { id: 'b10', kind: 'realestate', sub: 'apartment', name: 'Co-living Space, Makati', emoji: '🛋️', cost: 6_500_000, down: 650_000, cf: 19_000, units: 8 },
+  { id: 'b11', kind: 'business', name: 'Car Wash Franchise', emoji: '🚿', cost: 900_000, down: 450_000, cf: 15_000 },
+  { id: 'b12', kind: 'business', name: 'Gas Station, Province', emoji: '⛽', cost: 6_000_000, down: 900_000, cf: 32_000 },
+  { id: 'b13', kind: 'business', name: 'Mini Grocery', emoji: '🛒', cost: 2_500_000, down: 600_000, cf: 20_000 },
+  { id: 'b14', kind: 'business', name: 'Fishpond, Pangasinan', emoji: '🐟', cost: 1_500_000, down: 400_000, cf: 12_500 },
+  { id: 'b15', kind: 'business', name: 'Small Beach Resort, La Union', emoji: '🏖️', cost: 7_000_000, down: 900_000, cf: 22_000 },
+  { id: 'b16', kind: 'business', name: 'Coffee Shop Franchise', emoji: '☕', cost: 3_000_000, down: 700_000, cf: 9_000, aral: 'A famous brand is not the same as a good return. Do the math.' },
+  { id: 'b17', kind: 'business', name: 'Solar Farm Share', emoji: '☀️', cost: 2_000_000, down: 500_000, cf: 14_000 },
+  { id: 'b18', kind: 'business', name: 'Modern Jeepneys (2)', emoji: '🚐', cost: 5_000_000, down: 800_000, cf: 26_000 },
+  { id: 'b19', kind: 'business', name: 'Rice Mill', emoji: '🌾', cost: 4_000_000, down: 700_000, cf: 21_000 },
+  { id: 'b20', kind: 'business', name: 'Poultry Farm', emoji: '🐔', cost: 3_500_000, down: 600_000, cf: 18_000 },
+  { id: 'b21', kind: 'business', name: 'Laundry Shops (3 branches)', emoji: '🧺', cost: 1_800_000, down: 500_000, cf: 15_500 },
+  { id: 'b22', kind: 'realestate', sub: 'house', name: 'Rent-to-Own Houses (3), Iloilo', emoji: '🏠', cost: 4_500_000, down: 450_000, cf: 14_000, units: 3 },
 ];
 
-// ─── Gastos / Expense Cards ───────────────────────────────────────────────────
-// type: 'liability' | 'expense' | 'cash'
-// minRound: earliest round this card can appear (formula in GAMEPLAN Part B)
-// g1–g25: original 25 cards; g26–g35: new cards
+// Expenses ("doodads"). `options` give a choice; otherwise `effects` apply directly.
+// effect keys: cash, medical, installment {name,payment,months}, revolving {name,balance,rate},
+// living, koneksyon, diskarte, perChild
+// `fixable`: a government fine or paperwork bill, the only kind a fixer (lagay) can "make go away".
+// `needs`: only drawn if the player has it ('business', 'realestate').
+// `aral`: the lesson for this card. The coach line under it is worked out from your own numbers.
 export const gastosCards = [
-  {
-    id: 'g1',  name: 'Bagong Kotse (Installment)',
-    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 8,
-    description: 'Na-tempt sa showroom. ₱18,000/month sa loob ng 48 buwan.',
-  },
-  {
-    id: 'g2',  name: 'iPhone (In-house Financing)',
-    type: 'liability', addedMonthlyPayment: 4500, addedLiability: 54000, minRound: 4,
-    description: 'Pinakabago na modelo. ₱4,500/month sa 12 buwan.',
-  },
-  {
-    id: 'g3',  name: 'Anak sa Pribadong Paaralan',
-    type: 'expense', addedMonthlyExpense: 8000, permanent: true, minRound: 6,
-    description: '+₱8,000/month na permanenteng dagdag sa gastusin.',
-  },
-  {
-    id: 'g4',  name: 'Online Sugal (E-Sabong/Poker)',
-    type: 'cash', cashLoss: 30000, minRound: 6,
-    description: 'Maling taya. Nawala ₱30,000 mula sa cash.',
-  },
-  {
-    id: 'g5',  name: 'Baha — Walang Insurance',
-    type: 'cash', cashLoss: 80000, mitigatedByInsurance: true, insuranceCost: 10000, minRound: 10,
-    description: '₱80,000 repair. ₱10,000 lang kung insured.',
-  },
-  {
-    id: 'g6',  name: 'Medical Emergency (Walang HMO)',
-    type: 'cash', cashLoss: 150000, mitigatedByInsurance: true, insuranceCost: 50000, minRound: 10,
-    description: '₱150,000 ospital. ₱50,000 lang kung insured.',
-  },
-  {
-    id: 'g7',  name: 'Credit Card Hindi Binabayaran',
-    type: 'liability', addedMonthlyPayment: 5000, addedLiability: 50000, creditScorePenalty: -50, minRound: 4,
-    description: '3.5%/month interest. Credit score -50.',
-  },
-  {
-    id: 'g8',  name: '5-6 Loan Trap',
-    type: 'liability', addedMonthlyPayment: 10000, addedLiability: 50000, minRound: 8,
-    description: '₱50K sa 5-6. ₱10K/month bayad sa 6 buwan.',
-  },
-  {
-    id: 'g9',  name: 'Major Car Repair',
-    type: 'cash', cashLoss: 45000, minRound: 6,
-    description: 'Napalitan ng makina ng kotse. ₱45,000.',
-  },
-  {
-    id: 'g10', name: 'Renovation Frenzy',
-    type: 'cash', cashLoss: 60000, minRound: 10,
-    description: 'Home improvement na hindi nagdagdag ng halaga.',
-  },
-  {
-    id: 'g11', name: 'Gadgets para sa Pamilya',
-    type: 'cash', cashLoss: 80000, minRound: 10,
-    description: 'Phones para sa apat na miyembro. ₱80,000.',
-  },
-  {
-    id: 'g12', name: 'Maling Investment (Scam)',
-    type: 'cash', cashLoss: 100000, minRound: 10,
-    description: 'Na-scam sa investment scheme. Nawala ₱100,000.',
-  },
-  {
-    id: 'g13', name: 'Pamilya — Bagong Upa',
-    type: 'expense', addedMonthlyExpense: 5000, permanent: true, minRound: 6,
-    description: 'Napilitang lumipat ng mas mahal na bahay. +₱5,000/month.',
-  },
-  {
-    id: 'g14', name: 'Utang ng Kapatid (Pinanghiram)',
-    type: 'cash', cashLoss: 40000, minRound: 6,
-    description: 'Pamilya nangangailangan. ₱40,000 ang nilabas. Hindi mababawi.',
-  },
-  {
-    id: 'g15', name: 'Maluho na Bakasyon (Boracay, Business Class)',
-    type: 'cash', cashLoss: 70000, minRound: 10,
-    description: 'YOLO trip. ₱70,000 all-in para sa pamilya.',
-  },
-  {
-    id: 'g16', name: 'Kasal — Grand Reception',
-    type: 'cash', cashLoss: 250000, minRound: 10,
-    description: 'Malaking kasal na hindi kaya ng budget. ₱250,000.',
-  },
-  {
-    id: 'g17', name: 'Appliances on Installment (Ref + TV + Washer)',
-    type: 'liability', addedMonthlyPayment: 6000, addedLiability: 72000, minRound: 4,
-    description: 'Pinabili ng bagong appliances. ₱6,000/month sa 12 buwan.',
-  },
-  {
-    id: 'g18', name: 'Pinautang ang Kaibigan (Negosyo)',
-    type: 'cash', cashLoss: 50000, minRound: 6,
-    description: 'Inutangan ng kaibigan para sa negosyo. Hindi nagbalik.',
-  },
-  {
-    id: 'g19', name: 'Sagot sa Pag-aaral ng Kapatid (College)',
-    type: 'expense', addedMonthlyExpense: 6000, permanent: true, minRound: 6,
-    description: '+₱6,000/month para sa tuition at allowance ng kapatid.',
-  },
-  {
-    id: 'g20', name: 'Bagyo — Hindi Narepair ang Bubong',
-    type: 'cash', cashLoss: 55000, mitigatedByInsurance: true, insuranceCost: 12000, minRound: 6,
-    description: 'Damage ng bagyo. ₱55,000 kung walang insurance. ₱12,000 kung insured.',
-  },
-  {
-    id: 'g21', name: 'BIR Penalty — Late Filing',
-    type: 'cash', cashLoss: 25000, minRound: 3,
-    description: 'Nakalimutang mag-file ng ITR sa tamang oras. ₱25,000 penalty.',
-  },
-  {
-    id: 'g22', name: 'Mall Sale Impulse Buying',
-    type: 'cash', cashLoss: 35000, minRound: 6,
-    description: '₱35,000 na gamit na hindi naman kailangan.',
-  },
-  {
-    id: 'g23', name: 'Bagong Muwebles (Interior Design Frenzy)',
-    type: 'cash', cashLoss: 65000, minRound: 10,
-    description: 'Pinalamutian ng bahay. ₱65,000 sa muwebles at dekorasyon.',
-  },
-  {
-    id: 'g24', name: 'Sakit ng Magulang (Walang PhilHealth)',
-    type: 'cash', cashLoss: 120000, mitigatedByInsurance: true, insuranceCost: 40000, minRound: 10,
-    description: 'Ospital ang magulang. ₱120,000 kung walang insurance. ₱40,000 kung insured.',
-  },
-  {
-    id: 'g25', name: 'Legal Dispute sa Katabi (Property)',
-    type: 'cash', cashLoss: 45000, minRound: 6,
-    description: 'Kaso sa korte dahil sa property boundary. ₱45,000 legal fees.',
-  },
-
-  // ── New gastos cards g26–g35 ─────────────────────────────────────────────────
-  {
-    id: 'g26', name: 'Biniling Brand-New na Kotse (Na-Finance ng 5 Taon)',
-    type: 'liability', addedMonthlyPayment: 18000, addedLiability: 864000, minRound: 6,
-    lesson: 'Ang bagong kotse ay depreciating liability — hindi investment. Tingnan ang income statement.',
-  },
-  {
-    id: 'g27', name: "Whole Life Insurance 'Para sa Investment'",
-    type: 'expense', addedMonthlyExpense: 8500, permanent: true, minRound: 3,
-    lesson: "Ang insurance na may 'savings component' ay mahal na insurance — hindi tunay na investment.",
-  },
-  {
-    id: 'g28', name: 'Timeshare Resort Unit',
-    type: 'cash', cashLoss: 90000, addedMonthlyExpense: 3000, permanent: true, minRound: 8,
-    lesson: 'Ang timeshare ay may resale value na malapit sa zero. Ito ay prepaid vacation, hindi real estate.',
-  },
-  {
-    id: 'g29', name: "Premium Credit Card Annual Fee 'Para sa Rewards'",
-    type: 'cash', cashLoss: 5000, minRound: 1,
-    lesson: 'Ang reward points ay may value lamang kung mas malaki kaysa sa annual fee at interes.',
-  },
-  {
-    id: 'g30', name: 'Renovation ng Rented Apartment',
-    type: 'cash', cashLoss: 45000, minRound: 4,
-    lesson: 'Ang pagpapaganda ng bahay ng ibang tao ay hindi mo investment.',
-  },
-  {
-    id: 'g31', name: 'MBA Degree — Kinuha ng Pautang',
-    type: 'cash', cashLoss: 120000, minRound: 6,
-    lesson: 'Ang edukasyon ay may ROI — pero ang utang para dito ay may tunay na cost na kailangang kalkulahin.',
-  },
-  {
-    id: 'g32', name: "Nagbili ng Jewelry Bilang 'Investment'",
-    type: 'cash', cashLoss: 60000, minRound: 5,
-    lesson: 'Ang alahas ay may emotional value — pero ang resale ay halos laging mas mababa kaysa purchase price.',
-  },
-  {
-    id: 'g33', name: "Nagbili ng Bagong Motorcycle 'Para sa Business'",
-    type: 'liability', addedMonthlyPayment: 8000, addedLiability: 288000, minRound: 3,
-    lesson: 'Kailangang mas malaki ang kita ng negosyo kaysa sa buwanang amortization ng sasakyan.',
-  },
-  {
-    id: 'g34', name: "Lupa sa Lalawigan — 'Pangmatagalang Investment'",
-    type: 'cash', cashLoss: 150000, addedMonthlyExpense: 1500, permanent: true, minRound: 8,
-    lesson: 'Ang lupa na walang kita ay gastos sa tax at oportunidad. Hindi ito passive income.',
-  },
-  {
-    id: 'g35', name: 'Japan Trip — YOLO Family Vacation (Business Class)',
-    type: 'cash', cashLoss: 85000, minRound: 4,
-    lesson: 'Ang karanasan ay may halaga — pero kailangan mong malaman kung saan nanggaling ang pera.',
-  },
+  { id: 'g1', name: 'New Phone', emoji: '📱', text: 'The new flagship just dropped. Your phone still works.',
+    aral: '"0% interest" still costs ₱45,000. It just spreads the pain so it is easier to say yes.',
+    options: [
+      { key: 'cash', label: 'Pay ₱45,000 cash', effects: { cash: -45_000 } },
+      { key: 'inst', label: '0% installment, ₱3,750 × 12', effects: { installment: { name: 'Phone Installment', payment: 3_750, months: 12 } } },
+      { key: 'skip', label: 'Keep the old phone', effects: {} },
+    ] },
+  { id: 'g2', name: 'Barkada Trip to Boracay', emoji: '🏝️', text: 'Everyone is going. YOLO daw.',
+    aral: 'Fun is part of life. The question is whether you pay for it with savings or with your future cashflow.',
+    options: [
+      { key: 'go', label: 'Go all in, ₱25,000', effects: { cash: -25_000 } },
+      { key: 'budget', label: 'Join for one night, ₱8,000', effects: { cash: -8_000 } },
+    ] },
+  { id: 'g3', name: 'Birthday Party', emoji: '🎂', text: 'Lechon for the whole clan.', effects: { cash: -12_000, perChild: -5_000 },
+    aral: 'Family costs grow with the family. Budget for celebrations before they arrive.' },
+  { id: 'g4', name: 'Aircon Died', emoji: '🥵', text: 'In the middle of summer.', effects: { cash: -18_000 },
+    aral: 'Things break. An emergency fund turns a crisis into an errand.' },
+  { id: 'g5', name: 'Hometown Fiesta', emoji: '🎉', text: 'You are the hermano mayor this year.', effects: { cash: -15_000 },
+    aral: 'Saying yes to every role in the community is generous, and expensive. Know your number before you agree.' },
+  { id: 'g6', name: 'Gym Membership', emoji: '🏋️', text: '12-month lock-in. You will start on Monday.',
+    aral: 'A lock-in contract is a liability with a smile. Read how long you are stuck before you sign.',
+    options: [
+      { key: 'lock', label: 'Sign the 12-month lock-in', effects: { installment: { name: 'Gym Lock-in', payment: 2_500, months: 12 } } },
+      { key: 'free', label: 'Jog at the park instead', effects: {} },
+    ] },
+  { id: 'g7', name: 'Streaming Subscriptions', emoji: '📺', text: 'Netflix, Disney+, Spotify, one more... It renews every month.', effects: { living: 1_200 },
+    aral: 'Subscriptions are designed to be forgotten. Small monthly bills raise the passive income you need to escape.' },
+  { id: 'g8', name: 'Car Repair', emoji: '🔧', text: 'Transmission is gone.', effects: { cash: -22_000 },
+    aral: 'A car is a liability: it takes money out every month and loses value every year.' },
+  { id: 'g9', name: '11.11 Sale', emoji: '🛒', text: 'It was on sale, so technically you saved money.', effects: { cash: -14_000 },
+    aral: 'You only save money on a sale if you were going to buy it anyway.' },
+  { id: 'g10', name: 'Ninong at a Wedding', emoji: '💍', text: 'A well-connected businessman asked you to be a ninong.',
+    aral: 'Relationships are an investment too. They pay off only if you use them well.',
+    options: [
+      { key: 'yes', label: 'Say yes, gift ₱15,000 (+1 contact card)', effects: { cash: -15_000, koneksyon: 1 } },
+      { key: 'no', label: 'Politely decline', effects: {} },
+    ] },
+  { id: 'g11', name: 'Car Broke Down', emoji: '🚗', text: 'You still need to get to work.',
+    aral: 'The monthly payment is not the price. Multiply it by the months, then decide.',
+    options: [
+      { key: 'new', label: 'Brand new car, ₱16,000 × 60', effects: { installment: { name: 'Car Loan', payment: 16_000, months: 60 } } },
+      { key: 'used', label: 'Second-hand, ₱150,000 cash', effects: { cash: -150_000 } },
+      { key: 'commute', label: 'Commute (+₱2,500/mo)', effects: { living: 2_500 } },
+    ] },
+  { id: 'g12', name: 'Dengue', emoji: '🦟', text: 'A week in the hospital.', effects: { medical: 45_000 },
+    aral: 'Insurance is for the bill you cannot afford, not the one you expect.' },
+  { id: 'g13', name: 'Lent Money to Pare', emoji: '🤷', text: '"Bayaran kita sa sweldo." He never did.', effects: { cash: -20_000 },
+    aral: 'Only lend what you can afford to lose. Or write it down, with dates and interest, like a real loan.' },
+  { id: 'g14', name: 'Laptop for Work', emoji: '💻', text: 'Your old one finally died.',
+    aral: 'A work tool is still an expense. It earns only if it raises your income.',
+    options: [
+      { key: 'cash', label: 'Pay ₱50,000 cash', effects: { cash: -50_000 } },
+      { key: 'inst', label: 'Installment, ₱4,800 × 12', effects: { installment: { name: 'Laptop Installment', payment: 4_800, months: 12 } } },
+      { key: 'used', label: 'Refurbished, ₱22,000 cash', effects: { cash: -22_000 } },
+    ] },
+  { id: 'g15', name: 'Dentist', emoji: '🦷', text: 'Root canal and a crown.', effects: { medical: 15_000 },
+    aral: 'Skipping check-ups saves a little now and costs a lot later.' },
+  { id: 'g16', name: 'Vet Bills', emoji: '🐕', text: 'Bantay got sick.', effects: { cash: -9_000 },
+    aral: 'Every dependent, even a dog, is a monthly cost. Plan for it.' },
+  { id: 'g17', name: 'Traffic Violation', emoji: '🚨', text: 'Swerving, apparently. Your license is confiscated until you pay the fine at the office.', effects: { cash: -6_000 },
+    fixable: true, aral: 'A fine is a fixed price. A shortcut adds risk on top of it.' },
+  { id: 'g18', name: 'Kitchen Renovation', emoji: '🔨', text: 'Looks great. Earns nothing.',
+    aral: 'Your house is not an asset if it only takes money out. Upgrades should wait until assets pay for them.',
+    options: [
+      { key: 'cash', label: 'Pay ₱60,000 cash', effects: { cash: -60_000 } },
+      { key: 'inst', label: 'Home loan, ₱3,200 × 24', effects: { installment: { name: 'Renovation Loan', payment: 3_200, months: 24 } } },
+      { key: 'later', label: 'Not this year', effects: {} },
+    ] },
+  { id: 'g19', name: 'Concert Tickets', emoji: '🎤', text: 'Your favorite band, one night only.', effects: { cash: -9_500 },
+    aral: 'Spend on what you value most and cut hard on the rest. That is a budget, not a punishment.' },
+  { id: 'g20', name: 'Credit Card Surprise', emoji: '💳', text: 'You did not notice the balance creeping up. 3% interest a month.', effects: { revolving: { name: 'Credit Card', balance: 40_000, rate: 0.03 } },
+    aral: 'Paying only the interest keeps the debt forever. A credit card is a tool only if you pay it in full.' },
+  { id: 'g21', name: 'Milk Tea Habit', emoji: '🧋', text: 'Every single day.', effects: { living: 900 },
+    aral: 'A daily habit is a monthly bill. ₱30 a day is ₱10,800 a year.' },
+  { id: 'g22', name: 'Lost Wallet', emoji: '👛', text: 'On the jeep home.', effects: { cash: -6_000 },
+    aral: 'Bad luck is part of the plan. Cash on hand is what makes it small.' },
+  { id: 'g23', name: 'New Sofa Set', emoji: '🛋️', text: 'For the guests. Still a doodad.',
+    aral: 'A doodad is anything you buy that does not put money back in your pocket.',
+    options: [
+      { key: 'cash', label: 'Pay ₱35,000 cash', effects: { cash: -35_000 } },
+      { key: 'inst', label: 'Installment, ₱3,500 × 12', effects: { installment: { name: 'Furniture Installment', payment: 3_500, months: 12 } } },
+      { key: 'skip', label: 'The old sofa is fine', effects: {} },
+    ] },
+  { id: 'g24', name: 'Batch Reunion', emoji: '🥂', text: 'You ended up paying for the drinks.', effects: { cash: -10_000 },
+    aral: 'Looking rich and being rich pull in opposite directions.' },
+  { id: 'g25', name: 'Expired Car Registration', emoji: '🚓', text: 'Flagged at a checkpoint. Late fees, penalties and an impound bill.', effects: { cash: -14_000 },
+    fixable: true, aral: 'Paperwork on time is the cheapest money you will ever save.' },
+  { id: 'g26', name: 'No Building Permit', emoji: '🏗️', text: 'The extension at the back of your house was built without a permit. Fine and back fees.', effects: { cash: -25_000 },
+    fixable: true, aral: 'Skipping the permit felt like saving money. It was a loan from the future with a penalty attached.' },
+  { id: 'g27', name: 'Late Business Permit', emoji: '📝', text: 'You missed the January renewal for your business. Surcharges and interest.', effects: { cash: -18_000 },
+    needs: 'business', fixable: true, aral: 'Running a business means compliance costs. Put renewal dates on the calendar.' },
+  { id: 'g28', name: 'Property Tax Arrears', emoji: '🧾', text: 'Real property tax on your rentals was never paid. Penalties piled up.', effects: { cash: -20_000 },
+    needs: 'realestate', fixable: true, aral: 'Owning property has holding costs. Count tax and repairs before counting rent as profit.' },
 ];
 
-// ─── Life Event Cards (20 total) ─────────────────────────────────────────────
+// Life events
+// extra effect keys: child, salaryMult, salaryAdd, jobless, spouse, gamble {cost,need,win}, freeSkill, abroad, bonusMonths
 export const lifeEvents = [
-  {
-    id: 'le1',  name: 'Na-promote Ka!',
-    type: 'salary_increase', amount: 8000,
-    description: '+₱8,000/month sa sahod.',
-  },
-  {
-    id: 'le2',  name: 'Nagsilang ang Anak',
-    type: 'expense', addedMonthlyExpense: 8000, permanent: true,
-    description: '+₱8,000/month gastusin. Permanente.',
-  },
-  {
-    id: 'le3',  name: 'Nagretiro ang Magulang',
-    type: 'expense', addedMonthlyExpense: 5000, permanent: true,
-    description: '+₱5,000/month suporta. Permanente.',
-  },
-  {
-    id: 'le4',  name: 'Mana — Namatay ang Tito',
-    type: 'cash_gain', cashGain: 500000,
-    description: '+₱500,000 sa cash.',
-  },
-  {
-    id: 'le5',  name: 'Natanggal sa Trabaho',
-    type: 'job_loss', rounds: 2,
-    description: 'Walang sahod sa 2 rounds. Passive income lang.',
-  },
-  {
-    id: 'le6',  name: 'Nagpalit ng Trabaho',
-    type: 'salary_multiplier', multiplier: 1.2,
-    description: '+20% sa sahod. Bagong kompanya.',
-  },
-  {
-    id: 'le7',  name: 'Pumasok sa OFW (Nurse Only)',
-    type: 'ofw_upgrade', condition: 'nurse',
-    description: 'Nurse lang: 3x ang sahod. Asset risk mechanic nag-aapply.',
-  },
-  {
-    id: 'le8',  name: 'Annulment / Legal Separation',
-    type: 'combo', cashLoss: 200000, addedMonthlyExpense: 5000, permanent: true,
-    description: '₱200K legal fees + ₱5K/month maintenance.',
-  },
-  {
-    id: 'le9',  name: 'Nagbukas ng Side Hustle',
-    type: 'passive_income', monthlyIncome: 5000,
-    description: '+₱5,000/month passive income (freelance/consulting).',
-  },
-  {
-    id: 'le10', name: 'Sakit — Nag-leave ng 3 Buwan',
-    type: 'sick_leave', rounds: 3, salaryMultiplier: 0.5,
-    description: 'Kalahati lang ng sahod sa 3 rounds.',
-  },
-  {
-    id: 'le11', name: '13th Month + Performance Bonus',
-    type: 'cash_gain', cashGain: 60000,
-    description: 'Bonus season. +₱60,000 one-time na cash.',
-  },
-  {
-    id: 'le12', name: 'Asawa Naghahanap ng Trabaho (Nakapasok!)',
-    type: 'salary_increase', amount: 18000,
-    description: 'Dual income na kayo. +₱18,000/month sa household income.',
-  },
-  {
-    id: 'le13', name: 'Negosyo na Lumakas — Nadagdagan ang Kita',
-    type: 'passive_income', monthlyIncome: 8000,
-    description: 'Lumaking negosyo. +₱8,000/month passive income.',
-  },
-  {
-    id: 'le14', name: 'Nagresign — Naghintay ng Maayos na Trabaho',
-    type: 'job_loss', rounds: 1,
-    description: 'Walang sahod sa 1 round. Passive income lang ang pumasok.',
-  },
-  {
-    id: 'le15', name: 'Nagbenta ng Lumang Sasakyan',
-    type: 'combo', cashGain: 180000, removedLiabilityPayment: 8000,
-    description: '+₱180,000 sa cash. Car loan payment na naaalis sa gastusin.',
-  },
-  {
-    id: 'le16', name: 'Scholarship ng Anak (Buong Tuition)',
-    type: 'expense_reduction', reducedMonthlyExpense: 6000,
-    description: '-₱6,000/month. Scholarship ang nagbabayad ng tuition.',
-  },
-  {
-    id: 'le17', name: 'Lumipat sa Mas Mura at Mas Malapit sa Trabaho',
-    type: 'expense_reduction', reducedMonthlyExpense: 4000,
-    description: '-₱4,000/month sa rent at transportasyon.',
-  },
-  {
-    id: 'le18', name: 'Nagkaroon ng Freelance Client (Abroad)',
-    type: 'passive_income', monthlyIncome: 12000,
-    description: '+₱12,000/month freelance income mula sa abroad.',
-  },
-  {
-    id: 'le19', name: 'Namatay ang Negosyo (Sinara)',
-    type: 'income_loss', removedMonthlyIncome: 5000,
-    description: 'Isang passive income source ang nawala. -₱5,000/month.',
-  },
-  {
-    id: 'le20', name: 'Nakita ang Bahay ng Lola (Mana)',
-    type: 'cash_gain', cashGain: 300000,
-    description: 'Bahay ng lola na nabenta. +₱300,000 mana.',
-  },
+  { id: 'l1', name: 'New Baby', emoji: '👶', text: 'Congrats! A new member of the family.', effects: { child: 1 },
+    aral: 'Children are not a financial decision, but they are a financial fact. Every kid raises your monthly bills.' },
+  { id: 'l2', name: 'Another Baby', emoji: '🍼', text: 'One more on the way.', effects: { child: 1 },
+    aral: 'Each child raises the passive income you need to escape. Plan the family budget before the budget plans you.' },
+  { id: 'l3', name: 'Promoted', emoji: '🎖️', text: '12% raise. Your officemates expect a blowout.',
+    aral: 'A raise grows your salary, not your freedom. It only helps if the extra goes into assets.',
+    options: [
+      { key: 'invest', label: 'Keep your lifestyle', effects: { salaryMult: 1.12 } },
+      { key: 'upgrade', label: 'Upgrade your lifestyle (+₱6,000/mo)', effects: { salaryMult: 1.12, living: 6_000 } },
+    ] },
+  { id: 'l4', name: 'Performance Bonus', emoji: '🎁', text: 'Half a month of salary.', effects: { bonusMonths: 0.5 },
+    aral: 'Bonuses are the easiest money to invest, because you never had time to get used to them.' },
+  { id: 'l5', name: 'Inheritance from Lola', emoji: '👵', text: 'She left you her savings.', effects: { cash: 150_000 },
+    aral: 'Spend a windfall and it is gone once. Invest it and it pays you every month.' },
+  { id: 'l6', name: 'Hospitalized', emoji: '🏥', text: 'Emergency appendectomy.', effects: { medical: 120_000 },
+    aral: 'One hospital stay can erase years of savings. That is the job of insurance.' },
+  { id: 'l7', name: 'Getting Married', emoji: '💒', text: 'Your partner\'s income helps, but how big is the reception?',
+    aral: 'One day of celebration should not cost three years of cashflow.',
+    options: [
+      { key: 'simple', label: 'Civil wedding, ₱30,000', effects: { cash: -30_000, spouse: true } },
+      { key: 'grand', label: 'Big church wedding, ₱12,000 × 36', effects: { installment: { name: 'Wedding Loan', payment: 12_000, months: 36 }, spouse: true, diskarte: 1 } },
+    ] },
+  { id: 'l8', name: 'Parents Retired', emoji: '👴', text: 'They have no pension. You now send them ₱5,000 a month.', effects: { living: 5_000 },
+    aral: 'Sandwich generation: supporting parents and kids at once. Your own retirement plan keeps your kids from the same fate.' },
+  { id: 'l9', name: 'Cousin Needs Help', emoji: '🙏', text: 'Your cousin needs ₱30,000 for a hospital bill.',
+    aral: 'Help is a gift, not a loan. Give what you can afford to never see again.',
+    options: [
+      { key: 'give', label: 'Give ₱30,000 (+1 Diskarte)', effects: { cash: -30_000, diskarte: 1 } },
+      { key: 'part', label: 'Give ₱10,000', effects: { cash: -10_000 } },
+      { key: 'no', label: 'Can\'t right now (−1 Diskarte)', effects: { diskarte: -1 } },
+    ] },
+  { id: 'l10', name: '"Double Your Money" Invite', emoji: '🤑', text: 'A friend swears it pays 30% a month, guaranteed. Put in ₱50,000?',
+    aral: 'Guaranteed high returns are the signature of a scam. Real investments carry risk and say so.',
+    options: [
+      { key: 'in', label: 'Put in ₱50,000 (roll a 6 to get ₱150K)', effects: { gamble: { cost: 50_000, need: 6, win: 150_000 } } },
+      { key: 'no', label: 'No thanks', effects: {} },
+    ] },
+  { id: 'l11', name: 'Job Offer Abroad', emoji: '✈️', text: 'Double the salary, but ₱15,000 more a month in costs and padala.',
+    aral: 'Working abroad raises active income. You still escape only through passive income.',
+    options: [
+      { key: 'go', label: 'Take the job', effects: { abroad: true } },
+      { key: 'stay', label: 'Stay home', effects: {} },
+    ] },
+  { id: 'l12', name: 'Weekend Consulting Gig', emoji: '🧑‍💼', text: '+₱6,000 a month. Still trading your time for it.', effects: { salaryAdd: 6_000 },
+    aral: 'A side hustle is more active income. It becomes freedom only when it funds assets.' },
+  { id: 'l13', name: 'Small Lotto Win', emoji: '🎰', text: 'Four numbers out of six.', effects: { cash: 20_000 },
+    aral: 'Luck is not a plan. What you do with luck can be.' },
+  { id: 'l14', name: 'Company Shut Down', emoji: '📉', text: 'No salary for 2 paydays.', effects: { jobless: 2 },
+    aral: 'Your employer can stop paying you. Your assets do not need permission to keep paying.' },
+  { id: 'l15', name: 'Free Money Seminar', emoji: '🎓', text: 'Pick one skill for free.', effects: { freeSkill: true },
+    aral: 'Financial education compounds. Every skill makes every later deal better.' },
+  { id: 'l16', name: 'Anniversary Trip', emoji: '🌅', text: 'You earned it.',
+    aral: 'Rewarding yourself is healthy. Rewarding yourself on credit is not.',
+    options: [
+      { key: 'abroad', label: 'Bali, ₱20,000', effects: { cash: -20_000 } },
+      { key: 'local', label: 'Staycation, ₱6,000', effects: { cash: -6_000 } },
+    ] },
+  { id: 'l17', name: 'Found a Mentor', emoji: '🧓', text: 'A real "rich dad" offers to show you the ropes.', effects: { koneksyon: 1, diskarte: 1 },
+    aral: 'Learn from people who have what you want, not from people who just talk about it.' },
+  { id: 'l18', name: 'Balikbayan Box', emoji: '📦', text: 'From Tita in Dubai. There\'s cash inside.', effects: { cash: 10_000 },
+    aral: 'Gifts are nice. Do not build a budget around them.' },
+  { id: 'l19', name: 'Union Raise', emoji: '📈', text: 'New CBA. Salary +6%.', effects: { salaryMult: 1.06 },
+    aral: 'Raises usually trail inflation. Assets are how you stay ahead of rising prices.' },
+  { id: 'l20', name: 'Annual Check-up', emoji: '🩻', text: 'Caught something early. Small bill now.', effects: { medical: 8_000 },
+    aral: 'Prevention is the cheapest medicine.' },
 ];
 
-// ─── Market Event Cards (15 total) ───────────────────────────────────────────
+// Market events
 export const marketEvents = [
-  {
-    id: 'me1',  name: 'PSE Bull Run!',
-    effect: 'all_stocks_value_up', magnitude: 0.15,
-    description: 'Lahat ng stocks: +15% market value.',
-  },
-  {
-    id: 'me2',  name: 'Real Estate Boom',
-    effect: 'all_realestate_value_up', magnitude: 0.10,
-    description: 'Lahat ng real estate: +10% value.',
-  },
-  {
-    id: 'me3',  name: 'Bagyo at Baha (Walang Insurance)',
-    effect: 'disaster_cash_loss', cashLoss: 50000, mitigatedByInsurance: true, insuranceCost: 10000,
-    description: 'Uninsured: -₱50,000. Insured: -₱10,000.',
-  },
-  {
-    id: 'me4',  name: 'BSP Interest Rate Hike',
-    effect: 'all_loan_payments_up', magnitude: 0.10,
-    description: 'Lahat ng loan payments: +10% ngayong round.',
-  },
-  {
-    id: 'me5',  name: 'Bagong Tren Extension',
-    effect: 'urban_realestate_value_up', magnitude: 0.20,
-    description: 'Urban real estate: +20% value.',
-  },
-  {
-    id: 'me6',  name: 'Peso Depreciation',
-    effect: 'ofw_income_bonus', amount: 10000,
-    description: 'OFW players: +₱10,000 sa sahod ngayong round.',
-  },
-  {
-    id: 'me7',  name: 'POGO Ban',
-    effect: 'condo_value_down', magnitude: 0.15,
-    description: 'Condos: -15% value.',
-  },
-  {
-    id: 'me8',  name: 'BIR Tax Amnesty',
-    effect: 'waive_bir_penalty',
-    description: 'Kung may pending BIR penalty: cancelled. Kung wala: discard.',
-  },
-  {
-    id: 'me9',  name: 'Recession Quarter',
-    effect: 'variable_income_at_risk',
-    description: 'Variable income players: roll D6. 1-2 = kalahati ng normal na kita.',
-  },
-  {
-    id: 'me10', name: 'OFW Remittance Boom',
-    effect: 'provincial_realestate_up', magnitude: 0.05,
-    description: 'Non-NCR real estate: +5% value.',
-  },
-  {
-    id: 'me11', name: 'Tech IPO sa PSE (Hot Stock!)',
-    effect: 'player_choice_stock_gain', magnitude: 0.25,
-    description: 'Pumili ng isa mong stock: +25% value.',
-  },
-  {
-    id: 'me12', name: 'Inflation Spike',
-    effect: 'immediate_expense_increase', amount: 2000,
-    description: 'LAHAT ng players: +₱2,000 sa monthly expenses ngayong round.',
-  },
-  {
-    id: 'me13', name: 'Government Infrastructure Spending',
-    effect: 'all_realestate_value_up', magnitude: 0.05,
-    description: 'Lahat ng real estate: +5% value.',
-  },
-  {
-    id: 'me14', name: 'OFW Bagong Patakaran (OWWA)',
-    effect: 'ofw_cash_gain', amount: 30000,
-    description: 'OFW players: +₱30,000 na OWWA benefit.',
-  },
-  {
-    id: 'me15', name: 'Stock Market Crash',
-    effect: 'all_stocks_value_down', magnitude: 0.20,
-    description: 'Lahat ng stocks: -20% market value. Huwag mag-panic sell.',
-  },
+  { id: 'm1', name: 'House Buyer', emoji: '🏠', type: 'offer', subs: ['house'], mult: 1.5, text: 'An OFW family wants a house. They offer 150% of what you paid.', aral: 'A motivated buyer is worth waiting for. You make the profit when you buy cheap. You collect it when you sell.' },
+  { id: 'm2', name: 'House Buyer', emoji: '🏠', type: 'offer', subs: ['house'], mult: 1.25, text: 'A local buyer offers 125% of what you paid.', aral: 'A small premium may not beat the rent you give up. Compare the cash you get with the cashflow you lose.' },
+  { id: 'm3', name: 'Condo Buyer', emoji: '🏙️', type: 'offer', subs: ['condo'], mult: 1.3, text: 'A bulk buyer offers 130% for condo units.', aral: 'Condos sell in bulk only in hot markets. How fast you can sell is part of an asset\'s value.' },
+  { id: 'm4', name: 'Apartment Buyer', emoji: '🏢', type: 'offer', subs: ['apartment'], mult: 1.4, text: 'A REIT is buying apartments at 140% of the price.', aral: 'Big buyers pay for income. Assets with strong cashflow attract the best offers.' },
+  { id: 'm5', name: 'New Expressway', emoji: '🛣️', type: 'offer', subs: ['land'], mult: 2.5, text: 'The expressway will pass through. Land sells for 250%.', aral: 'Land pays when roads arrive. Speculation works only if you can wait without bleeding cash.' },
+  { id: 'm6', name: 'Land Developer', emoji: '🏗️', type: 'offer', subs: ['land'], mult: 1.6, text: 'A subdivision developer offers 160% for land.', aral: 'Raw land is a bet on someone else\'s plans. This time, someone showed up.' },
+  { id: 'm7', name: 'Logistics Company', emoji: '🏬', type: 'offer', subs: ['commercial'], mult: 1.35, text: 'Offers 135% for commercial property.', aral: 'Commercial buyers pay for location and long leases.' },
+  { id: 'm8', name: 'Business Buyer', emoji: '🤝', type: 'offer', subs: ['business'], cfMult: 30, text: 'Will buy any business for 30 months of its cashflow.', aral: 'Businesses are priced by their cashflow. Grow the cashflow, grow the price.' },
+  { id: 'm9', name: 'Big Corp Acquisition', emoji: '🧾', type: 'offer', subs: ['business'], cfMult: 45, text: 'A conglomerate pays 45 months of cashflow for a business.', aral: 'This is how owners get rich: build a cashflow, then sell it for many months of it at once.' },
+  { id: 'm10', name: 'Bull Market', emoji: '🐂', type: 'cycle', cycle: 'bull', text: 'The economy heats up. Stock prices and buyer offers +20%.', aral: 'In a boom everything looks like a good investment. Prices are high, so buy carefully and sell gladly.' },
+  { id: 'm11', name: 'Recession', emoji: '🐻', type: 'cycle', cycle: 'bear', text: 'Things slow down. Stock prices and buyer offers −20%.', aral: 'Recessions put assets on sale. Cash and steady income let you buy when others are forced to sell.' },
+  { id: 'm12', name: 'Back to Normal', emoji: '⚖️', type: 'cycle', cycle: 'normal', text: 'The market settles down.', aral: 'Cycles end. Do not plan as if today\'s market lasts forever.' },
+  { id: 'm13', name: 'SARI Stock Split', emoji: '✂️', type: 'split', symbol: 'SARI', ratio: 2, text: 'Everyone holding SARI gets double the shares at half the price.', aral: 'A split does not make you richer. Same company, more slices.' },
+  { id: 'm14', name: 'BYC Reverse Split', emoji: '🪙', type: 'split', symbol: 'BYC', ratio: 0.5, text: 'BayaniCoin holders get half the coins at double the price.', aral: 'The price per coin changed. The value of your holding did not.' },
+  { id: 'm15', name: 'Super Typhoon', emoji: '🌀', type: 'damage', perProperty: 15_000, text: 'Every property owner pays ₱15,000 per property in repairs. Insurance covers 80%.', aral: 'Property owners carry disaster risk. Insurance and a repair fund are part of the real cost.' },
+  { id: 'm16', name: 'Inflation Spike', emoji: '🔥', type: 'inflation', amount: 1_500, text: 'Prices went up. Everyone\'s monthly expenses +₱1,500.', aral: 'Inflation raises your bills every year. Salaries lag. Rents and businesses can keep up.' },
+  { id: 'm17', name: 'Tenant Skipped Out', emoji: '😤', type: 'tenant', cost: 15_000, text: 'If you own a rental, a tenant left owing rent and broke stuff. ₱15,000 to fix.', aral: 'Being a landlord is a business with bad days. Screen tenants and keep a repair fund.' },
+  { id: 'm18', name: 'Rental Boom', emoji: '📈', type: 'rentup', pct: 0.1, text: 'Every apartment and house earns 10% more.', aral: 'Rents rise with demand. Good rentals protect you from inflation.' },
+  { id: 'm19', name: 'Peso Drops', emoji: '💱', type: 'peso', text: 'OFW salaries +10%. Everyone else pays ₱500 more a month.', aral: 'A weak peso helps those earning dollars and raises prices for everyone else.' },
+  { id: 'm20', name: 'Foreign Fund Buying', emoji: '🏘️', type: 'offer', subs: ['house', 'condo', 'apartment'], mult: 1.2, text: 'Offers 120% for any residential property.', aral: 'Foreign money chases property in good times. Sell into strong demand.' },
 ];
 
-// ─── Network / Koneksyon Cards (15 total) ────────────────────────────────────
+// Contact cards, kept in hand.
+// use: 'anytime' (tap to use), 'deal' (apply when buying), 'expense' (cancel an expense)
 export const networkCards = [
-  {
-    id: 'nc1',  name: 'Accountant na Kaibigan',
-    effect: 'skip_bir_penalty',
-    description: 'Gamitin sa BIR Audit. I-skip ang lahat ng penalty.',
-  },
-  {
-    id: 'nc2',  name: 'Broker na Kakilala',
-    effect: 'first_look_big_deal',
-    description: 'Sa susunod na Malaking Deal space: makakita ka rin at maaaring bumili.',
-  },
-  {
-    id: 'nc3',  name: 'Kontratista',
-    effect: 'rehab_cost_minus_20pct',
-    description: 'Sa susunod na property deal: -20% sa cost.',
-  },
-  {
-    id: 'nc4',  name: 'DOST-Accredited Appraiser',
-    effect: 'brrrr_ltv_80pct',
-    description: 'Sa susunod na BRRRR refinancing: 80% LTV instead of 70%.',
-  },
-  {
-    id: 'nc5',  name: 'Banker na Kaibigan',
-    effect: 'waive_one_loan_interest',
-    description: 'I-waive ang interest payment ng isang loan ngayong round.',
-  },
-  {
-    id: 'nc6',  name: 'Abogado (Lawyer)',
-    effect: 'skip_title_delay',
-    description: 'Sa susunod na property purchase: skip transfer penalty/delay.',
-  },
-  {
-    id: 'nc7',  name: 'HR Recruiter',
-    effect: 'salary_plus_5000',
-    description: 'Gamitin kahit kailan: +₱5,000 sa monthly salary mo.',
-  },
-  {
-    id: 'nc8',  name: 'Financial Advisor',
-    effect: 'next_deal_analysis',
-    description: 'Sa susunod na deal card: kitain ang full cashflow analysis bago mag-decide.',
-  },
-  {
-    id: 'nc9',  name: 'Paluwagan Organizer',
-    effect: 'paluwagan_start',
-    description: 'Mag-imbita ng co-players sa paluwagan. Lahat magdeposit ng ₱10K/round, isang player ang manalo ng pot bawat round.',
-  },
-  {
-    id: 'nc10', name: 'Insurance Agent',
-    effect: 'free_first_month_insurance',
-    description: 'Ma-activate ang insurance nang libre ngayong round.',
-  },
-  {
-    id: 'nc11', name: 'Property Manager na Kaibigan',
-    effect: 'skip_tenant_damage_roll',
-    description: 'Gamitin bago ang Tenant Roll: i-skip ang tenant damage/vacancy result para sa isang property ngayong Sahod Day.',
-  },
-  {
-    id: 'nc12', name: 'OFW Recruiter na Kakilala',
-    effect: 'ofw_upgrade_chance',
-    description: 'Kung Nars ka: maaari kang mag-upgrade sa OFW status ngayong round nang walang Life Event card.',
-  },
-  {
-    id: 'nc13', name: 'Tax Consultant',
-    effect: 'bir_refund_plus_5000',
-    description: 'Sa susunod na BIR Audit: +₱5,000 sa normal na BIR refund kung 5–6 ang roll, o automatic 3–4 result (auto-pass) kung 1–2.',
-  },
-  {
-    id: 'nc14', name: 'Real Estate Developer na Kakilala',
-    effect: 'preselling_deal_discount_10pct',
-    description: 'Sa susunod na pre-selling property deal: -10% sa downpayment.',
-  },
-  {
-    id: 'nc15', name: 'Lender na Kaibigan (Emergency Loan)',
-    effect: 'emergency_loan_no_credit_penalty',
-    description: 'Humiram ng hanggang ₱50,000 nang walang credit score penalty. Bayaran sa 3 rounds.',
-  },
+  { id: 'k1', name: 'Broker Kumpare', emoji: '🤝', use: 'deal', effect: 'down_minus_30', text: '30% off the down payment on one real estate deal.', aral: 'A good broker finds deals and negotiates. Their fee can be the cheapest part of the deal.' },
+  { id: 'k2', name: 'Lawyer Ninong', emoji: '⚖️', use: 'expense', effect: 'cancel_expense', text: 'Cancel one expense card.', aral: 'A good lawyer is cheaper than a bad contract.' },
+  { id: 'k3', name: 'HR Recruiter', emoji: '📋', use: 'anytime', effect: 'salary_up', text: 'Better job. Salary +10% for good.', aral: 'Your skills are worth what the market will pay. Sometimes you have to ask.' },
+  { id: 'k4', name: 'Banker Friend', emoji: '🏦', use: 'anytime', effect: 'pay_debt_50k', text: 'Restructures a loan. ₱50,000 off your most expensive debt.', aral: 'Restructuring is a tool, not a rescue. Kill the most expensive debt first.' },
+  { id: 'k5', name: 'Paluwagan Group', emoji: '🫶', use: 'anytime', effect: 'paluwagan', text: 'You get the first payout: ₱60,000 now, then ₱6,000 × 10. No interest.', aral: 'A paluwagan is a zero-interest loan if you get the first payout, and forced savings if you get the last.' },
+  { id: 'k6', name: 'Diskarte Coach', emoji: '🧠', use: 'anytime', effect: 'diskarte_2', text: '+2 Diskarte, even past your max.', aral: 'Good habits are a skill. Practice turns into luck.' },
+  { id: 'k7', name: 'Insurance Agent', emoji: '🛡️', use: 'anytime', effect: 'free_insurance', text: 'Free insurance for the next 6 paydays.', aral: 'An honest agent sells you what you need, not what pays them the biggest commission.' },
+  { id: 'k8', name: 'Contractor', emoji: '👷', use: 'deal', effect: 'down_minus_30', text: '30% off the down payment on one real estate deal.', aral: 'A contractor who knows costs keeps you from overpaying for repairs.' },
+  { id: 'k9', name: 'Business Partner', emoji: '🧑‍💼', use: 'deal', effect: 'biz_half', text: 'Covers half the down payment on one business.', aral: 'A partner halves the cost and halves the profit. Choose one who brings more than money.' },
+  { id: 'k10', name: 'Accountant Ninang', emoji: '🧮', use: 'expense', effect: 'cancel_expense', text: 'Cancel one expense card.', aral: 'An accountant pays for themselves at tax time.' },
+  { id: 'k11', name: 'Tita Abroad', emoji: '💌', use: 'anytime', effect: 'cash_40k', text: 'Sends ₱40,000.', aral: 'Family abroad helps. Turn the padala into an asset and it helps every month.' },
+  { id: 'k12', name: 'Market Insider', emoji: '🔭', use: 'anytime', effect: 'reveal_stock', text: 'Shows you the usual price range of every stock, for good.', aral: 'Knowing a stock\'s normal range is the difference between investing and guessing.' },
 ];
+
+export const skills = [
+  { id: 'real_estate', name: 'Real Estate 101', emoji: '🏠', cost: 25_000, text: 'See 2 big deals and pick one.' },
+  { id: 'stocks', name: 'Stock Basics', emoji: '📊', cost: 15_000, text: 'See each stock\'s usual price range.' },
+  { id: 'negosyo', name: 'Business Bootcamp', emoji: '🏪', cost: 25_000, text: 'Businesses earn 20% more.' },
+  { id: 'tax', name: 'Tax Planning', emoji: '🧾', cost: 20_000, text: 'Taxes and contributions −30%.' },
+  { id: 'negotiation', name: 'Negotiation', emoji: '🗣️', cost: 20_000, text: '10% off every down payment.' },
+  { id: 'frugal', name: 'Frugal Living', emoji: '🥬', cost: 10_000, text: 'Cut living expenses by 10% now.' },
+  { id: 'networking', name: 'Networking', emoji: '🌐', cost: 15_000, text: 'Draw a contact card now. Hold one more.' },
+  { id: 'mindset', name: 'Rich Dad Mindset', emoji: '🧠', cost: 10_000, text: '+1 max Diskarte, and +1 now.' },
+  { id: 'property_mgmt', name: 'Property Management', emoji: '🔑', cost: 20_000, text: 'Tenant problems skip you. Typhoon damage halved.' },
+  { id: 'digital', name: 'Online Course', emoji: '📘', cost: 30_000, text: 'Make an online course: +₱4,000/mo passive.' },
+  { id: 'insurance', name: 'Insurance Know-how', emoji: '🛡️', cost: 10_000, text: 'Insurance costs half.' },
+];
+
+export const dreams = [
+  { id: 'd1', name: 'House in Tagaytay', emoji: '🏡', cost: 12_000_000, text: 'Taal view, cool air, no commute.' },
+  { id: 'd2', name: 'Scholarship Fund', emoji: '🎓', cost: 10_000_000, text: 'Send 100 kids from the province to college.' },
+  { id: 'd3', name: 'Surf Resort in Siargao', emoji: '🏄', cost: 20_000_000, text: 'Your own place on the island.' },
+  { id: 'd4', name: 'Year Around the World', emoji: '🌍', cost: 8_000_000, text: '30 countries with the whole family.' },
+  { id: 'd5', name: 'Farm-to-Table Restaurant', emoji: '🍽️', cost: 14_000_000, text: 'You grow it, you cook it.' },
+  { id: 'd6', name: 'Barangay Health Center', emoji: '🏥', cost: 9_000_000, text: 'Free check-ups for your hometown.' },
+  { id: 'd7', name: 'Boat in Palawan', emoji: '⛵', cost: 16_000_000, text: 'Island hopping whenever you feel like it.' },
+  { id: 'd8', name: 'Restore Lola\'s House', emoji: '🏛️', cost: 7_000_000, text: 'Bring the old family house back to life.' },
+];
+
+// Fast Track fixed deals keyed by space index on the fastTrack board.
+export const ftDeals = {
+  1:  { name: 'Tech Startup (Angel Round)', emoji: '🚀', kind: 'gamble', cost: 3_000_000, need: 6, win: 40_000_000 },
+  2:  { name: 'Laundry Chain (20 branches)', emoji: '🧺', kind: 'deal', cost: 5_000_000, cf: 220_000 },
+  5:  { name: 'BPO Office Building', emoji: '🏢', kind: 'deal', cost: 15_000_000, cf: 600_000 },
+  7:  { name: 'Indie Film Production', emoji: '🎬', kind: 'gamble', cost: 5_000_000, need: 5, win: 20_000_000 },
+  8:  { name: 'Resort in Palawan', emoji: '🏝️', kind: 'deal', cost: 12_000_000, cf: 450_000 },
+  11: { name: 'Solar Power Plant', emoji: '🔆', kind: 'deal', cost: 20_000_000, cf: 800_000 },
+  14: { name: 'Fast Food Franchises (5)', emoji: '🍔', kind: 'deal', cost: 8_000_000, cf: 330_000 },
+  16: { name: 'Shipping Company', emoji: '🚢', kind: 'deal', cost: 25_000_000, cf: 1_000_000 },
+  17: { name: 'Gold Mining Claim', emoji: '⛏️', kind: 'gamble', cost: 6_000_000, need: 4, win: 15_000_000 },
+  19: { name: 'Hospital Wing', emoji: '🏥', kind: 'deal', cost: 18_000_000, cf: 700_000 },
+  22: { name: 'Agri-Tech Plantation', emoji: '🌱', kind: 'deal', cost: 6_000_000, cf: 250_000 },
+};
+
+export const ftDisasters = {
+  4:  { name: 'Lawsuit', emoji: '⚖️', pct: 0.5, text: 'Lawyers and a settlement eat half your cash.' },
+  13: { name: 'BIR Audit', emoji: '🧾', pct: 0.3, text: 'Some filings were missing. You lose 30% of your cash.' },
+  20: { name: 'Inheritance Fight', emoji: '💔', pct: 0.4, text: 'The family splits the estate. You lose 40% of your cash.' },
+};
+
+// Dream spaces on the Fast Track, in board order.
+export const dreamSpaces = [3, 9, 15, 21, 23];

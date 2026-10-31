@@ -1,219 +1,125 @@
-import { useEffect } from 'react';
-import { useGameStore } from '../store/gameStore.js';
-import { boardSpaces, freedomTrackSpaces } from '../data/boardSpaces.js';
-import SpaceCell from './SpaceCell.jsx';
-import BoardInterior from './BoardInterior.jsx';
+import { useState } from 'react';
+import { useGame } from '../store/gameStore.js';
+import { useUi } from '../store/uiStore.js';
+import { ratRace, fastTrack, cellGrid, spaceTypes, BOARD_SIZE } from '../data/board.js';
+import { ftDeals } from '../data/cards.js';
+import { dreamById } from '../engine/engine.js';
+import { spaceTone, playerTone } from '../lib/theme.js';
+import { fmtShort } from '../lib/format.js';
+import Icon from './Icon.jsx';
+import Pawn from './Pawn.jsx';
+import BoardCenter from './BoardCenter.jsx';
 
-// Board layout — 28 spaces, 7 per side:
-// top   (L→R): spaces 0–6
-// right (T→B): spaces 7–13
-// bottom (R→L visual): 20,19,18,17,16,15,14
-// left  (T→B visual): 27,26,25,24,23,22,21
-const topRow    = boardSpaces.slice(0, 7);
-const rightCol  = boardSpaces.slice(7, 14);
-const bottomRow = [...boardSpaces.slice(14, 21)].reverse();
-const leftCol   = [...boardSpaces.slice(21, 28)].reverse();
+// Token layer coordinates: each board cell is 1/7 of the inner board.
+const LEFT = ['left-[0%]', 'left-[14.2857%]', 'left-[28.5714%]', 'left-[42.8571%]', 'left-[57.1429%]', 'left-[71.4286%]', 'left-[85.7143%]'];
+const TOP = ['top-[0%]', 'top-[14.2857%]', 'top-[28.5714%]', 'top-[42.8571%]', 'top-[57.1429%]', 'top-[71.4286%]', 'top-[85.7143%]'];
+const XY = cellGrid.map(c => {
+  const [, col, row] = c.match(/col-start-(\d) row-start-(\d)/);
+  return `${LEFT[col - 1]} ${TOP[row - 1]}`;
+});
+// When several pawns share a cell, fan them out.
+const FAN = ['', '-translate-x-[28%] -translate-y-[12%]', 'translate-x-[28%] -translate-y-[12%]', 'translate-y-[18%]'];
 
-const FREEDOM_CFG = {
-  malaking_deal:      { bg: '#0d2e10', border: '#2d5a2d', color: '#4ade80' },
-  sahod_day:          { bg: '#2e2510', border: '#5a4a1a', color: '#f59e0b' },
-  pangyayari_merkado: { bg: '#1a0d2e', border: '#3a1a5a', color: '#c084fc' },
-  gastos:             { bg: '#2e0d0d', border: '#5a1a1a', color: '#f87171' },
-  bangko:             { bg: '#0d1b2e', border: '#1a3a5a', color: '#60a5fa' },
-  koneksyon:          { bg: '#1a0a2e', border: '#3a1a5a', color: '#e879f9' },
-  win_check:          { bg: '#1a2e10', border: '#3a5a2d', color: '#86efac' },
-};
-
-function FreedomSpaceCell({ space, players }) {
-  const cfg = FREEDOM_CFG[space.type] ?? { bg: '#0d1b2e', border: '#2d4a6a', color: '#8aabcb' };
-  const tokens = players.filter(p => p.freedomPosition === space.id);
+function Cell({ index, type, track, owner, dreamers, focus, onTap }) {
+  const meta = spaceTypes[type];
+  const corner = index % 6 === 0;
+  const deal = track === 'fast' ? ftDeals[index] : null;
   return (
-    <div
-      className="flex-1 min-w-0 flex flex-col items-center justify-between rounded p-1"
-      style={{
-        background: cfg.bg,
-        border: `1px solid ${cfg.border}`,
-        minWidth: 40,
-      }}
+    <button
+      type="button"
+      aria-label={meta.label}
+      onClick={() => onTap(index)}
+      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-lg border-[2.5px] border-ink p-0.5 text-center shadow-[inset_0_-4px_0_rgb(0_0_0/0.18),inset_0_3px_0_rgb(255_255_255/0.35)] ${cellGrid[index]} ${spaceTone[meta.tone]} ${focus ? 'z-10 animate-cell-glow' : ''}`}
     >
-      <span
-        className="text-center leading-tight w-full"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '8px',
-          color: cfg.color,
-          fontWeight: 700,
-        }}
-      >
-        {space.name}
+      <Icon name={meta.icon} className={corner ? 'size-[70%] sm:size-[62%]' : 'size-[64%] sm:size-[52%]'} />
+      <span className={`mt-0.5 w-full truncate font-display text-[9px] leading-none tracking-wide text-white label-shadow sm:block sm:text-xs ${deal ? 'block' : 'hidden'}`}>
+        {deal ? fmtShort(deal.cost) : meta.label}
       </span>
-      <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
-        {tokens.map(p => {
-          const idx = players.indexOf(p);
-          return (
-            <div
-              key={p.id}
-              className="w-3 h-3 rounded-full"
-              style={{ background: `var(--player-${idx})`, border: '1px solid rgba(255,255,255,0.3)' }}
-              title={p.name}
-            />
-          );
-        })}
-      </div>
+      {owner && <span className={`absolute right-0.5 top-0.5 size-2.5 rounded-full border-2 border-ink sm:size-3.5 ${playerTone[owner.color].bg}`} />}
+      {dreamers.length > 0 && (
+        <span className="absolute left-0.5 top-0 text-[10px] leading-none sm:text-sm">{dreamers.map(d => dreamById[d.dreamId].emoji).join('')}</span>
+      )}
+    </button>
+  );
+}
+
+function spot(p, anim, ghost) {
+  if (anim?.pid === p.id) return anim.path[anim.step];
+  if (ghost?.pid === p.id) return ghost.path[ghost.path.length - 1];
+  return p.position;
+}
+
+function Tokens({ players, anim, ghost, current }) {
+  const groups = {};
+  const placed = players.map(p => {
+    const pos = spot(p, anim, ghost);
+    groups[pos] = (groups[pos] ?? 0) + 1;
+    return { p, pos, slot: groups[pos] - 1 };
+  });
+  return (
+    <div className="pointer-events-none absolute inset-[4px] sm:inset-2">
+      {placed.map(({ p, pos, slot }) => {
+        const moving = anim?.pid === p.id;
+        const hopKey = moving ? `${p.id}-${anim.step}` : p.id;
+        return (
+          <div
+            key={p.id}
+            className={`absolute flex h-[14.2857%] w-[14.2857%] items-center justify-center transition-[left,top] ease-[cubic-bezier(0.4,0,0.3,1)] ${moving && anim.quick ? 'duration-[240ms]' : 'duration-[380ms]'} ${XY[pos]} ${moving ? 'z-30' : p.id === current ? 'z-20' : 'z-10'}`}
+          >
+            <div className={`relative h-[96%] w-[96%] ${FAN[slot % FAN.length]}`}>
+              <span key={`s${hopKey}`} className={`absolute bottom-[2%] left-[22%] h-[9%] w-[56%] rounded-full bg-ink/30 ${moving && anim.step > 0 ? (anim.quick ? 'animate-hop-shadow-quick' : 'animate-hop-shadow') : ''}`} />
+              <div key={hopKey} className={`size-full origin-bottom ${moving && anim.step > 0 ? (anim.quick ? 'animate-hop-quick' : 'animate-hop') : p.id === current ? 'animate-bob' : ''}`}>
+                <Pawn color={p.color} job={p.professionId} shadow={false} className="size-full drop-shadow-[0_2px_0_rgb(31_22_51/0.35)]" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-const INTER_SPACE = '1px solid rgba(201,162,39,0.35)';
-
-export default function Board({ selectedPlayerId, onSelectPlayer }) {
-  const players            = useGameStore(s => s.players);
-  const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
-  const animatingToken     = useGameStore(s => s.animatingToken);
-  const playerJustLanded   = useGameStore(s => s.playerJustLanded);
-  const advanceAnimPos     = useGameStore(s => s.advanceAnimPos);
-  const endTokenAnimation  = useGameStore(s => s.endTokenAnimation);
-  const escapedPlayers     = players.filter(p => p.hasEscapedRatRace);
-  const currentPlayer      = players[currentPlayerIndex] ?? null;
-
-  // During animation, show the animating player's token at currentPos instead of final position
-  const displayPlayers = players.map(p =>
-    animatingToken.active &&
-    animatingToken.currentPos !== null &&
-    p.id === animatingToken.playerId
-      ? { ...p, position: animatingToken.currentPos }
-      : p
-  );
-
-  // Drive the token glow animation one step at a time
-  useEffect(() => {
-    if (!animatingToken.active) return;
-    if (animatingToken.currentPos === animatingToken.targetPos) {
-      endTokenAnimation();
-      return;
-    }
-    const t = setTimeout(advanceAnimPos, 340);
-    return () => clearTimeout(t);
-  }, [animatingToken.active, animatingToken.currentPos, animatingToken.targetPos]);
-
-  const isAnim   = (id) => animatingToken.active && animatingToken.currentPos === id;
-  const isLanded = (id) => playerJustLanded && !animatingToken.active && currentPlayer?.position === id;
+export default function Board() {
+  const game = useGame(s => s.shown ?? s.game);
+  const anim = useUi(s => s.anim);
+  const ghost = useUi(s => s.ghost);
+  const busy = useUi(s => s.busyCount > 0);
+  const [inspect, setInspect] = useState(null);
+  const current = game.players[game.current];
+  const pend = game.pending;
+  // After a reload mid-decision there is no parked pawn yet, so park it on the rolled space.
+  const parked = ghost ?? (pend?.kind === 'move' && !busy ? { pid: current.id, path: [(current.position + pend.total) % BOARD_SIZE] } : null);
+  // Highlight where the pawn stands once it has landed: while choosing Diskarte, and while its card is open.
+  let focus = null;
+  if (!anim && parked?.pid === current.id) focus = parked.path[parked.path.length - 1];
+  else if (!busy && pend && pend.kind !== 'roll' && pend.kind !== 'move') focus = current.position;
+  const track = anim?.track ?? current.track;
+  const spaces = track === 'fast' ? fastTrack : ratRace;
+  const onTrack = game.players.filter(p => p.track === track);
+  const tap = i => setInspect(prev => (prev === i ? null : i));
 
   return (
-    <div
-      className="flex flex-col w-full h-full rounded-[8px] overflow-hidden"
-      style={{
-        border: '3px solid var(--color-gold)',
-        boxShadow: '0 0 28px rgba(201,162,39,0.18), inset 0 0 40px rgba(0,0,0,0.4)',
-        background: '#081408',
-      }}
-    >
-      {/* ── Main board grid ── */}
-      <div
-        className="flex-1 min-h-0"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '80px 1fr 80px',
-          gridTemplateRows: '72px 1fr 64px',
-        }}
-      >
-        {/* Top row — spans all cols */}
-        <div
-          className="flex"
-          style={{ gridColumn: '1 / -1', gridRow: '1', borderBottom: '2px solid var(--color-gold)' }}
-        >
-          {topRow.map((s, i) => (
-            <div
-              key={s.id}
-              className="flex-1 h-full"
-              style={{ borderRight: i < topRow.length - 1 ? INTER_SPACE : undefined }}
-            >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
-            </div>
+    <div className="relative mx-auto aspect-square w-full max-w-[620px] animate-drop-in">
+      <div className="relative size-full rounded-[20px] border-[4px] border-ink bg-wood p-[4px] shadow-[0_6px_0_#1f1633] sm:p-2">
+        <div className="grid size-full grid-cols-7 grid-rows-7 gap-[3px] sm:gap-1">
+          {spaces.map((type, i) => (
+            <Cell
+              key={`${track}-${i}`}
+              index={i}
+              type={type}
+              track={track}
+              owner={track === 'fast' && game.ftOwned[i] ? game.players.find(p => p.id === game.ftOwned[i]) : null}
+              dreamers={track === 'fast' && type === 'pangarap' ? game.players.filter(p => p.dreamSpace === i) : []}
+              focus={focus === i && current.track === track}
+              onTap={tap}
+            />
           ))}
+          <div className="tablecloth col-start-2 col-end-7 row-start-2 row-end-7 overflow-hidden rounded-xl border-[3px] border-ink shadow-[inset_0_4px_0_rgb(0_0_0/0.12)]">
+            <BoardCenter inspect={inspect} track={track} onCloseInspect={() => setInspect(null)} />
+          </div>
         </div>
-
-        {/* Left col */}
-        <div
-          className="flex flex-col"
-          style={{ gridColumn: '1', gridRow: '2', borderRight: '2px solid var(--color-gold)' }}
-        >
-          {leftCol.map((s, i) => (
-            <div
-              key={s.id}
-              className="flex-1 w-full"
-              style={{ borderBottom: i < leftCol.length - 1 ? INTER_SPACE : undefined }}
-            >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
-            </div>
-          ))}
-        </div>
-
-        {/* Center — BoardInterior */}
-        <div style={{ gridColumn: '2', gridRow: '2' }}>
-          <BoardInterior
-            selectedPlayerId={selectedPlayerId}
-            onSelectPlayer={onSelectPlayer}
-          />
-        </div>
-
-        {/* Right col */}
-        <div
-          className="flex flex-col"
-          style={{ gridColumn: '3', gridRow: '2', borderLeft: '2px solid var(--color-gold)' }}
-        >
-          {rightCol.map((s, i) => (
-            <div
-              key={s.id}
-              className="flex-1 w-full"
-              style={{ borderBottom: i < rightCol.length - 1 ? INTER_SPACE : undefined }}
-            >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom row — spans all cols */}
-        <div
-          className="flex"
-          style={{ gridColumn: '1 / -1', gridRow: '3', borderTop: '2px solid var(--color-gold)' }}
-        >
-          {bottomRow.map((s, i) => (
-            <div
-              key={s.id}
-              className="flex-1 h-full"
-              style={{ borderRight: i < bottomRow.length - 1 ? INTER_SPACE : undefined }}
-            >
-              <SpaceCell space={s} players={displayPlayers} isAnimating={isAnim(s.id)} isLanded={isLanded(s.id)} isCorner={!!s.isCorner} />
-            </div>
-          ))}
-        </div>
+        <Tokens players={onTrack} anim={anim} ghost={parked} current={current.id} />
       </div>
-
-      {/* ── Freedom Track (only when players have escaped) ── */}
-      {escapedPlayers.length > 0 && (
-        <div
-          className="shrink-0 px-2 py-1.5"
-          style={{ borderTop: '2px solid var(--color-gold)', background: '#050f05' }}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className="font-bold tracking-wider uppercase"
-              style={{ fontFamily: 'var(--font-display)', fontSize: '9px', color: '#4ade80' }}
-            >
-              Freedom Track 🗺️
-            </span>
-            <span style={{ fontSize: '9px', color: '#2d5a2d' }}>
-              {escapedPlayers.map(p => p.name).join(', ')}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            {freedomTrackSpaces.map(s => (
-              <FreedomSpaceCell key={s.id} space={s} players={escapedPlayers} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

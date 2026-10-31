@@ -1,45 +1,31 @@
 # LAYA Game — Claude Code Project Instructions
 
 ## Project
-Filipino financial literacy board game. React + Vite + Zustand + Tailwind CSS.
-Single HTML/JS app. No backend. No external APIs. Target: desktop browser 1280px+.
+Filipino financial literacy board game (Rich Dad Poor Dad / CASHFLOW style). React 19 + Vite + Zustand + Tailwind CSS v4.
+Static site. No backend of our own. The only external service is Supabase Realtime, used as a message relay for online rooms (optional; see README). **Mobile-first** (portrait phone), scales up to desktop.
 
 ## Before every task
-Read GAMEPLAN.md in full before writing any code.
+Read GAMEPLAN.md before writing code.
+
+## Architecture
+- `src/data/` — all game content and constants (professions, cards, board, constants). Peso values in PHP.
+- `src/engine/` — pure rules. `step(state, action) -> { state, fx }`. No React, no DOM, no Math.random (seeded RNG in state).
+  `bot.js` = AI player; `finance.js` = derived numbers shared with UI.
+  Some pending decisions belong to a player other than the current one (deal offers, loan requests): use `actorOf(state)`.
+- `src/store/` — `gameStore.js` (Zustand, persisted to localStorage), `uiStore.js` (animation/tab/toast UI state), `fxRunner.js` (turns engine fx into timed animations/sounds).
+  `gameStore.shown` is what the screen renders: it lags behind `game` until the fx animations finish, so results never show before the pawn lands. Display components read `s.shown ?? s.game`; only the bot driver reads `game`.
+- `src/net/` — online rooms. `transport.js` = relay (Supabase, or `?net=local` BroadcastChannel for testing in two tabs); `online.js` = lobby and host/guest protocol. The host runs the engine and broadcasts the full state plus fx after every move; guests send actions and play back what they receive. `netStore.js` says which player this device controls (`controls()`); components use it instead of `!p.isBot`.
+- `src/components/` — one component per file, PascalCase.jsx.
+- `src/lib/` — formatting, theme class maps, sound effects and music (one shared WebAudio context in `audio.js`; start it from click/touchend, not pointerdown, or iPhones stay silent), safe storage.
+- `scripts/simulate.mjs` — headless bot games for balance and crash checks. `node scripts/simulate.mjs versus 270` checks that Hard bots beat Normal beat Easy.
 
 ## Build rules
 - JavaScript only. No TypeScript.
-- Tailwind CSS only for styling. No inline styles. No CSS modules.
-- Zustand for all game state. No useState for game logic (only for local UI state).
-- Build one module at a time. Never jump ahead in the module list.
-- After each module completes, run `npm run dev` to confirm no errors before moving on.
-- All peso values are in Philippine Peso (PHP). No currency conversion needed.
-
-## Folder structure
-
-/src
-
-/data          → professions.js, cards.js, boardSpaces.js, gameConstants.js
-
-/store         → gameStore.js
-
-/components    → one file per component
-
-App.jsx
-
-main.jsx
-
-## Module build order (update checkboxes as you finish each)
-- [x] Module 1: Data Layer (/src/data/)
-- [x] Module 2: Game State Engine (/src/store/gameStore.js)
-- [x] Module 3: Financial Statement Component
-- [x] Module 4: Board + Player Position Display
-- [x] Module 5: Card Draw and Resolution System
-- [x] Module 6: Final — Event Log, Freedom Track, Paluwagan, OFW Risk, Polish, Help Modal
-
-## Code style
-- Component files: PascalCase.jsx
-- Data files: camelCase.js
-- All card and space names keep their Filipino/Tagalog names as defined in GAMEPLAN.md
-- No console.log left in final code
-- Comments only where logic is non-obvious
+- Tailwind only for styling. Custom utilities/keyframes live in `src/index.css` (`@theme`, `@utility`). No inline `style`, no CSS modules.
+  For dynamic sizes (progress bars) use SVG attributes. Keep Tailwind class strings literal (see `src/lib/theme.js`).
+- Game rules change only in `src/engine/` — never in components.
+- After any rules or data change: `node scripts/simulate.mjs 100 1` (must finish with no errors) and check pacing. After card or lesson changes also run `node scripts/lessons-check.mjs`.
+- Every Expense, Life, Market and Contact card needs its own `aral`. Fixer options appear only on `fixable` cards (government fines and paperwork). Real-world facts in lessons must be checked against a source.
+- Before committing: `npm run lint` and `npm run build` must pass.
+- Player-facing text is English by default. Use Filipino only for words Filipinos naturally say in English conversation (sari-sari, 5-6, paluwagan, ninong, barkada, padala, Pasko, Diskarte). Keep copy short and plain: no emoji in buttons or headings, no em dashes.
+- No console.log in final code. Comments only where logic is non-obvious.
