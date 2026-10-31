@@ -118,6 +118,13 @@ const ICONS = {
       <path d="M11 11h10M11 16h10M11 21h6" fill="none" {...S} />
     </>
   ),
+  book: (
+    <>
+      <path d="M16 8.5C13 6.5 8.5 6 4.5 6.5v18c4-.5 8.5 0 11.5 2 3-2 7.5-2.5 11.5-2v-18c-4-.5-8.5 0-11.5 2z" fill="#fff" {...S} />
+      <path d="M16 8.5v18" fill="none" {...S} />
+      <path d="M20 11.5l2 1.5 3-4" fill="none" stroke="#e59a00" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
   board: (
     <>
       <rect x="5" y="5" width="22" height="22" rx="3" fill="#fff" {...S} />

@@ -59,6 +59,13 @@ export default function HelpModal() {
             <li><b>Insurance</b> covers 80% of hospital and typhoon bills.</li>
           </ul>
 
+          <H>Learning as you play</H>
+          <ul className="list-disc pl-5">
+            <li><b>Think it through</b>: every card shows what each choice really costs you, worked out from your own cash, bills and insurance. The same card says different things as your situation changes.</li>
+            <li><b>Lesson Book</b> (book button at the top): lessons unlock the first time something happens to you, like your first installment or a 5-6 loan. Locked ones show a hint. Play different ways to find them all.</li>
+            <li><b>Money report</b>: at the end, see how much went to interest and doodads compared with what your assets paid you.</li>
+          </ul>
+
           <H>The calendar</H>
           <p>December brings 13th month pay and Pasko spending. June is school fees if you have kids. July to October is typhoon season.</p>
 

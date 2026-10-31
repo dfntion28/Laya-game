@@ -5,6 +5,7 @@ import { useUi } from './uiStore.js';
 import { play, buzz } from '../lib/sfx.js';
 import { fmt } from '../engine/engine.js';
 import { useNet } from './netStore.js';
+import { useLessons } from './lessonStore.js';
 
 const TIMING = {
   normal: { step: 430, dice: 900, settle: 450 },
@@ -123,6 +124,13 @@ export function runFx(fx, state, commit) {
           if (f.tone === 'bad') play('bad', muted);
         });
         break;
+      case 'lesson': {
+        // Online, only the player on this device learns it. Locally, any human at the table.
+        const net = useNet.getState();
+        const pl = state.players.find(x => x.id === f.pid);
+        if (pl && !pl.isBot && (net.mode === 'local' || net.me === f.pid)) at(t, () => useLessons.getState().unlock(f.id));
+        break;
+      }
       case 'bankrupt':
         at(t, () => {
           play('bad', muted);

@@ -14,6 +14,8 @@ import FreedomMeter from './FreedomMeter.jsx';
 import PlayerStrip from './PlayerStrip.jsx';
 import BottomNav, { Tabs } from './BottomNav.jsx';
 import HelpModal from './HelpModal.jsx';
+import LessonBook from './LessonBook.jsx';
+import LessonPopup from './LessonPopup.jsx';
 import { EscapeOverlay, EndScreen } from './Celebration.jsx';
 import { Toasts, TurnBanner, CoinBursts } from './Effects.jsx';
 import { SIDE_TABS } from '../lib/tabs.js';
@@ -85,10 +87,12 @@ export default function GameScreen() {
         <section className={`flex-col gap-3 ${tab === 'board' ? 'flex' : 'hidden lg:flex'}`}>
           {multi && <div className="rounded-2xl border-[3px] border-ink bg-paper px-1.5 py-1"><PlayerStrip /></div>}
           <Board />
+          {!wide && <LessonPopup />}
           {!wide && <TurnCard />}
           {!wide && <MeterCard p={viewed} />}
         </section>
         <section key={tab} className={`flex-col gap-3 ${tab === 'board' ? 'hidden lg:flex' : 'flex animate-drop-in'}`}>
+          {wide && <LessonPopup />}
           {wide && <TurnCard />}
           {wide && <MeterCard p={viewed} />}
           {wide && (
@@ -105,6 +109,7 @@ export default function GameScreen() {
       <EscapeOverlay />
       <EndScreen />
       <HelpModal />
+      <LessonBook />
       <TurnBanner />
       <Toasts />
     </div>

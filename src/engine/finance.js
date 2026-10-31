@@ -1,11 +1,24 @@
 // Pure derived-number helpers shared by the engine, the bots and the UI.
 import {
   CHILD_COST, INSURANCE_COST, MP2_RATE, BANK_RATE_GOOD, BANK_RATE_STD,
-  CREDIT_GOOD, CREDIT_BANK_MIN,
+  CREDIT_GOOD, CREDIT_BANK_MIN, INSURANCE_COVER,
 } from '../data/constants.js';
 import { stocks } from '../data/cards.js';
 
 export const has = (p, skillId) => p.skills.includes(skillId);
+
+export const fmt = n => {
+  const v = Math.round(n || 0);
+  return (v < 0 ? '−₱' : '₱') + Math.abs(v).toLocaleString('en-US');
+};
+
+// What a hospital bill costs this player after their trait and insurance.
+export function medicalCost(p, amount) {
+  let c = amount;
+  if (p.traitKey === 'medical_half') c *= 0.5;
+  if (p.insured) c *= 1 - INSURANCE_COVER;
+  return Math.round(c);
+}
 
 export function cycleMult(market) {
   if (market === 'bull') return 1.2;

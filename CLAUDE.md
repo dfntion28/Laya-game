@@ -24,7 +24,8 @@ Read GAMEPLAN.md before writing code.
 - Tailwind only for styling. Custom utilities/keyframes live in `src/index.css` (`@theme`, `@utility`). No inline `style`, no CSS modules.
   For dynamic sizes (progress bars) use SVG attributes. Keep Tailwind class strings literal (see `src/lib/theme.js`).
 - Game rules change only in `src/engine/` — never in components.
-- After any rules or data change: `node scripts/simulate.mjs 100 1` (must finish with no errors) and check pacing.
+- After any rules or data change: `node scripts/simulate.mjs 100 1` (must finish with no errors) and check pacing. After card or lesson changes also run `node scripts/lessons-check.mjs`.
+- Every Expense, Life, Market and Contact card needs its own `aral`. Fixer options appear only on `fixable` cards (government fines and paperwork). Real-world facts in lessons must be checked against a source.
 - Before committing: `npm run lint` and `npm run build` must pass.
 - Player-facing text is English by default. Use Filipino only for words Filipinos naturally say in English conversation (sari-sari, 5-6, paluwagan, ninong, barkada, padala, Pasko, Diskarte). Keep copy short and plain: no emoji in buttons or headings, no em dashes.
 - No console.log in final code. Comments only where logic is non-obvious.

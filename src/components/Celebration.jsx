@@ -7,6 +7,8 @@ import { Btn, Figure } from './Ui.jsx';
 import Pawn from './Pawn.jsx';
 import { useNet, useControls } from '../store/netStore.js';
 import { leaveRoom } from '../net/online.js';
+import { useLessons } from '../store/lessonStore.js';
+import { lessonById } from '../data/lessons.js';
 
 const CONFETTI = [
   'left-[4%] bg-mustard [animation-delay:0s]', 'left-[11%] bg-berry [animation-delay:0.6s]',
@@ -26,7 +28,7 @@ function Shell({ children }) {
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {CONFETTI.map((c, i) => <span key={i} className={`absolute -top-4 h-4 w-2.5 animate-confetti rounded-sm border-2 border-ink ${c}`} />)}
       </div>
-      <div className="relative w-full max-w-md animate-pop rounded-[28px] border-[4px] border-ink bg-paper p-6 text-center pop-shadow">{children}</div>
+      <div className="relative max-h-[92dvh] w-full max-w-md animate-pop overflow-y-auto rounded-[28px] border-[4px] border-ink bg-paper p-6 text-center pop-shadow">{children}</div>
     </div>
   );
 }
@@ -61,6 +63,39 @@ export function EscapeOverlay() {
   );
 }
 
+// Where the money went, for the player(s) on this device. Numbers only teach if you see them.
+function MoneyReport({ p }) {
+  const openBook = useLessons(s => s.openBook);
+  const st = p.stats;
+  const leak = (st.interest || 0) + (st.doodads || 0);
+  const learned = p.learned ?? [];
+  return (
+    <div className="mt-4 rounded-2xl bg-white/70 p-3 text-left">
+      <div className="font-display text-lg">{p.name === 'You' ? 'Your money report' : `${p.name}'s money report`}</div>
+      <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-2">
+        <Figure label="Salary earned" value={fmt(st.salary)} />
+        <Figure label="Passive earned" value={fmt(st.passive)} tone="text-green-700" />
+        <Figure label="Interest paid" value={fmt(st.interest)} tone={st.interest ? 'text-red-600' : ''} />
+        <Figure label="Spent on doodads" value={fmt(st.doodads)} tone={st.doodads ? 'text-red-600' : ''} />
+      </div>
+      <p className="mt-2 text-sm font-bold leading-snug">
+        {leak > (st.passive || 0)
+          ? `Interest and doodads (${fmt(leak)}) took more than your assets ever paid you. Cutting those is the fastest raise there is.`
+          : leak > 0
+            ? `Your assets paid you ${fmt(st.passive)}, more than the ${fmt(leak)} that leaked out to interest and doodads.`
+            : 'No interest and no doodads. That is rare discipline.'}
+      </p>
+      {learned.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {learned.map(id => (
+            <button key={id} type="button" onClick={() => openBook(id)} className="press rounded-full border-2 border-ink bg-mustard px-2.5 py-0.5 text-xs font-extrabold">{lessonById[id]?.title}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EndScreen() {
   const game = useGame(s => s.shown ?? s.game);
   const quit = useGame(s => s.quit);
@@ -70,6 +105,7 @@ export function EndScreen() {
   const how = game.pending?.how;
   const dream = dreamById[winner.dreamId];
   const youWon = net.mode === 'local' ? !winner.isBot : winner.id === net.me;
+  const mine = game.players.filter(p => (net.mode === 'local' ? !p.isBot : p.id === net.me));
   return (
     <Shell>
       <div className="text-6xl">{how === 'dream' ? dream.emoji : '🏆'}</div>
@@ -88,6 +124,7 @@ export function EndScreen() {
           </div>
         ))}
       </div>
+      {mine.map(p => <MoneyReport key={p.id} p={p} />)}
       <Btn size="lg" className="mt-5 w-full" onClick={net.mode === 'local' ? quit : leaveRoom}>Play again</Btn>
     </Shell>
   );

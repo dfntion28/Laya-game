@@ -6,7 +6,7 @@ import {
   INSURANCE_COVER, CHILD_COST, MAX_CHILDREN, TUITION_PER_CHILD, DISKARTE_START, DISKARTE_MAX,
   HAND_MAX, TYPHOON_MONTHS, TYPHOON_DAMAGE_PER_PROPERTY, FT_CASHFLOW_MULT, FT_WIN_GAIN,
   FT_CHARITY_COST, MONTHS, PLAYER_COLORS, PITCH_STEP, PITCH_MAX, PLAYER_LOAN_MAX, PLAYER_LOAN_RATES,
-  FIXER_SHARE, FIXER_MIN_BILL, FIXER_CAUGHT_MAX, FIXER_FINE_MULT, FIXER_CREDIT_HIT, PERMIT_HOLD_COST,
+  FIXER_CAUGHT_MAX, FIXER_CREDIT_HIT, PERMIT_HOLD_COST,
   PERMIT_HOLD_FEE, PERMIT_CAUGHT_FINE,
 } from '../data/constants.js';
 import { professionById } from '../data/professions.js';
@@ -17,8 +17,9 @@ import {
 } from '../data/cards.js';
 import {
   has, cycleMult, passiveIncome, totalExpenses, expectedSalary, monthlyCashflow,
-  maxBankLoan, bankRate, canEscape, assetCashflow,
+  maxBankLoan, bankRate, canEscape, assetCashflow, fmt, medicalCost,
 } from './finance.js';
+import { optionMath, fixerMath } from './learn.js';
 
 const DECKS = {
   small: smallDeals, big: bigDeals, gastos: gastosCards, buhay: lifeEvents,
@@ -31,10 +32,7 @@ export const getCard = id => CARD_INDEX[id];
 export const skillById = Object.fromEntries(skills.map(s => [s.id, s]));
 export const dreamById = Object.fromEntries(dreams.map(d => [d.id, d]));
 
-export const fmt = n => {
-  const v = Math.round(n || 0);
-  return (v < 0 ? '−₱' : '₱') + Math.abs(v).toLocaleString('en-US');
-};
+export { fmt };
 
 // ─── RNG ────────────────────────────────────────────────────────────────────
 
@@ -120,7 +118,8 @@ function makePlayer(s, cfg, index) {
     ft: null,
     escapedMonth: null,
     escapedTurn: null,
-    stats: { deals: 0, sold: 0, gains: 0, bankruptcies: 0, paidOff: 0, donated: 0 },
+    stats: { deals: 0, sold: 0, gains: 0, bankruptcies: 0, paidOff: 0, donated: 0, interest: 0, doodads: 0, passive: 0, salary: 0 },
+    learned: [],
   };
   for (const l of prof.liabilities) {
     p.liabilities.push(makeLiability(s, l.name, l.balance, l, 'consumer'));
@@ -193,16 +192,22 @@ function toast(ctx, text, tone = 'info', pid = null) {
   ctx.fx.push({ type: 'toast', text, tone, pid });
 }
 
+// A lesson from the Lesson Book happened to a human player. Once per player per game.
+function learn(ctx, p, id) {
+  if (!p || p.isBot) return;
+  p.learned ??= [];
+  if (p.learned.includes(id)) return;
+  p.learned.push(id);
+  ctx.fx.push({ type: 'lesson', pid: p.id, id });
+}
+
+const stat = (p, key, n) => {
+  p.stats[key] = (p.stats[key] || 0) + n;
+};
+
 function addDiskarte(p, n) {
   if (n > 0) p.diskarte = Math.min(p.diskarteMax, p.diskarte + n);
   else p.diskarte = Math.max(0, p.diskarte + n);
-}
-
-function medicalCost(p, amount) {
-  let c = amount;
-  if (p.traitKey === 'medical_half') c *= 0.5;
-  if (p.insured) c *= 1 - INSURANCE_COVER;
-  return Math.round(c);
 }
 
 function gainKoneksyon(ctx, p) {
@@ -245,6 +250,7 @@ function addFiveSix(ctx, p, amount) {
   ctx.fx.push({ type: 'cash', pid: p.id, amount, label: '5-6 loan' });
   toast(ctx, `${p.name} had to borrow from a 5-6 lender (20%/mo)`, 'bad', p.id);
   log(ctx, p, `Borrowed ${fmt(amount)} from a 5-6 lender.`, 'bad');
+  learn(ctx, p, 'five_six');
 }
 
 // Cover negative cash: bank first, then 5-6, then bankruptcy.
@@ -257,6 +263,7 @@ function settle(ctx, p) {
   if (maxBankLoan(p) >= amount) {
     addBankLoan(ctx, p, amount, true);
     log(ctx, p, `Short on cash. Emergency bank loan: ${fmt(amount)}.`, 'warn');
+    learn(ctx, p, 'emergency_loan');
     return;
   }
   const fiveSix = p.liabilities.find(l => l.kind === 'fivesix')?.balance || 0;
@@ -287,6 +294,7 @@ function bankrupt(ctx, p) {
   ctx.fx.push({ type: 'bankrupt', pid: p.id });
   toast(ctx, `${p.name} went bankrupt. Assets sold.`, 'bad', p.id);
   log(ctx, p, 'Bankrupt. Assets sold at half price, debts cut in half.', 'bad');
+  learn(ctx, p, 'bankrupt');
 }
 
 // ─── Turn flow ──────────────────────────────────────────────────────────────
@@ -334,6 +342,7 @@ function enterFastTrack(ctx, p) {
   for (const l of p.liabilities.filter(x => x.kind === 'player')) repay(ctx, p, l.id, l.balance);
   ctx.fx.push({ type: 'escape', pid: p.id });
   log(ctx, p, `Out of the Rat Race in month ${p.month}. Fast Track cashflow: ${fmt(cf)}.`, 'great');
+  learn(ctx, p, 'escape');
   ctx.s.pending = {
     kind: 'escape', pid: p.id,
     title: 'You\'re out!',
@@ -414,6 +423,13 @@ function payday(ctx, p, atStep, exact) {
   const net = salary + passive - expenses;
   p.cash += net;
   const notes = [];
+  const interest = p.liabilities.reduce((sum, l) => sum + (l.rate ? l.payment : 0), 0);
+  const consumer = p.liabilities.reduce((sum, l) => sum + (l.months && l.kind === 'consumer' ? l.payment : 0), 0);
+  stat(p, 'interest', interest);
+  stat(p, 'doodads', consumer);
+  stat(p, 'passive', passive);
+  stat(p, 'salary', salary);
+  if (interest > 0) notes.push(`Interest −${fmt(interest)}`);
 
   if (m === 11) {
     if (p.thirteenth && p.jobless === 0) {
@@ -426,6 +442,7 @@ function payday(ctx, p, atStep, exact) {
     const pasko = 10_000 + p.children * 3_000;
     p.cash -= pasko;
     notes.push(`Pasko spending −${fmt(pasko)}`);
+    learn(ctx, p, 'pasko');
   }
   if (m === 5 && p.children > 0) {
     const tuition = p.children * TUITION_PER_CHILD;
@@ -440,6 +457,7 @@ function payday(ctx, p, atStep, exact) {
     dmg = Math.round(dmg);
     p.cash -= dmg;
     notes.push(`Typhoon damage −${fmt(dmg)}`);
+    learn(ctx, p, 'typhoon');
   }
   if (p.traitKey === 'family_risk' && d6(s) === 1) {
     p.cash -= 25_000;
@@ -459,6 +477,7 @@ function payday(ctx, p, atStep, exact) {
       p.credit = clampCredit(p.credit + 20);
       p.stats.paidOff++;
       notes.push(`Paid off ${l.name}`);
+      learn(ctx, p, 'paid_off');
     }
   }
 
@@ -492,8 +511,9 @@ function resolveSpace(ctx, p) {
       s.pending = { ...base, kind: 'oport' };
       return;
     case 'gastos': {
-      const card = draw(s, 'gastos');
-      s.pending = { ...base, kind: 'card', deck: 'gastos', cardId: card.id, options: cardOptions(p, card, 'gastos', s.players.length > 1) };
+      let card = draw(s, 'gastos');
+      for (let i = 0; i < 6 && !gastosEligible(p, card); i++) card = draw(s, 'gastos');
+      s.pending = { ...base, kind: 'card', deck: 'gastos', cardId: card.id, options: cardOptions(p, card, 'gastos') };
       return;
     }
     case 'buhay': {
@@ -524,6 +544,7 @@ function resolveSpace(ctx, p) {
         info(ctx, p, '🛡️', 'Layoffs, but not you', 'Government job security. Nothing happens.');
       } else {
         p.jobless = 2;
+        learn(ctx, p, 'laid_off');
         log(ctx, p, 'Laid off. No salary for the next 2 paydays.', 'bad');
         info(ctx, p, '📦', 'Laid off', 'No salary for the next 2 paydays. Only your passive income keeps coming in.');
       }
@@ -595,6 +616,12 @@ function info(ctx, p, emoji, title, text, tone = 'info') {
   ctx.s.pending = { kind: 'info', pid: p.id, emoji, title, text, tone };
 }
 
+function gastosEligible(p, card) {
+  if (card.needs === 'business') return p.assets.some(a => a.kind === 'business');
+  if (card.needs === 'realestate') return p.assets.some(a => a.kind === 'realestate');
+  return true;
+}
+
 function lifeEligible(p, card) {
   const e = card.effects || {};
   if (card.id === 'l7' && p.married) return false;
@@ -616,28 +643,28 @@ function describeEffects(p, effects) {
   return parts.join(' · ');
 }
 
-// Biggest cash hit a card can deal, used to price the fixer.
-function cardBill(p, card) {
-  const one = e => Math.max(0, -(e?.cash || 0)) + (e?.medical ? medicalCost(p, e.medical) : 0);
-  return card.options ? Math.max(...card.options.map(o => one(o.effects))) : one(card.effects);
+// The fine on a fixable card (government fines and paperwork only).
+function cardBill(card) {
+  return Math.max(0, -(card.effects?.cash || 0));
 }
 
-const fixerFee = bill => Math.round(bill * FIXER_SHARE / 1000) * 1000;
-
-function cardOptions(p, card, deck, multi = false) {
+function cardOptions(p, card, deck) {
   let options;
   if (card.options) {
-    options = card.options.map(o => ({ key: o.key, label: o.label, sub: describeEffects(p, o.effects) }));
+    options = card.options.map(o => ({ key: o.key, label: o.label, sub: describeEffects(p, o.effects), math: optionMath(p, o.effects) }));
   } else {
     const sub = describeEffects(p, card.effects);
-    options = [{ key: 'ok', label: deck === 'gastos' ? 'Pay' : 'OK', sub }];
+    options = [{ key: 'ok', label: deck === 'gastos' ? (card.fixable ? 'Pay the fine' : 'Pay') : 'OK', sub, math: optionMath(p, card.effects) }];
   }
   if (deck === 'gastos') {
     const shield = p.hand.find(id => getCard(id).use === 'expense');
-    if (shield) options.push({ key: `use:${shield}`, label: `Use ${getCard(shield).name}`, sub: 'Cancels this expense' });
-    const bill = cardBill(p, card);
-    if (multi && bill >= FIXER_MIN_BILL) {
-      options.push({ key: 'fixer', label: `Pay a fixer ${fmt(fixerFee(bill))}`, sub: 'Makes it go away. 1 in 3 chance you get caught', fixer: true });
+    if (shield) options.push({ key: `use:${shield}`, label: `Use ${getCard(shield).name}`, sub: 'Cancels this expense', math: ['Your contact handles it. The card is used up.'] });
+    if (card.fixable) {
+      const f = fixerMath(cardBill(card));
+      options.push({
+        key: 'fixer', label: `Pay a fixer ${fmt(f.fee)}`, sub: '1 in 3 chance you get caught', fixer: true,
+        math: [`Caught: you pay ${fmt(f.fee + f.fine)} in total and credit score −${FIXER_CREDIT_HIT}.`, `Average cost: ${fmt(f.average)} vs ${fmt(cardBill(card))} honest.`],
+      });
     }
   }
   return options;
@@ -646,12 +673,20 @@ function cardOptions(p, card, deck, multi = false) {
 function applyEffects(ctx, p, e, label) {
   const { s } = ctx;
   if (e.cash) cash(ctx, p, e.cash, label);
-  if (e.medical) cash(ctx, p, -medicalCost(p, e.medical), label);
+  if (e.medical) {
+    cash(ctx, p, -medicalCost(p, e.medical), label);
+    if (p.insured) learn(ctx, p, 'insured');
+    else if (medicalCost(p, e.medical) >= 15_000) learn(ctx, p, 'uninsured');
+  }
+  if (e.cash > 0 || e.bonusMonths) {
+    if ((e.cash || 0) + (e.bonusMonths ? expectedSalary(p) * e.bonusMonths : 0) >= 20_000) learn(ctx, p, 'windfall');
+  }
   if (e.perChild && p.children) cash(ctx, p, e.perChild * p.children, label);
   if (e.installment) {
     const i = e.installment;
     p.liabilities.push(makeLiability(s, i.name, i.payment * i.months, { payment: i.payment, months: i.months }, 'consumer'));
     toast(ctx, `${i.name}: +${fmt(i.payment)}/mo`, 'bad', p.id);
+    learn(ctx, p, 'installment');
   }
   if (e.revolving) {
     const r = e.revolving;
@@ -663,23 +698,30 @@ function applyEffects(ctx, p, e, label) {
       p.liabilities.push(makeLiability(s, r.name, r.balance, { rate: r.rate }, 'consumer'));
     }
     p.credit = clampCredit(p.credit - 20);
+    learn(ctx, p, 'credit_card');
   }
   if (e.living) {
     p.living += e.living;
     toast(ctx, `Expenses +${fmt(e.living)}/mo`, 'bad', p.id);
+    learn(ctx, p, 'creep');
   }
   if (e.koneksyon) gainKoneksyon(ctx, p);
   if (e.diskarte) addDiskarte(p, e.diskarte);
   if (e.child) {
     p.children = Math.min(MAX_CHILDREN, p.children + e.child);
+    learn(ctx, p, 'kids');
   }
+  if (e.salaryMult || e.salaryAdd) learn(ctx, p, 'raise');
   if (e.salaryMult) {
     if (p.variable) p.variable = [p.variable[0], Math.round(p.variable[1] * e.salaryMult)];
     else p.salaryBase = Math.round(p.salaryBase * e.salaryMult);
   }
   if (e.salaryAdd) p.spouseIncome += e.salaryAdd;
   if (e.bonusMonths) cash(ctx, p, Math.round(expectedSalary(p) * e.bonusMonths), label);
-  if (e.jobless && p.traitKey !== 'job_secure') p.jobless = Math.max(p.jobless, e.jobless);
+  if (e.jobless && p.traitKey !== 'job_secure') {
+    p.jobless = Math.max(p.jobless, e.jobless);
+    learn(ctx, p, 'laid_off');
+  }
   if (e.spouse) {
     p.married = true;
     p.spouseIncome += 15_000;
@@ -695,6 +737,7 @@ function applyEffects(ctx, p, e, label) {
     const roll = d6(s);
     ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
     cash(ctx, p, -e.gamble.cost, 'Invest');
+    learn(ctx, p, 'scam');
     if (roll >= e.gamble.need) {
       cash(ctx, p, e.gamble.win, 'Panalo!');
       log(ctx, p, `Rolled ${roll} and it paid off: +${fmt(e.gamble.win)}`, 'good');
@@ -733,6 +776,7 @@ function resolveCardOption(ctx, key) {
   } else {
     log(ctx, p, `${card.name}${describeEffects(p, effects) ? ': ' + describeEffects(p, effects) : ''}`, pend.deck === 'gastos' ? 'bad' : 'info');
   }
+  if (pend.deck === 'gastos') stat(p, 'doodads', Math.max(0, -(effects.cash || 0)) + (effects.medical ? medicalCost(p, effects.medical) : 0));
   applyEffects(ctx, p, effects, card.name);
   if (effects.freeSkill) {
     openAral(ctx, p, true);
@@ -845,6 +889,8 @@ function sellAsset(ctx, p, a, proceeds, label) {
   p.stats.gains += gain;
   ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Sold ${a.name}` });
   log(ctx, p, `Sold ${a.name} (${label}) for ${fmt(proceeds)} cash${gain ? `, ${gain >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(gain))}` : ''}.`, gain >= 0 ? 'good' : 'bad');
+  if (label === 'fire sale') learn(ctx, p, 'fire_sale');
+  else if (gain > 0) learn(ctx, p, 'sold_profit');
   settle(ctx, p);
 }
 
@@ -922,6 +968,7 @@ function buyDeal(ctx, a) {
     else p.assets.push({ id: uid(s, 'A'), kind: 'mp2', name: 'Pag-IBIG MP2', emoji: '🐷', amount, down: amount, mortgage: 0 });
     ctx.fx.push({ type: 'cash', pid: p.id, amount: -amount, label: 'MP2 deposit' });
     log(ctx, p, `Put ${fmt(amount)} into MP2.`, 'good');
+    learn(ctx, p, 'mp2');
     return true;
   }
   const useCardId = a.useCard && p.hand.includes(a.useCard) ? a.useCard : null;
@@ -940,10 +987,13 @@ function bankGap(p, down, extra = 0) {
 function buyAsset(ctx, p, card, useCardId, borrow) {
   const { s } = ctx;
   const down = dealDown(p, card, useCardId);
+  const hadIncome = p.assets.some(x => assetCashflow(p, x) > 0);
+  let borrowed = 0;
   if (p.cash < down) {
     if (!borrow) return false;
     const need = bankGap(p, down);
     if (need === null) return false;
+    borrowed = Math.round(need * bankRate(p));
     addBankLoan(ctx, p, need, false);
     p.credit = clampCredit(p.credit - 5);
     log(ctx, p, `Bank loan of ${fmt(need)} for the down payment.`, 'warn');
@@ -962,6 +1012,10 @@ function buyAsset(ctx, p, card, useCardId, borrow) {
   ctx.fx.push({ type: 'cash', pid: p.id, amount: -down, label: card.name });
   ctx.fx.push({ type: 'buy', pid: p.id, cf: card.cf });
   log(ctx, p, `Bought ${card.name} (${fmt(down)} down, ${card.cf >= 0 ? '+' : ''}${fmt(card.cf)}/mo).`, card.cf >= 0 ? 'good' : 'warn');
+  if (borrowed) learn(ctx, p, card.cf > borrowed ? 'good_leverage' : 'bad_leverage');
+  if (card.cf < 0) learn(ctx, p, 'liability_asset');
+  else if (card.cf === 0) learn(ctx, p, 'land_spec');
+  else if (!hadIncome) learn(ctx, p, 'first_asset');
   return true;
 }
 
@@ -988,6 +1042,8 @@ function sellShares(ctx, p, holding, qty, price) {
   p.stats.gains += gain;
   ctx.fx.push({ type: 'cash', pid: p.id, amount: proceeds, label: `Sold ${holding.symbol}` });
   log(ctx, p, `Sold ${qty.toLocaleString()} ${holding.symbol} at ₱${price}: ${gain >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(gain))}.`, gain >= 0 ? 'good' : 'bad');
+  if (gain > 0) learn(ctx, p, 'stock_gain');
+  else if (gain < 0) learn(ctx, p, 'stock_loss');
 }
 
 // ─── Aral (skills) ─────────────────────────────────────────────────────────
@@ -1036,6 +1092,7 @@ function learnSkill(ctx, p, skillId, free) {
       break;
   }
   log(ctx, p, `Learned ${skill.name}${cost ? ` (${fmt(cost)})` : ' (free)'}.`, 'good');
+  learn(ctx, p, 'skill');
   return true;
 }
 
@@ -1058,6 +1115,7 @@ function repay(ctx, p, liabId, amount) {
     p.stats.paidOff++;
     toast(ctx, `${l.name} paid off`, 'good', p.id);
     log(ctx, p, `Fully paid: ${l.name}.`, 'good');
+    learn(ctx, p, 'paid_off');
   }
   return true;
 }
@@ -1095,6 +1153,7 @@ function applyAnytimeCard(ctx, p, cardId) {
     case 'salary_up':
       if (p.variable) p.variable = [p.variable[0], Math.round(p.variable[1] * 1.1)];
       else p.salaryBase = Math.round(p.salaryBase * 1.1);
+      learn(ctx, p, 'raise');
       break;
     case 'pay_debt_50k': {
       const target = [...p.liabilities].filter(l => l.kind !== 'player').sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
@@ -1120,6 +1179,7 @@ function applyAnytimeCard(ctx, p, cardId) {
       break;
     case 'cash_40k':
       cash(ctx, p, 40_000, card.name);
+      learn(ctx, p, 'windfall');
       break;
     case 'reveal_stock':
       p.revealStocks = true;
@@ -1223,6 +1283,8 @@ function lend(ctx, lender, borrower, amount, rate) {
   ctx.fx.push({ type: 'cash', pid: lender.id, amount: -amount, label: `Lent to ${borrower.name}` });
   ctx.fx.push({ type: 'cash', pid: borrower.id, amount, label: `Loan from ${lender.name}` });
   log(ctx, lender, `Lent ${fmt(amount)} to ${borrower.name} at ${Math.round(rate * 100)}%/mo (+${fmt(l.payment)}/mo).`, 'good');
+  learn(ctx, lender, 'player_loan');
+  learn(ctx, borrower, 'player_loan');
 }
 
 function syncIou(s, l) {
@@ -1284,13 +1346,13 @@ function respond(ctx, actor, a) {
 // Pay a fixer to make an expense card disappear. Caught = pay it anyway, plus a fine.
 function payFixer(ctx, p, card) {
   const { s } = ctx;
-  const bill = cardBill(p, card);
-  const fee = fixerFee(bill);
+  const bill = cardBill(card);
+  const { fee, fine } = fixerMath(bill);
   const roll = d6(s);
   ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
   cash(ctx, p, -fee, 'Fixer');
+  learn(ctx, p, 'fixer');
   if (roll <= FIXER_CAUGHT_MAX) {
-    const fine = Math.round(bill * (1 + FIXER_FINE_MULT));
     cash(ctx, p, -fine, 'Caught');
     p.credit = clampCredit(p.credit - FIXER_CREDIT_HIT);
     log(ctx, p, `Fixer got caught on ${card.name}. Paid ${fmt(fee + fine)} in total.`, 'bad');
@@ -1310,6 +1372,7 @@ function holdPermit(ctx, p, a) {
   if (s.pending.kind !== 'roll' || p.track !== 'rat' || p.fixerTurn === s.turn) return false;
   if (!target || !rivals(s, p).includes(target) || target.permitHold || p.cash < PERMIT_HOLD_COST) return false;
   p.fixerTurn = s.turn;
+  learn(ctx, p, 'fixer');
   const roll = d6(s);
   ctx.fx.push({ type: 'dice', pid: p.id, dice: [roll] });
   cash(ctx, p, -PERMIT_HOLD_COST, 'Fixer');
@@ -1408,6 +1471,8 @@ function reduce(ctx, a) {
         return true;
       }
       if (a.type === 'PASS') {
+        const card = getCard(pend.cardId);
+        if ((card.kind === 'realestate' || card.kind === 'business') && card.cf < 0) learn(ctx, p, 'patience');
         endTurn(ctx);
         return true;
       }
@@ -1462,6 +1527,7 @@ function reduce(ctx, a) {
         p.stats.donated += pend.amount;
         addDiskarte(p, 1);
         log(ctx, p, `Donated ${fmt(pend.amount)}. 2 dice for 3 turns.`, 'good');
+        learn(ctx, p, 'charity');
         settle(ctx, p);
       }
       endTurn(ctx);

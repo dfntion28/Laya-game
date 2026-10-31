@@ -6,7 +6,7 @@ Source of truth for numbers is `src/data/*`. This document explains the *why*.
 ## Design pillars
 1. **Phone first.** One thumb, portrait, 10–20 min to escape the Rat Race, autosave.
 2. **A decision every turn.** Diskarte (move ±1 / reroll with landing preview), buy/pass/borrow, cash vs installment, sell now vs wait.
-3. **Teach by consequence, not text.** Every card shows its effect on the Freedom Meter; a one-line "Aral" (lesson) sits under it.
+3. **Teach by consequence, not text.** Every card has its own lesson, plus a "Think it through" note worked out from the player's own numbers (cash cushion, insurance, debts, family), so the same card teaches different things as your situation changes. Each choice shows its real cost (total paid, interest per month, new escape target). See *Learning system* below.
 4. **Variability.** 9 professions (draft 3), 8 dreams (draft 3), ~140 cards, market cycles, Philippine calendar seasons, 11 skills, bot opponents with 3 levels and 5 play styles.
 5. **Feel.** Cartoon kitchen-table look (thick outlines, chunky buttons), a character per profession (hard hat, nurse cap, headset...) in the player's color, bouncy motion, a live-synthesized music loop that speeds up on the Fast Track.
    Only the bottom tab bar is fixed on phones. Header, Freedom meter and cards scroll with the page.
@@ -29,8 +29,15 @@ On escape: Fast Track cashflow = passive income × 20, paid at every Cashflow Da
 ## Player to player (2+ players)
 - **Sell a deal card**: land on a property or business you can't or won't buy, offer it to another player at a price you set. They buy (price to you, plus their own down payment), counter once, or refuse. You can offer it to each player once.
 - **Borrow from a player**: on your turn (before rolling, or on a deal), ask a player for a loan at 1, 2, 3 or 5% a month. If they agree, you pay them interest every Payday until you repay. It counts as their passive income. If you escape, your player loans are paid off first. Bankruptcy halves what you owe them.
-- **Fixer (lagay)**: on an Expense card of ₱10K or more, pay a fixer 30% to make it go away. Before rolling, pay ₱20K to hold a rival's permit (their next property or business costs ₱30K more). Either way, a roll of 1 or 2 means caught: pay the bill plus a 50% fine (or a ₱50K fine), credit −40.
+- **Fixer (lagay)**: only on government fines and paperwork (traffic violation, expired registration, missing building permit, late business permit, property tax arrears; `fixable` cards). Pay a fixer 30% to make it go away. The card shows the math: average cost ≈ 80% of the honest fine, with credit risk. Works in solo games too. Before rolling, pay ₱20K to hold a rival's permit (their next property or business costs ₱30K more). Either way, a roll of 1 or 2 means caught: pay the bill plus a 50% fine (or a ₱50K fine), credit −40.
 - Bots: Normal and Hard sell deals they can't afford and ask the richest player for loans; they lend at 2%+ when it's safe. Easy bots fall for fixers.
+
+## Learning system
+- **Think it through** (`src/engine/learn.js`): pure functions that turn the player's state into a note. Cash vs installment depends on whether paying cash empties the cushion; hospital bills compare insured vs uninsured; raises point out that the Freedom meter does not move; windfalls show what the money would earn in an asset; deals show payback months, borrowing spread (good vs bad debt) and the MP2 comparison.
+- **Option math**: every Expense/Life option lists totals (₱3,750 × 12 = ₱45,000), cash left, and the new escape target. Several cards gained a "skip" or cheaper choice so not buying is a real option.
+- **Lesson Book** (`src/data/lessons.js`, 32 lessons in Debt, Assets, Life, Mindset): a lesson unlocks the first time it happens to a human player (first installment, 5-6 loan, bad leverage, fire sale, December payday...). Locked lessons show a hint only. Progress is saved per device, across games (`lessonStore.js`). Each lesson has a principle and an "In real life" line with Philippine facts (BSP 3%/mo card cap, Pag-IBIG MP2 7.1% for 2024, RA 11032 fixer penalties, PD 851 13th month).
+- **Money report** at the end: salary earned, passive earned, interest paid, spent on doodads, and the lessons found that game.
+- `node scripts/lessons-check.mjs` checks every lesson can unlock and no coach note shows NaN.
 
 ## Online
 Create a room, share the link or 5-letter code, 2 to 4 players (host can fill seats with bots). Each phone shows only its own player's decisions; everyone sees every roll and hop. The host's phone is the referee. Message relay: Supabase Realtime (free tier).

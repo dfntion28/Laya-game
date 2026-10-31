@@ -7,7 +7,8 @@ import {
 } from '../engine/engine.js';
 import { useControls } from '../store/netStore.js';
 import { SellToPlayer, AskLoan, RivalMoves, PitchCard, LoanAskCard } from './PlayerDeals.jsx';
-import { stocks, ftDeals, ftDisasters, lessons } from '../data/cards.js';
+import { stocks, ftDeals, ftDisasters } from '../data/cards.js';
+import { cardCoach, dealCoach, stockCoach, mp2Coach, oportCoach, seminarCoach } from '../engine/learn.js';
 import { spaceTypes } from '../data/board.js';
 import { LOAN_STEP, PERMIT_HOLD_FEE } from '../data/constants.js';
 import {
@@ -37,19 +38,40 @@ function Header({ art, tone, tag, title, text }) {
   );
 }
 
-function Tip({ text }) {
-  if (!text) return null;
-  return <p className="text-sm font-bold italic text-ink-soft">{text}</p>;
+// The card's lesson, plus a note worked out from the player's own numbers.
+function Coach({ lines, aral }) {
+  const list = (Array.isArray(lines) ? lines : [lines]).filter(Boolean);
+  if (!list.length && !aral) return null;
+  return (
+    <div className="rounded-2xl bg-sky/25 px-3.5 py-3">
+      {list.length > 0 && (
+        <>
+          <div className="text-[11px] font-extrabold uppercase tracking-widest text-blue-800">Think it through</div>
+          <ul className="mt-1 flex flex-col gap-1 text-sm font-bold leading-snug">
+            {list.map(l => <li key={l}>{l}</li>)}
+          </ul>
+        </>
+      )}
+      {aral && <p className={`text-sm font-bold italic leading-snug text-ink-soft ${list.length ? 'mt-2 border-t-2 border-ink/10 pt-2' : ''}`}>{aral}</p>}
+    </div>
+  );
 }
 
 function Options({ options, act, locked }) {
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       {options.map((o, i) => (
-        <Btn key={o.key} disabled={locked || o.disabled} variant={i === 0 ? 'primary' : 'ghost'} onClick={() => act({ type: 'OPTION', key: o.key })} className="flex flex-col items-center leading-tight">
-          <span>{o.label}</span>
-          {o.sub && <span className="font-sans text-xs font-extrabold opacity-75">{o.sub}</span>}
-        </Btn>
+        <div key={o.key} className="flex flex-col gap-1">
+          <Btn disabled={locked || o.disabled} variant={i === 0 ? 'primary' : 'ghost'} onClick={() => act({ type: 'OPTION', key: o.key })} className="flex flex-col items-center leading-tight">
+            <span>{o.label}</span>
+            {o.sub && <span className="font-sans text-xs font-extrabold opacity-75">{o.sub}</span>}
+          </Btn>
+          {o.math?.length > 0 && (
+            <ul className="px-2 text-xs font-bold leading-snug text-ink-soft">
+              {o.math.map(m => <li key={m}>{m}</li>)}
+            </ul>
+          )}
+        </div>
       ))}
     </div>
   );
@@ -94,7 +116,7 @@ function AssetDeal({ game, pend, p, card, act, locked }) {
           })}
         </div>
       )}
-      <Tip text={card.aral ?? lessons.oport} />
+      <Coach lines={dealCoach(p, card, down, cf, need > 0 && canBorrow ? borrow : 0)} aral={card.aral} />
       <div className="flex flex-col gap-2.5">
         {need === 0 ? (
           <Btn disabled={locked} onClick={() => act({ type: 'BUY', useCard })}>Buy for {fmt(down)}</Btn>
@@ -147,7 +169,7 @@ function StockDeal({ game, p, card, act, locked }) {
         Cost <b className="text-ink">{fmt(qty * price)}</b>
         {st.dps > 0 && qty > 0 && <> · +{fmt(qty * st.dps)}/mo</>}
       </div>
-      <Tip text={st.note} />
+      <Coach lines={stockCoach(p, st, price, holding)} />
       <div className="grid grid-cols-2 gap-2">
         <Btn disabled={locked || qty === 0} onClick={() => act({ type: 'BUY', qty })}>Buy</Btn>
         <Btn variant="good" disabled={locked || !holding} onClick={() => act({ type: 'SELL', qty: holding?.shares })}>Sell all</Btn>
@@ -165,7 +187,7 @@ function Mp2Deal({ p, card, act, locked }) {
       <p className="text-[15px] font-bold text-ink-soft">Low-risk savings that pay 0.55% a month. You can withdraw anytime.</p>
       <Stepper value={amount} set={setAmount} step={LOAN_STEP} max={max} format={fmt} />
       <div className="text-center text-sm font-bold text-ink-soft">+{fmt(amount * 0.0055)}/mo passive income</div>
-      <Tip text={card.aral} />
+      <Coach lines={mp2Coach(p)} aral={card.aral} />
       <Btn disabled={locked || amount <= 0} onClick={() => act({ type: 'BUY', amount })}>Deposit</Btn>
       <Btn variant="ghost" disabled={locked} onClick={() => act({ type: 'PASS' })}>Pass</Btn>
     </div>
@@ -210,7 +232,7 @@ function OfferBody({ game, card, act, locked, canAct }) {
         </div>
       ))}
       </div>
-      <Tip text={lessons.merkado} />
+      <Coach aral={card.aral} />
       <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>Done</Btn>
     </div>
   );
@@ -238,7 +260,7 @@ function SheetContent({ game, p, pend, act, locked, canAct }) {
               <span className="text-center text-xs font-extrabold">Apartments, big businesses. ₱350K to ₱900K down</span>
             </button>
           </div>
-          <Tip text={lessons.oport} />
+          <Coach lines={oportCoach(p, loan)} />
         </div>
       );
     }
@@ -279,7 +301,7 @@ function SheetContent({ game, p, pend, act, locked, canAct }) {
       return (
         <div className="flex flex-col gap-4">
           <Header art={card.emoji} tone={meta.tone} tag={meta.label} title={card.name} text={card.text} />
-          <Tip text={card.aral ?? lessons[pend.deck]} />
+          <Coach lines={cardCoach(p, card)} aral={card.aral} />
           <Options options={pend.options} act={act} locked={locked} />
         </div>
       );
@@ -290,7 +312,12 @@ function SheetContent({ game, p, pend, act, locked, canAct }) {
       return (
         <div className="flex flex-col gap-4">
           <Header art={card.emoji} tone="violet" tag="Market" title={card.name} text={card.text} />
-          {pend.kind === 'offer' ? <OfferBody game={game} card={card} act={act} locked={locked} canAct={canAct} /> : <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>}
+          {pend.kind === 'offer' ? <OfferBody game={game} card={card} act={act} locked={locked} canAct={canAct} /> : (
+            <>
+              <Coach aral={card.aral} />
+              <Btn disabled={locked} onClick={() => act({ type: 'DONE' })}>OK</Btn>
+            </>
+          )}
         </div>
       );
     }
@@ -312,7 +339,7 @@ function SheetContent({ game, p, pend, act, locked, canAct }) {
               </button>
             );
           })}
-          <Tip text={lessons.aral} />
+          <Coach aral={seminarCoach(p)} />
           {!pend.free && <Btn variant="ghost" disabled={locked} onClick={() => act({ type: 'SKIP' })}>Skip</Btn>}
         </div>
       );

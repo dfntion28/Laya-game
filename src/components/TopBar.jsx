@@ -8,6 +8,8 @@ import { Btn } from './Ui.jsx';
 import { MONTHS } from '../data/constants.js';
 import { useNet } from '../store/netStore.js';
 import { leaveRoom } from '../net/online.js';
+import { useLessons } from '../store/lessonStore.js';
+import { lessonList } from '../data/lessons.js';
 
 function Toggle({ label, on, onClick }) {
   return (
@@ -60,6 +62,8 @@ export default function TopBar() {
   const game = useGame(s => s.shown ?? s.game);
   const quit = useGame(s => s.quit);
   const setHelp = useUi(s => s.setHelp);
+  const openBook = useLessons(s => s.openBook);
+  const found = useLessons(s => Object.keys(s.found).length);
   const net = useNet();
   const online = net.mode !== 'local';
   const hostQuiet = net.mode === 'guest' && net.hostQuiet;
@@ -84,6 +88,10 @@ export default function TopBar() {
       </span>
       <span className="flex-1" />
       <MusicButton className={round} />
+      <button type="button" aria-label={`Lesson Book, ${found} of ${lessonList.length} found`} onClick={() => openBook()} className={`${round} relative`}>
+        <Icon name="book" className="size-6" />
+        <span className="absolute -bottom-1 -right-1 min-w-5 rounded-full border-2 border-ink bg-mustard px-1 text-center text-[10px] font-extrabold leading-4">{found}</span>
+      </button>
       <button type="button" aria-label="How to play" onClick={() => setHelp(true)} className={round}><Icon name="help" className="size-6" /></button>
       <div className="relative">
         <button type="button" aria-label="Menu" onClick={() => { setMenu(!menu); setSure(false); }} className={round}><Icon name="menu" className="size-5" /></button>
