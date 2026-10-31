@@ -8,6 +8,8 @@ import BangkoModal        from './components/BangkoModal.jsx';
 import EscapeScreen       from './components/EscapeScreen.jsx';
 import WinScreen          from './components/WinScreen.jsx';
 import EventLog           from './components/EventLog.jsx';
+import LessonJournal      from './components/LessonJournal.jsx';
+import { CONCEPT_IDS }    from './data/lessons.js';
 
 const MARKET_PILL = {
   bear:   { text: '🐻 BEAR MARKET',   bg: '#2e0d0d', border: '#5a2d2d', color: '#ff6b6b' },
@@ -25,10 +27,12 @@ export default function App() {
   const marketCycle        = useGameStore(s => s.marketCycle);
   const inflationCounter   = useGameStore(s => s.inflationCounter);
   const currentPlayerIndex = useGameStore(s => s.currentPlayerIndex);
+  const discoveredCount    = useGameStore(s => s.discoveredLessons.length);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [escapeAlert, setEscapeAlert]           = useState(null);
   const [showHelp, setShowHelp]                 = useState(false);
+  const [showJournal, setShowJournal]           = useState(false);
 
   const prevEscapedRef = useRef({});
 
@@ -137,6 +141,15 @@ export default function App() {
           </span>
         )}
 
+        {/* Lesson journal */}
+        <button
+          onClick={() => setShowJournal(true)}
+          className="h-7 px-3 rounded-full flex items-center gap-1 text-[11px] font-bold cursor-pointer text-[#93c5fd] bg-[#0d1b2e] border border-[#1e3a5f] font-[family-name:var(--font-display)]"
+          title="Kuwaderno ng Aral"
+        >
+          📘 Aral {discoveredCount}/{CONCEPT_IDS.length}
+        </button>
+
         {/* Help button */}
         <button
           onClick={() => setShowHelp(true)}
@@ -176,6 +189,8 @@ export default function App() {
         <EscapeScreen player={escapeAlert} onContinue={() => setEscapeAlert(null)} />
       )}
 
+      {showJournal && <LessonJournal onClose={() => setShowJournal(false)} />}
+
       {/* Help modal */}
       {showHelp && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4">
@@ -205,6 +220,18 @@ export default function App() {
                       <span className="text-slate-400">{desc}</span>
                     </div>
                   ))}
+                </div>
+              </section>
+
+              <section>
+                <p className="text-slate-400 text-[10px] uppercase tracking-widest mb-2">Paano Matuto sa LAYA</p>
+                <div className="flex flex-col gap-1 text-xs text-slate-400 leading-relaxed">
+                  <p><span className="text-amber-300 font-bold">🧮 Mabilisang Kuwenta:</span> Sa bawat deal, sagutin ang tanong bago bumili. Tama = +1 Talino, at makikita mo ang buong analysis.</p>
+                  <p><span className="text-amber-300 font-bold">💸 Gastos na may pagpipilian:</span> Hindi lahat ng gastos ay pare-pareho. Ikaw ang pipili kung paano tutugunan — at kung paano babayaran.</p>
+                  <p><span className="text-emerald-300 font-bold">Ano ang Nangyari?:</span> Pagkatapos ng bawat desisyon, makikita kung ano ang gumalaw sa financial statement mo at bakit.</p>
+                  <p><span className="text-blue-300 font-bold">📘 Kuwaderno ng Aral:</span> Bawat aral ay nabubuksan lang kapag naranasan mo. Naiipon ito sa bawat laro.</p>
+                  <p><span className="text-amber-300 font-bold">🧠 Talino:</span> Iyong financial IQ — tamang kuwenta, matalinong pagpili, magandang deal, at iniwasang masamang deal.</p>
+                  <p><span className="text-slate-200 font-bold">Hulugan:</span> Ang installment at starting loans ay nababawasan bawat Sahod Day hanggang matapos.</p>
                 </div>
               </section>
 

@@ -8,6 +8,24 @@ const PROFESSION_EMOJI = {
 const php = n =>
   (n ?? 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
+// One line per stat that actually happened, phrased as a lesson for the player
+function reflectionLines(p) {
+  const st = p.stats ?? {};
+  const lines = [];
+  if (st.quizTotal) lines.push({ good: st.quizCorrect / st.quizTotal >= 0.6, text: `Mabilisang Kuwenta: ${st.quizCorrect}/${st.quizTotal} tama` });
+  if (st.choicesMade) lines.push({ good: st.wiseChoices / st.choicesMade >= 0.5, text: `Matalinong pagpili sa Gastos: ${st.wiseChoices}/${st.choicesMade}` });
+  if (st.financingPremium) lines.push({ good: false, text: `Dagdag na binayaran dahil sa hulugan: ${php(st.financingPremium)}` });
+  if (st.uninsuredLoss) lines.push({ good: false, text: `Nawala dahil walang insurance: ${php(st.uninsuredLoss)}` });
+  if (st.insuranceSaved) lines.push({ good: true, text: `Natipid dahil insured: ${php(st.insuranceSaved)}` });
+  if (st.scamLoss) lines.push({ good: false, text: `Nawala sa scam: ${php(st.scamLoss)}` });
+  if (st.gambleNet) lines.push({ good: st.gambleNet > 0, text: `Resulta ng sugal: ${st.gambleNet > 0 ? '+' : '−'}${php(Math.abs(st.gambleNet))}` });
+  if (st.lendLost) lines.push({ good: false, text: `Pautang na hindi naibalik: ${php(st.lendLost)}` });
+  if (st.badDealsAvoided) lines.push({ good: true, text: `Masamang deal na iniwasan: ${st.badDealsAvoided}` });
+  if (st.goodDealsBought) lines.push({ good: true, text: `Magandang deal na binili: ${st.goodDealsBought}` });
+  if (st.loansFinished) lines.push({ good: true, text: `Hulugang natapos: ${st.loansFinished}` });
+  return lines;
+}
+
 export default function WinScreen() {
   const winner    = useGameStore(s => s.winner);
   const players   = useGameStore(s => s.players);
@@ -25,7 +43,7 @@ export default function WinScreen() {
   const netWorthGain = netWorth - (player.startingNetWorth ?? 0);
 
   return (
-    <div className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-[#0a0a14] overflow-hidden">
+    <div className="fixed inset-0 z-60 flex flex-col items-center bg-[#0a0a14] overflow-y-auto">
 
       {/* Starfield effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -45,7 +63,7 @@ export default function WinScreen() {
       </div>
 
       {/* Trophy card */}
-      <div className="relative z-10 flex flex-col items-center gap-6 text-center max-w-md w-full mx-4">
+      <div className="relative z-10 flex flex-col items-center gap-6 text-center max-w-md w-full mx-4 my-auto py-8">
 
         <div className="text-8xl">🏆</div>
 
@@ -131,6 +149,31 @@ export default function WinScreen() {
                 {netWorthGain >= 0 ? '+' : ''}{php(netWorthGain)}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Learning reflection */}
+        <div className="w-full bg-slate-900/80 border border-blue-800/50 rounded-2xl p-4 font-mono text-left">
+          <p className="text-blue-300 text-xs uppercase tracking-widest mb-3">🧠 Mga Aral ng Larong Ito</p>
+          <div className="flex flex-col gap-3">
+            {[...players].sort((a, b) => (b.talino ?? 0) - (a.talino ?? 0)).map(p => {
+              const lines = reflectionLines(p);
+              return (
+                <div key={p.id}>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-200 font-bold">{PROFESSION_EMOJI[p.professionId] ?? '🧑'} {p.name}</span>
+                    <span className="text-yellow-400 font-bold">Talino {p.talino ?? 0}</span>
+                  </div>
+                  {lines.length === 0 ? (
+                    <p className="text-slate-600 text-[11px]">Walang naitalang desisyon.</p>
+                  ) : lines.map(l => (
+                    <p key={l.text} className={`text-[11px] ${l.good ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {l.good ? '✓' : '✗'} {l.text}
+                    </p>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
 

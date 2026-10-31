@@ -19,7 +19,7 @@ Read GAMEPLAN.md in full before writing any code.
 
 /src
 
-/data          → professions.js, cards.js, boardSpaces.js, gameConstants.js
+/data          → professions.js, cards.js, boardSpaces.js, gameConstants.js, lessons.js
 
 /store         → gameStore.js
 
@@ -36,6 +36,7 @@ main.jsx
 - [x] Module 4: Board + Player Position Display
 - [x] Module 5: Card Draw and Resolution System
 - [x] Module 6: Final — Event Log, Freedom Track, Paluwagan, OFW Risk, Polish, Help Modal
+- [x] Module 7: Learning Layer — Gastos choices, deal analysis + quiz, debrief, lesson journal, reflection
 
 ## Code style
 - Component files: PascalCase.jsx

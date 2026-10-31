@@ -299,3 +299,36 @@ export const CREDIT_LOAN_PAID = +50;
 export const CREDIT_MISSED_PAYMENT = -80;
 export const CREDIT_CARD_PENALTY = -50;
 ```
+
+## Learning Layer (Module 7)
+
+Goal: players learn by deciding and seeing consequences, not by reading fixed slogans.
+
+### 1. Decisions on Gastos cards
+- Most Gastos cards carry `choices` (see cards.js header comment). Each choice is a real-life way to meet the situation: installment vs cash vs cheaper alternative, lend with/without written agreement, gamble or walk away, check SEC vs invest.
+- Installment choices store `cashPrice`, so the financing premium is visible and tracked.
+- Insurance-mitigated disasters, car repair, BIR late filing and g12 stay unavoidable.
+- `wise: true` choices give +1 Talino.
+
+### 2. Deal analysis + Mabilisang Kuwenta
+- Before deciding on a deal the player sees critical-thinking prompts and one quick-math question (net after mortgage, payback months, or monthly income of a no-income asset).
+- Answering reveals the full analysis: cash needed (market-adjusted), net cash flow, return/yr, payback, share of the escape gap closed, risk flags (thin margin, expected tenant-roll loss, low emergency buffer after buying), and a verdict.
+- Financial Advisor network card (`next_deal_analysis`) reveals the analysis without the quiz and is consumed on the decision.
+- Talino: +1 correct answer, +1 buying a "good" deal, +1 passing a "bad" deal.
+
+### 3. "Ano ang Nangyari?" debrief
+- Shown after every card decision, Sahod Day and BIR Audit. Before → after: cash, monthly cash flow, passive income, gap to freedom, Rat Race %.
+- Points are computed from the player's own numbers (src/data/lessons.js `buildCardPoints`).
+- One situational coach tip (Payo) per debrief when a rule matches; each tip fires once per player per game.
+
+### 4. Kuwaderno ng Aral (lesson journal)
+- 30 concepts. A concept unlocks only when the player experiences a card that teaches it. Saved in this browser (localStorage) across games.
+
+### 5. Mechanic fixes that the lessons depend on
+- Tenant roll (Special Mechanic #4) now runs on every Sahod Day for each rental. Property Manager card cancels one bad roll.
+- Installment debts (`source: 'starting' | 'gastos'`) shrink by one payment per Sahod Day and close when paid (+50 credit). Bank loans and mortgages unchanged.
+- Loans to family/friends resolve on a D6 after N rounds. Scam card pays bait income, then vanishes with the principal. Scam income never counts toward escaping.
+- Credit card interest text corrected to the BSP cap of 3%/month.
+
+### 6. End-game reflection
+- Win screen lists per player: Talino, quiz accuracy, wise choices, financing premium paid, uninsured losses, insurance savings, scam/gambling/lending results, good deals bought, bad deals avoided, loans finished.

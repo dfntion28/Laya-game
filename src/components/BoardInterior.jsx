@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore.js';
+import {
+  analyzeDeal, buildDealQuiz, snapshot, buildCardPoints, conceptForCard,
+  pickCoachTip, buildPaydayPoints, buildBirPoints,
+} from '../data/lessons.js';
+import DealInsight from './DealInsight.jsx';
+import GastosChoices from './GastosChoices.jsx';
+import DebriefPanel from './DebriefPanel.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -24,15 +31,6 @@ const BADGE_STYLE = {
   gastos:             { bg: '#2e0d0d', border: '#5a1a1a', color: '#f87171', label: 'GASTOS'               },
   pangyayari_buhay:   { bg: '#0d1b2e', border: '#1a3a5a', color: '#60a5fa', label: 'PANGYAYARI SA BUHAY' },
   pangyayari_merkado: { bg: '#1a0d2e', border: '#3a1a5a', color: '#c084fc', label: 'PANGYAYARI SA MERKADO'},
-};
-
-const CARD_LESSONS = {
-  maliit_deal:        'Passive income works for you even while you sleep.',
-  malaking_deal:      'Bigger assets mean bigger passive income — but they need more capital.',
-  gastos:             'Expenses reduce your cash flow. Watch your spending.',
-  pangyayari_buhay:   "Life events are unpredictable. That's why emergency funds matter.",
-  pangyayari_merkado: 'Markets move in cycles. Position your assets accordingly.',
-  koneksyon:          'Your network is your net worth. Connections open doors.',
 };
 
 function getEffectDisplay(card) {
@@ -71,6 +69,11 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
   const clearPendingAction = useGameStore(s => s.clearPendingAction);
   const nextTurn           = useGameStore(s => s.nextTurn);
   const checkWinCondition  = useGameStore(s => s.checkWinCondition);
+  const applyGastosChoice  = useGameStore(s => s.applyGastosChoice);
+  const recordDealDecision = useGameStore(s => s.recordDealDecision);
+  const recordQuiz         = useGameStore(s => s.recordQuiz);
+  const discoverLesson     = useGameStore(s => s.discoverLesson);
+  const markTipSeen        = useGameStore(s => s.markTipSeen);
 
   // ── Local state ─────────────────────────────────────────────────────────────
   const [toast, setToast]           = useState(null);
@@ -78,6 +81,8 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
   const [buyError, setBuyError]     = useState(null);
   const [animDice, setAnimDice]     = useState({ a: null, b: null });
   const [cardVisible, setCardVisible] = useState(false);
+  const [debrief, setDebrief]         = useState(null);
+  const [quizPick, setQuizPick]       = useState(null);
   const drawnRef    = useRef(false);
   const animTimeout = useRef(null);
   const prevRolls   = useRef([null, null]);
@@ -87,7 +92,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
   const isMyTurn      = currentPlayer?.id === selectedPlayerId;
   const hasRolled     = lastDiceRoll !== null;
   const canRoll       = phase === 'playing' && !hasRolled && isMyTurn && !animatingToken.active;
-  const canEnd        = hasRolled && !pendingSpaceAction && !animatingToken.active;
+  const canEnd        = hasRolled && !pendingSpaceAction && !animatingToken.active && !debrief;
   const spaceType     = pendingSpaceAction?.type ?? null;
   const deckName      = CARD_DECK_MAP[spaceType] ?? null;
   const isDeal        = DEAL_TYPES.has(spaceType);
@@ -95,6 +100,13 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
     (currentPlayer?.cash ?? 0) >= (drawnCard.downPayment ?? drawnCard.purchasePrice ?? drawnCard.cost ?? 0);
 
   const [d1, d2] = lastDiceRolls ?? [null, null];
+
+  const hasChoices = spaceType === 'gastos' && !!drawnCard?.choices?.length;
+  const hasAdvisor = !!currentPlayer?.heldNetworkCards.some(c => c.effect === 'next_deal_analysis');
+  const analysis = isDeal && drawnCard && currentPlayer
+    ? analyzeDeal(drawnCard, currentPlayer, marketCycle)
+    : null;
+  const quiz = analysis ? buildDealQuiz(drawnCard, analysis) : null;
 
   // ── Dice animation ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -127,6 +139,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
       drawnRef.current = false;
       setDrawnCard(null);
       setBuyError(null);
+      setQuizPick(null);
       return;
     }
     if (drawnRef.current) return;
@@ -150,6 +163,41 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
     // Cleared in handleEndTurn — no auto-dismiss so toast persists until turn ends
   };
 
+  const playerNow = (id) => useGameStore.getState().players.find(p => p.id === id);
+
+  // Builds the post-decision debrief from a pre-action snapshot
+  const openDebrief = ({ playerId, title, before, beforeTalino, card = null, choice = null, outcome = null, analysis: a = null, extraPoints = [], concept: conceptOverride, showDeltas = true }) => {
+    const p = playerNow(playerId);
+    if (!p) return;
+    const after = snapshot(p);
+    const cardPoints = card ? buildCardPoints({ card, choice, outcome, before, after, player: p, analysis: a }) : [];
+    const concept = conceptOverride !== undefined ? conceptOverride : (card ? conceptForCard(card, a) : null);
+    const isNewConcept = discoverLesson(concept);
+    const tip = pickCoachTip(p, useGameStore.getState().round);
+    if (tip) markTipSeen(playerId, tip.id);
+    setDebrief({
+      title,
+      before: showDeltas ? before : null,
+      after:  showDeltas ? after : null,
+      points: [...extraPoints, ...cardPoints].slice(0, 4),
+      concept,
+      isNewConcept,
+      cardLesson: card?.lesson ?? null,
+      talinoGained: p.talino - beforeTalino,
+      tip,
+    });
+  };
+
+  const runPayday = (playerId) => {
+    const p0 = playerNow(playerId);
+    if (!p0) return;
+    const before = snapshot(p0);
+    const summary = collectPayday(playerId);
+    clearPendingAction();
+    const { points, concept } = buildPaydayPoints(summary);
+    openDebrief({ playerId, title: '💰 Sahod Day!', before, beforeTalino: p0.talino, extraPoints: points, concept });
+  };
+
   const handleRoll = () => {
     if (!canRoll || !currentPlayer) return;
     const total = rollDice();
@@ -159,11 +207,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
     // Freedom Track: no animation, resolve non-card spaces immediately
     if (currentPlayer.hasEscapedRatRace) {
       if (space.type === 'sahod_day') {
-        const before = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
-        collectPayday(currentPlayer.id);
-        const after = useGameStore.getState().players.find(p => p.id === currentPlayer.id)?.cash ?? 0;
-        clearPendingAction();
-        showToast(`💰 Sahod Day! Net cash flow: ${php(after - before)}`);
+        runPayday(currentPlayer.id);
       } else if (space.type === 'koneksyon') {
         const nc = drawCard('networkCards');
         if (nc) { applyCardEffect(currentPlayer.id, nc); showToast(`🤝 Nakakuha ng Koneksyon: ${nc.name}`); }
@@ -188,11 +232,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
     if (!pending || !cp || pending.isFreedomTrack) return;
 
     if (pending.type === 'sahod_day') {
-      const before = cp.cash;
-      collectPayday(cp.id);
-      const after = useGameStore.getState().players.find(p => p.id === cp.id)?.cash ?? 0;
-      clearPendingAction();
-      showToast(`💰 Sahod Day! Net cash flow: ${php(after - before)}`);
+      runPayday(cp.id);
     } else if (pending.type === 'koneksyon') {
       const nc = drawCard('networkCards');
       if (nc) { applyCardEffect(cp.id, nc); showToast(`🤝 Nakakuha ng Koneksyon: ${nc.name}`); }
@@ -200,14 +240,17 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
       clearPendingAction();
     } else if (pending.type === 'bir_audit') {
       const d6 = Math.floor(Math.random() * 6) + 1;
+      const before = snapshot(cp);
       const res = resolveBirAudit(cp.id, d6);
-      if (res?.result === 'penalty')
-        showToast(`🧾 BIR Audit! Bayad ₱20,000 multa 😬 (D6: ${d6})`);
-      else if (res?.result === 'pass')
-        showToast(`✅ BIR Audit — Malinaw ang books! (D6: ${d6})`);
-      else if (res?.result === 'refund')
-        showToast(`🎉 BIR Refund! +${php(res.amount)} (D6: ${d6})`);
       clearPendingAction();
+      openDebrief({
+        playerId: cp.id,
+        title: `🧾 BIR Audit (D6: ${d6})`,
+        before,
+        beforeTalino: cp.talino,
+        extraPoints: buildBirPoints(res),
+        concept: 'tax_compliance',
+      });
     } else if (pending.type === 'win_check') {
       checkWinCondition(cp.id);
       clearPendingAction();
@@ -220,25 +263,65 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
 
   const handleAccept = () => {
     if (!drawnCard || !currentPlayer) return;
-    if (drawnCard.cardType === 'trap_deal') {
-      applyCardEffect(currentPlayer.id, drawnCard);
-      if (deckName) discardCard(deckName, drawnCard);
+    const card = drawnCard;
+    const pid = currentPlayer.id;
+    const before = snapshot(currentPlayer);
+    const beforeTalino = currentPlayer.talino;
+    const a = isDeal ? analyzeDeal(card, currentPlayer, marketCycle) : null;
+
+    if (card.cardType === 'trap_deal') {
+      applyCardEffect(pid, card);
+      if (deckName) discardCard(deckName, card);
       // clearPendingAction already called inside applyCardEffect for trap_deal
-      return;
-    }
-    if (isDeal) {
-      const result = buyDeal(currentPlayer.id, drawnCard);
-      if (!result.success) { setBuyError(result.reason); return; }
     } else {
-      applyCardEffect(currentPlayer.id, drawnCard);
+      if (isDeal) {
+        const result = buyDeal(pid, card);
+        if (!result.success) { setBuyError(result.reason); return; }
+      } else {
+        applyCardEffect(pid, card);
+      }
+      if (deckName) discardCard(deckName, card);
+      clearPendingAction();
     }
-    if (deckName && drawnCard) discardCard(deckName, drawnCard);
-    clearPendingAction();
+    if (a) recordDealDecision(pid, { bought: true, verdict: a.verdict, usedAdvisor: hasAdvisor });
+    const noEffect = card.type === 'ofw_upgrade' && currentPlayer.professionId !== 'nurse';
+    openDebrief({ playerId: pid, title: card.name, before, beforeTalino, card, analysis: a, concept: noEffect ? null : undefined });
   };
 
   const handlePass = () => {
-    if (deckName && drawnCard) discardCard(deckName, drawnCard);
+    if (!drawnCard || !currentPlayer) return;
+    const card = drawnCard;
+    const pid = currentPlayer.id;
+    const before = snapshot(currentPlayer);
+    const beforeTalino = currentPlayer.talino;
+    const a = isDeal ? analyzeDeal(card, currentPlayer, marketCycle) : null;
+    if (deckName) discardCard(deckName, card);
     clearPendingAction();
+    if (a) recordDealDecision(pid, { bought: false, verdict: a.verdict, usedAdvisor: hasAdvisor });
+    openDebrief({
+      playerId: pid, title: `Pass: ${card.name}`, before, beforeTalino, card,
+      analysis: a, outcome: { passed: true }, showDeltas: false,
+      // A forced pass (not enough cash) teaches nothing about this deal's numbers
+      concept: a && !a.canAfford && a.verdict !== 'bad' ? 'emergency_fund' : undefined,
+    });
+  };
+
+  const handleChoose = (choice) => {
+    if (!drawnCard || !currentPlayer) return;
+    const card = drawnCard;
+    const pid = currentPlayer.id;
+    const before = snapshot(currentPlayer);
+    const beforeTalino = currentPlayer.talino;
+    const outcome = applyGastosChoice(pid, card, choice);
+    if (deckName) discardCard(deckName, card);
+    clearPendingAction();
+    openDebrief({ playerId: pid, title: choice.label, before, beforeTalino, card, choice, outcome });
+  };
+
+  const handleQuizPick = (value) => {
+    if (quizPick !== null || !quiz || !currentPlayer) return;
+    setQuizPick(value);
+    recordQuiz(currentPlayer.id, value === quiz.answer);
   };
 
   const handleEndTurn = () => {
@@ -322,10 +405,12 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
       </div>
 
       {/* ─── Zone B: Card Preview / Info ───────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center" style={{ perspective: '600px' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col" style={{ perspective: '600px' }}>
+      <div className="my-auto">
 
-        {/* Card — only renders after animation completes + 180ms delay */}
-        {cardVisible && deckName && drawnCard ? (
+        {debrief ? (
+          <DebriefPanel debrief={debrief} onClose={() => setDebrief(null)} />
+        ) : cardVisible && deckName && drawnCard ? (
           drawnCard.cardType === 'trap_deal' ? (
             /* ── Trap Deal — amber speculative card ── */
             <div className="flex flex-col gap-2" style={{ animation: 'cardFlipIn 0.32s ease-out forwards' }}>
@@ -350,7 +435,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
                 {drawnCard.name}
               </h3>
 
-              <p className="text-[10px] leading-[1.5] text-[#8aabcb]">{drawnCard.lesson}</p>
+              <p className="text-[10px] leading-[1.5] text-[#8aabcb]">{drawnCard.description}</p>
 
               <div
                 className="rounded-lg flex flex-col gap-1"
@@ -384,12 +469,9 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
 
               {buyError && <p className="text-[10px] text-[#f87171]">{buyError}</p>}
 
-              <p
-                className="text-[9px] italic rounded"
-                style={{ color: '#b45309', background: '#1c0a00', padding: '4px 8px' }}
-              >
-                💡 Ang kinalabasan ay depende sa market cycle kung kailan mag-resolve.
-              </p>
+              {analysis && (
+                <DealInsight card={drawnCard} analysis={analysis} quiz={null} quizPick={null} onPick={() => {}} hasAdvisor={false} />
+              )}
 
               <div className="flex gap-2 mt-1">
                 <button
@@ -465,8 +547,8 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
             {/* Description */}
             <p className="text-[10px] leading-[1.5] text-[#8aabcb]">{drawnCard.description}</p>
 
-            {/* Effect amount */}
-            {(() => {
+            {/* Effect amount (choice cards show cost per option instead) */}
+            {!hasChoices && (() => {
               const eff = getEffectDisplay(drawnCard);
               return eff ? (
                 <p
@@ -500,18 +582,23 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
               <p className="text-[10px] text-[#f87171]">{buyError}</p>
             )}
 
-            {/* Financial lesson */}
-            {CARD_LESSONS[spaceType] && (
-              <p
-                className="text-[9px] italic rounded"
-                style={{ color: '#4a7a4a', background: '#0a1f0a', padding: '4px 8px' }}
-              >
-                {CARD_LESSONS[spaceType]}
-              </p>
+            {analysis && (
+              <DealInsight
+                card={drawnCard}
+                analysis={analysis}
+                quiz={quiz}
+                quizPick={quizPick}
+                onPick={handleQuizPick}
+                hasAdvisor={hasAdvisor}
+              />
+            )}
+
+            {hasChoices && currentPlayer && (
+              <GastosChoices card={drawnCard} player={currentPlayer} onChoose={handleChoose} />
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 mt-1">
+            {!hasChoices && <div className="flex gap-2 mt-1">
               <button
                 onClick={handleAccept}
                 disabled={!drawnCard || (isDeal && !canAfford)}
@@ -549,7 +636,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
                   Pass
                 </button>
               )}
-            </div>
+            </div>}
           </div>
           )
 
@@ -621,6 +708,7 @@ export default function BoardInterior({ selectedPlayerId, onSelectPlayer }) {
             </p>
           </div>
         )}
+      </div>
       </div>
 
       {/* ─── Zone C: Chips + Controls ─────────────────────────── */}
